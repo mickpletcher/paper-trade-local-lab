@@ -4,6 +4,8 @@ TradeForge is a local-first paper trading and strategy testing platform for rese
 
 TradeForge does not connect to brokerages, place live orders, or send data externally by default.
 
+See [changelog.md](./changelog.md) for the repo change history.
+
 ## Features
 
 - SQLite persistence with SQLAlchemy models for symbols, bars, orders, fills, positions, trades, strategy runs, and account snapshots
@@ -89,6 +91,37 @@ Run the API locally:
 ```bash
 uvicorn tradeforge.api.app:app --reload
 ```
+
+## Docker
+
+Build and run with Docker:
+
+```bash
+docker build -t tradeforge .
+docker run --rm -p 8000:8000 --env-file .env -v "$(pwd)/data:/app/data" tradeforge
+```
+
+Run with Docker Compose:
+
+```bash
+docker compose up --build -d
+```
+
+The container starts the API, initializes the SQLite database if needed, and keeps database files and reports in the mounted `data/` folder.
+
+API URL:
+
+```text
+http://localhost:8000
+```
+
+For Proxmox, the simplest setup is a small Debian or Ubuntu VM or LXC with Docker installed, then clone this repo, copy `.env.example` to `.env`, and run:
+
+```bash
+docker compose up --build -d
+```
+
+That gives you a persistent local service with the app data stored on the Proxmox host volume mapped to `./data`.
 
 Endpoints:
 
