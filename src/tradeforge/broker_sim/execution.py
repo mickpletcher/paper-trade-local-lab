@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,7 @@ class SimBroker:
             order_type=request.order_type.value,
             quantity=request.quantity,
             limit_price=request.limit_price,
-            submitted_at=submitted_at or datetime.utcnow(),
+            submitted_at=submitted_at or datetime.now(timezone.utc),
         )
         self.session.add(order)
         self.session.flush()
@@ -43,9 +43,23 @@ class SimBroker:
         for order in open_orders:
             fill_price = self._match_price(order, bar)
             if fill_price is not None:
-                fills.append(self._fill_order(order, bar, fill_price))
+                fill = self._fill_order(order, bar, fill_price)
+                if fill is not None:
+                    fills.append(fill)
         self.session.flush()
         return fills
+
+    def cancel_open_orders(self, strategy_run_id: str | None = None, symbol_id: str | None = None) -> int:
+        query = self.session.query(Order).filter(Order.status == OrderStatus.OPEN.value)
+        if strategy_run_id is not None:
+            query = query.filter(Order.strategy_run_id == strategy_run_id)
+        if symbol_id is not None:
+            query = query.filter(Order.symbol_id == symbol_id)
+        orders = query.all()
+        for order in orders:
+            order.status = OrderStatus.CANCELLED.value
+        self.session.flush()
+        return len(orders)
 
     def _match_price(self, order: Order, bar: PriceBar) -> float | None:
         side = OrderSide(order.side)
@@ -62,30 +76,24 @@ class SimBroker:
         adjustment = price * (self.slippage_bps / 10_000)
         return price + adjustment if side is OrderSide.BUY else price - adjustment
 
-    def _fill_order(self, order: Order, bar: PriceBar, price: float) -> Fill:
+    def _fill_order(self, order: Order, bar: PriceBar, price: float) -> Fill | None:
         side = OrderSide(order.side)
         fee = self.fee_per_order
         gross = price * order.quantity
+        position = get_or_create_position(self.session, order.symbol_id, order.strategy_run_id)
+
         if side is OrderSide.BUY:
             total_cost = gross + fee
             if total_cost > self.account.cash:
                 order.status = OrderStatus.REJECTED.value
-                return Fill(
-                    order_id=order.id,
-                    strategy_run_id=order.strategy_run_id,
-                    symbol_id=order.symbol_id,
-                    timestamp=bar.timestamp,
-                    side=side.value,
-                    quantity=0,
-                    price=price,
-                    fee=0,
-                    slippage=0,
-                )
+                return None
             self.account.cash -= total_cost
         else:
+            if position.quantity <= 0 or order.quantity > position.quantity:
+                order.status = OrderStatus.REJECTED.value
+                return None
             self.account.cash += gross - fee
 
-        position = get_or_create_position(self.session, order.symbol_id, order.strategy_run_id)
         update = apply_fill_to_position(position, side, order.quantity, price, fee)
         fill = Fill(
             order_id=order.id,

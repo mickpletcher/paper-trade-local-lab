@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import typer
@@ -36,6 +37,16 @@ def import_csv(
     with session_scope() as session:
         count = import_ohlcv_csv(session, symbol, file)
     typer.echo(f"Imported {count} bars for {symbol.upper()}.")
+
+
+@app.command("seed-sample-data")
+def seed_sample_data(symbol: str = typer.Option("AAPL", "--symbol", "-s")) -> None:
+    create_schema()
+    dataset = files("tradeforge.sample_data").joinpath("aapl_sample.csv")
+    with as_file(dataset) as file_path:
+        with session_scope() as session:
+            count = import_ohlcv_csv(session, symbol, file_path)
+    typer.echo(f"Seeded {count} sample bars for {symbol.upper()}.")
 
 
 @app.command("run-backtest")

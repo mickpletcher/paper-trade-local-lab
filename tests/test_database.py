@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from sqlalchemy import inspect, select
 
+from tradeforge.database.migrations import get_current_version
 from tradeforge.database.models import Symbol
 from tradeforge.market_data.importer import import_ohlcv_csv
 
 
 def test_database_initialization_creates_tables(engine) -> None:
     tables = set(inspect(engine).get_table_names())
-    assert {"symbols", "price_bars", "orders", "fills", "positions", "trades", "strategy_runs"}.issubset(tables)
+    assert {"schema_migrations", "symbols", "price_bars", "orders", "fills", "positions", "trades", "strategy_runs"}.issubset(tables)
+    assert get_current_version(engine) == 1
 
 
 def test_csv_import_upserts_bars(session, tmp_path) -> None:

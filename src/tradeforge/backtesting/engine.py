@@ -103,7 +103,7 @@ class BacktestEngine:
                     submitted_at=bar.timestamp,
                 )
 
-        broker.process_bar(bars[-1])
+        broker.cancel_open_orders(strategy_run_id=run.id, symbol_id=symbol.id)
         position = get_or_create_position(self.session, symbol.id, run.id)
         ending_equity = account.cash + position.quantity * bars[-1].close
         fills = list(self.session.scalars(select(Fill).where(Fill.strategy_run_id == run.id)))

@@ -35,3 +35,34 @@ def test_limit_order_execution_respects_candle_range(session, symbol) -> None:
     assert len([fill for fill in fills if fill.quantity]) == 1
     assert buy.status == OrderStatus.FILLED.value
     assert sell.status == OrderStatus.OPEN.value
+
+
+def test_sell_order_without_inventory_is_rejected(session, symbol) -> None:
+    bar = add_bar(session, symbol, 1, 100, 105, 95, 101)
+    account = SimAccount.with_starting_cash(10_000)
+    broker = SimBroker(session, account, fee_per_order=0, slippage_bps=0)
+    sell = broker.submit_order(OrderRequest(symbol.id, OrderSide.SELL, OrderType.MARKET, 5))
+
+    fills = broker.process_bar(bar)
+
+    assert fills == []
+    assert sell.status == OrderStatus.REJECTED.value
+    assert account.cash == 10_000
+
+
+def test_sell_order_larger_than_position_is_rejected(session, symbol) -> None:
+    entry_bar = add_bar(session, symbol, 1, 100, 105, 95, 101)
+    exit_bar = add_bar(session, symbol, 2, 102, 106, 99, 104)
+    account = SimAccount.with_starting_cash(10_000)
+    broker = SimBroker(session, account, fee_per_order=0, slippage_bps=0)
+    broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 3))
+    broker.process_bar(entry_bar)
+    sell = broker.submit_order(OrderRequest(symbol.id, OrderSide.SELL, OrderType.MARKET, 5))
+
+    fills = broker.process_bar(exit_bar)
+
+    position = session.query(Position).one()
+    assert fills == []
+    assert sell.status == OrderStatus.REJECTED.value
+    assert position.quantity == 3
+    assert account.cash == 9_700

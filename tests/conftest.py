@@ -7,13 +7,14 @@ import pytest
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from tradeforge.database.models import Base, PriceBar, Symbol
+from tradeforge.database.migrations import init_db
+from tradeforge.database.models import PriceBar, Symbol
 
 
 @pytest.fixture()
 def engine() -> Engine:
     engine = create_engine("sqlite:///:memory:", future=True)
-    Base.metadata.create_all(engine)
+    init_db(engine)
     return engine
 
 

@@ -7,7 +7,7 @@ name = "tradeforge"
 version = "0.1.0"
 description = "Local-first paper trading and strategy testing platform."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.111",
   "pandas>=2.2",
@@ -26,6 +26,9 @@ tradeforge = "tradeforge.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+tradeforge = ["sample_data/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

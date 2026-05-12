@@ -31,3 +31,30 @@
 * Added priority labels (`Now`, `Next`, `Later`) across roadmap items.
 * Added a top 10 execution sequence for implementation order.
 * Added a completed section in `future-upgrades.md` and annotated completed entries with the 2026-05-12 date.
+
+### Simulation and local setup improvements
+
+* Fixed end of backtest execution so orders created from the final bar do not fill on that same final bar.
+* Added sell side inventory validation so the local simulator rejects sells that would create inventory out of thin air.
+* Added regression tests for final bar execution behavior, sell side validation, migrations, and an end to end CLI flow.
+* Added a bundled sample AAPL dataset plus the `tradeforge seed-sample-data` command for repeatable local setup.
+* Replaced ad hoc schema creation with versioned SQLite migrations tracked in `schema_migrations`.
+
+### Assessment and roadmap maintenance
+
+* Added `assessment.md` at the repo root as the current source of truth for project status, strengths, risks, and next steps.
+* Updated `future-upgrades.md` to remove completed items that are now part of the current repo baseline.
+* Expanded the completed section in `future-upgrades.md` so planning and current state stay aligned.
+* Rewrote `README.md` into a detailed operator guide covering local setup, configuration, sample data flow, CLI usage, API usage, Docker usage, testing, and current limitations.
+
+### GitHub Spec workflow
+
+* Added `.github/copilot-instructions.md` with repo specific GitHub Spec rules for TradeForge.
+* Added reusable `.github/prompts` files for requirements, spec, plan, tasks, audit, and release readiness.
+* Added `specs/README.md` plus the initial `specs/001-core-trading-foundation/` package as the baseline spec for the current MVP.
+* Updated `README.md` and `future-upgrades.md` to document the new spec workflow and baseline package.
+
+### Continuous integration
+
+* Added `.github/workflows/ci.yml` to run `python -m pytest -q` on pushes to `main` and on pull requests using Python 3.13.
+* Updated `README.md` testing documentation to note the GitHub Actions validation path.
