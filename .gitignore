@@ -14,3 +14,4 @@ data/reports/*.md
 future-upgrades.md
 !data/reports/.gitkeep
 !data/imports/.gitkeep
+*.code-workspace
