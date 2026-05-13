@@ -14,28 +14,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      * name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      * name: Set up Node
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
-      * name: Install Markdown tooling
+      - name: Install Markdown tooling
         run: npm install --no-save markdownlint-cli2
 
-      * name: Run Markdown lint
+      - name: Run Markdown lint
         run: npx markdownlint-cli2 "README.md" "CONTRIBUTING.md" "docs/**/*.md" ".github/prompts/**/*.md"
 
   links:
     runs-on: ubuntu-latest
 
     steps:
-      * name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      * name: Verify docs section entry points
+      - name: Verify docs section entry points
         run: |
           test -f docs/README.md
           test -f docs/architecture/README.md
