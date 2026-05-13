@@ -153,9 +153,11 @@ def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None
     assert "--start must be a valid ISO date or datetime string." in result.output
 
 
-def test_start_api_uses_uvicorn(monkeypatch) -> None:
+def test_start_api_uses_uvicorn(monkeypatch, tmp_path) -> None:
     runner = CliRunner()
     captured: dict[str, object] = {}
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
 
     def fake_run(app_path: str, host: str, port: int, reload: bool) -> None:
         captured["app_path"] = app_path
@@ -165,7 +167,12 @@ def test_start_api_uses_uvicorn(monkeypatch) -> None:
 
     monkeypatch.setattr("tradeforge.cli.uvicorn.run", fake_run)
 
-    result = runner.invoke(app, ["start-api", "--host", "0.0.0.0", "--port", "9000", "--reload"], catch_exceptions=False)
+    result = runner.invoke(
+        app,
+        ["start-api", "--host", "0.0.0.0", "--port", "9000", "--reload"],
+        env=env,
+        catch_exceptions=False,
+    )
 
     assert result.exit_code == 0
     assert captured == {
