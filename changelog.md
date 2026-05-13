@@ -65,3 +65,16 @@
 * Defined the next planned feature boundary as live quote based valuation only, with all trading and execution remaining local.
 * Added `specs/002-live-market-data-valuation/implementation-guide.md` with provider options and a detailed adapter, storage, valuation, API, and testing implementation plan.
 * Added `specs/002-live-market-data-valuation/feed-options.md` to rank providers as easy, best, and later for TradeForge.
+
+### CLI and API usability
+
+* Added `tradeforge start-api` so local startup and container startup use the same CLI app command surface.
+* Updated the container startup path to use `tradeforge start-api --host 0.0.0.0 --port 8000`.
+* Added cleaner `run-backtest` validation for strategy names, symbols, and date ranges.
+* Added OpenAPI response examples for the current API endpoints.
+* Added tests for the new CLI validation paths, API startup command wiring, and OpenAPI examples.
+
+### Documentation refresh
+
+* Updated `assessment.md` to reflect the current repo baseline, including GitHub Spec, CI, API startup, and the live valuation planning package.
+* Rewrote `README.md` as a more novice friendly setup and usage guide with step by step Windows and Linux instructions, troubleshooting notes, and a simpler first run path.

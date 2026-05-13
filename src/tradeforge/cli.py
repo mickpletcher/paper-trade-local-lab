@@ -8,16 +8,18 @@ from pathlib import Path
 
 import typer
 from sqlalchemy import select
+import uvicorn
 
 from tradeforge.backtesting.engine import BacktestEngine
 from tradeforge.database.migrations import init_db as create_schema
-from tradeforge.database.models import Order, Position, StrategyRun
+from tradeforge.database.models import Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
 
 app = typer.Typer(help="TradeForge local paper trading and backtesting CLI.")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+AVAILABLE_STRATEGIES = {"moving-average-cross"}
 
 
 @app.command("init-db")
@@ -61,12 +63,31 @@ def run_backtest(
 ) -> None:
     """Run a historical strategy backtest."""
     create_schema()
-    if strategy != "moving-average-cross":
-        raise typer.BadParameter("Only moving-average-cross is available in the MVP.")
+    strategy_name = strategy.strip().lower()
+    if strategy_name not in AVAILABLE_STRATEGIES:
+        available = ", ".join(sorted(AVAILABLE_STRATEGIES))
+        raise typer.BadParameter(f"Unknown strategy '{strategy}'. Available strategies: {available}.")
+    start_at = _parse_date_option("--start", start)
+    end_at = _parse_date_option("--end", end)
+    if start_at >= end_at:
+        raise typer.BadParameter("The start date must be earlier than the end date.")
+    normalized_symbol = symbol.strip().upper()
     strategy_obj = MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
     with session_scope() as session:
-        result = BacktestEngine(session, strategy_obj, symbol, _parse_date(start), _parse_date(end)).run()
+        _ensure_symbol_exists(session, normalized_symbol)
+        result = BacktestEngine(session, strategy_obj, normalized_symbol, start_at, end_at).run()
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("start-api")
+def start_api(
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8000, "--port"),
+    reload: bool = typer.Option(False, "--reload"),
+) -> None:
+    """Start the local TradeForge API."""
+    create_schema()
+    uvicorn.run("tradeforge.api.app:app", host=host, port=port, reload=reload)
 
 
 @app.command("show-positions")
@@ -118,8 +139,19 @@ def show_pnl() -> None:
             )
 
 
-def _parse_date(value: str) -> datetime:
-    return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+def _parse_date_option(option_name: str, value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise typer.BadParameter(f"{option_name} must be a valid ISO date or datetime string.") from exc
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _ensure_symbol_exists(session, symbol: str) -> None:
+    if session.scalar(select(Symbol.id).where(Symbol.ticker == symbol)) is None:
+        raise typer.BadParameter(f"Unknown symbol '{symbol}'. Import or seed market data before running a backtest.")
 
 
 if __name__ == "__main__":

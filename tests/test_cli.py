@@ -51,3 +51,126 @@ def test_seed_and_backtest_cli_flow(monkeypatch, tmp_path) -> None:
     assert "status=cancelled" in orders_result.stdout
 
     assert Path(tmp_path, "data", "tradeforge.db").exists()
+
+
+def test_run_backtest_rejects_unknown_strategy(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    result = runner.invoke(
+        app,
+        [
+            "run-backtest",
+            "--strategy",
+            "nope",
+            "--symbol",
+            "AAPL",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-08",
+        ],
+        env=env,
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown strategy 'nope'" in result.output
+
+
+def test_run_backtest_rejects_missing_symbol(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    result = runner.invoke(
+        app,
+        [
+            "run-backtest",
+            "--strategy",
+            "moving-average-cross",
+            "--symbol",
+            "MSFT",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-08",
+        ],
+        env=env,
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown symbol 'MSFT'" in result.output
+
+
+def test_run_backtest_rejects_invalid_date_range(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    result = runner.invoke(
+        app,
+        [
+            "run-backtest",
+            "--strategy",
+            "moving-average-cross",
+            "--symbol",
+            "AAPL",
+            "--start",
+            "2023-01-08",
+            "--end",
+            "2023-01-01",
+        ],
+        env=env,
+    )
+
+    assert result.exit_code != 0
+    assert "start date must be earlier than the end date" in result.output
+
+
+def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    result = runner.invoke(
+        app,
+        [
+            "run-backtest",
+            "--strategy",
+            "moving-average-cross",
+            "--symbol",
+            "AAPL",
+            "--start",
+            "not-a-date",
+            "--end",
+            "2023-01-08",
+        ],
+        env=env,
+    )
+
+    assert result.exit_code != 0
+    assert "--start must be a valid ISO date or datetime string." in result.output
+
+
+def test_start_api_uses_uvicorn(monkeypatch) -> None:
+    runner = CliRunner()
+    captured: dict[str, object] = {}
+
+    def fake_run(app_path: str, host: str, port: int, reload: bool) -> None:
+        captured["app_path"] = app_path
+        captured["host"] = host
+        captured["port"] = port
+        captured["reload"] = reload
+
+    monkeypatch.setattr("tradeforge.cli.uvicorn.run", fake_run)
+
+    result = runner.invoke(app, ["start-api", "--host", "0.0.0.0", "--port", "9000", "--reload"], catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert captured == {
+        "app_path": "tradeforge.api.app:app",
+        "host": "0.0.0.0",
+        "port": 9000,
+        "reload": True,
+    }

@@ -1,189 +1,156 @@
 # TradeForge
 
-TradeForge is a local first paper trading and strategy testing lab.
+TradeForge is a local paper trading and strategy testing app.
 
-It is built to mimic trading behavior on your own machine so new strategies can be tested without live brokerage access. The current repo runs fully offline by default, stores state in SQLite, imports OHLCV CSV data, replays historical bars, executes simulated orders, and writes reports for each backtest run.
+It lets you do three main things on your own computer:
 
-TradeForge does not place live trades. It does not connect to brokerages out of the box. It is a local simulation and research tool.
+1. load market data from CSV files
+2. run a strategy against that data
+3. inspect the simulated results
 
-Supporting project docs:
+TradeForge does not place live trades.
+
+TradeForge does not connect to a brokerage for execution.
+
+TradeForge is meant for local testing, learning, and strategy research.
+
+## If You Are New To This Project
+
+Start here.
+
+You do not need to understand the whole codebase first.
+
+The fastest path is:
+
+1. install Python
+2. install the project
+3. create the local database
+4. load the built in sample data
+5. run a sample backtest
+6. look at the results
+
+That is enough to prove the project is working.
+
+## What This Project Does
+
+TradeForge can currently:
+
+1. store data in a local SQLite database
+2. import OHLCV market data from CSV files
+3. simulate market and limit orders locally
+4. track positions, fills, trades, and strategy runs
+5. run historical backtests
+6. write markdown reports
+7. expose a small local API for inspection
+
+## What This Project Does Not Do
+
+TradeForge does not currently:
+
+1. place live trades
+2. connect to a broker for order execution
+3. stream live market data yet
+4. support stop orders or partial fills
+5. support multiple built in strategies
+6. provide a web dashboard UI
+
+## Files You Should Know About
+
+These are the most important repo files for a new user:
 
 * [assessment.md](./assessment.md)
 * [changelog.md](./changelog.md)
 * [future-upgrades.md](./future-upgrades.md)
 * [specs/README.md](./specs/README.md)
 
-## What The Repo Does
+## What You Need Before You Start
 
-The current repo gives you a usable MVP for local strategy research:
+You need:
 
-* Local SQLite storage for symbols, bars, orders, fills, positions, trades, strategy runs, and account snapshots.
-* Versioned SQLite schema setup through `schema_migrations`.
-* A CLI for database initialization, sample data seeding, CSV imports, backtest runs, and result inspection.
-* A simulated broker that supports market and limit orders with fees, slippage, cash tracking, and basic position accounting.
-* A historical backtest engine that evaluates one strategy against one symbol over a selected date range.
-* Markdown report generation for completed strategy runs.
-* A small FastAPI app for local visibility into symbols, orders, positions, and strategy runs.
-* Automated tests for core persistence, execution, migrations, and CLI flow.
+1. Python 3.12 or newer
+2. a terminal
+3. this repo on your machine
 
-## What The Repo Does Not Do Yet
+If you are on Windows, PowerShell is fine.
 
-The repo is still intentionally narrow:
+## Recommended Setup For Windows
 
-* No live trading.
-* No direct brokerage integration.
-* No real time data feed.
-* No multi symbol portfolio backtesting yet.
-* No stop orders or partial fills yet.
-* No dashboard UI yet.
-* No optimization or parameter sweep engine yet.
+### Step 1: Open PowerShell In The Repo Folder
 
-## Current Architecture
+If the repo is already cloned, open PowerShell and move into the repo folder.
 
-```text
-src/tradeforge/
-  api/                    FastAPI app and route handlers
-  backtesting/            Backtest engine and performance metrics
-  broker_sim/             Simulated account, execution, orders, and positions
-  database/               SQLAlchemy models, sessions, and migrations
-  market_data/            CSV import and bar replay helpers
-  reporting/              Markdown report generation
-  sample_data/            Bundled first run CSV data
-  strategies/             Strategy base types and built in strategies
-  cli.py                  Main Typer command surface
-  config.py               Runtime settings from environment
+Example:
 
-data/
-  imports/                User supplied OHLCV CSV files
-  reports/                Generated markdown backtest reports
-
-.github/
-  copilot-instructions.md Repo specific GitHub Spec rules
-  prompts/                Reusable prompts for requirements, spec, plan, tasks, audit
-
-specs/
-  001-core-trading-foundation/
-                          Baseline spec package for the current MVP
+```powershell
+cd "C:\Users\mick0\OneDrive\Documents\Code & Dev\GitHub\paper-trade-local-lab"
 ```
 
-## GitHub Spec Workflow
+### Step 2: Create A Virtual Environment
 
-This repo now includes a repo level GitHub Spec scaffold for non trivial work.
-
-Use it when the change affects behavior across multiple modules, schema, execution logic, API surface, or future adapter work.
-
-Repo level spec files:
-
-* `.github/copilot-instructions.md`
-* `.github/prompts/generate-requirements.prompt.md`
-* `.github/prompts/generate-spec.prompt.md`
-* `.github/prompts/generate-plan.prompt.md`
-* `.github/prompts/generate-tasks.prompt.md`
-* `.github/prompts/audit.prompt.md`
-* `.github/prompts/release-readiness.prompt.md`
-* `specs/README.md`
-* `specs/001-core-trading-foundation/`
-
-Recommended sequence for the next feature:
-
-1. Create the next numbered folder under `specs/`.
-2. Write `requirements.md`.
-3. Write `spec.md`.
-4. Write `plan.md`.
-5. Write `tasks.md`.
-6. Implement the feature.
-7. Audit the finished work against the spec.
-
-The baseline package for the current repo is:
-
-* `specs/001-core-trading-foundation/`
-
-## Requirements
-
-Current package requirement:
-
-* Python 3.12 or newer
-
-Main runtime dependencies:
-
-* FastAPI
-* Pandas
-* Pydantic Settings
-* SQLAlchemy
-* Typer
-* Uvicorn
-
-Dev dependencies:
-
-* Pytest
-* Pytest Cov
-
-## Local Setup
-
-### Windows PowerShell
-
-Create and activate a virtual environment:
+This gives the project its own isolated Python environment.
 
 ```powershell
 py -3.13 -m venv .venv
+```
+
+If `py -3.13` is not available, use any installed Python version that is 3.12 or newer.
+
+### Step 3: Activate The Virtual Environment
+
+```powershell
 . .\.venv\Scripts\Activate.ps1
 ```
 
-Install the project and test tools:
+If it worked, you will usually see `(.venv)` at the start of your prompt.
+
+### Step 4: Install The Project
 
 ```powershell
 python -m pip install -e ".[dev]"
 ```
 
-Initialize the local database:
+This installs:
+
+1. the TradeForge package
+2. the libraries it needs
+3. the test tools used by the repo
+
+### Step 5: Create The Local Database
 
 ```powershell
 tradeforge init-db
 ```
 
-Load the bundled sample dataset:
+This creates the local SQLite database structure.
+
+### Step 6: Load The Built In Sample Data
 
 ```powershell
 tradeforge seed-sample-data
 ```
 
-### Linux Or macOS
+This loads a small sample AAPL dataset so you can test the app right away.
+
+### Step 7: Run A Sample Backtest
+
+```powershell
+tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2023-01-08 --short-window 2 --long-window 3 --order-size 2
+```
+
+### Step 8: View The Results
+
+```powershell
+tradeforge show-orders
+tradeforge show-positions
+tradeforge show-pnl
+```
+
+## Recommended Setup For Linux Or macOS
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-tradeforge init-db
-tradeforge seed-sample-data
-```
-
-## Environment Settings
-
-Runtime settings come from environment variables or `.env`.
-
-The repo includes `.env.example` with the current defaults.
-
-| Variable | Purpose | Default |
-|---|---|---|
-| `TRADEFORGE_DATABASE_URL` | SQLite or other future database URL | `sqlite:///data/tradeforge.db` |
-| `TRADEFORGE_STARTING_CASH` | Starting cash for backtests | `100000` |
-| `TRADEFORGE_FEE_PER_ORDER` | Flat fee applied per order | `1.00` |
-| `TRADEFORGE_SLIPPAGE_BPS` | Slippage in basis points | `1` |
-
-Typical local `.env`:
-
-```text
-TRADEFORGE_DATABASE_URL=sqlite:///data/tradeforge.db
-TRADEFORGE_STARTING_CASH=100000
-TRADEFORGE_FEE_PER_ORDER=1.00
-TRADEFORGE_SLIPPAGE_BPS=1
-```
-
-## First Run Workflow
-
-If you want to verify the repo quickly without bringing your own market data, use this flow:
-
-```powershell
 tradeforge init-db
 tradeforge seed-sample-data
 tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2023-01-08 --short-window 2 --long-window 3 --order-size 2
@@ -192,42 +159,13 @@ tradeforge show-positions
 tradeforge show-pnl
 ```
 
-What this does:
-
-1. Creates the local schema if it does not already exist.
-2. Seeds the bundled AAPL sample dataset into the local database.
-3. Runs the built in moving average crossover strategy.
-4. Prints stored orders, positions, and strategy run summaries.
-5. Writes a markdown report to `data/reports/`.
-
-## Using Your Own Market Data
-
-TradeForge expects OHLCV CSV input with these columns:
-
-```csv
-date,open,high,low,close,volume
-2023-01-03,130.28,130.90,124.17,125.07,112117500
-2023-01-04,126.89,128.66,125.08,126.36,89113600
-```
-
-Import behavior:
-
-* `date` is normalized to UTC.
-* `open`, `high`, `low`, `close`, and `volume` must be present.
-* Invalid or missing values are rejected.
-* Reimports update existing rows for the same symbol and timestamp.
-
-Import command:
-
-```powershell
-tradeforge import-csv --symbol AAPL --file .\data\imports\aapl.csv
-```
-
-## CLI Reference
+## What Each Command Does
 
 ### `tradeforge init-db`
 
-Initializes the local schema and applies any pending SQLite migration steps.
+Creates the local database and applies the current schema migrations.
+
+Use this first.
 
 ```powershell
 tradeforge init-db
@@ -235,11 +173,12 @@ tradeforge init-db
 
 ### `tradeforge seed-sample-data`
 
-Loads the bundled sample CSV into the database. Default symbol is `AAPL`.
+Loads the built in sample market data into the database.
+
+Use this if you want to test the project without finding your own CSV file first.
 
 ```powershell
 tradeforge seed-sample-data
-tradeforge seed-sample-data --symbol AAPL
 ```
 
 ### `tradeforge import-csv`
@@ -247,39 +186,47 @@ tradeforge seed-sample-data --symbol AAPL
 Imports your own OHLCV CSV file.
 
 ```powershell
-tradeforge import-csv --symbol MSFT --file .\data\imports\msft.csv
+tradeforge import-csv --symbol AAPL --file .\data\imports\aapl.csv
 ```
 
 ### `tradeforge run-backtest`
 
-Runs the current built in strategy over a date range.
+Runs the built in strategy over a date range.
 
 ```powershell
 tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2024-01-01
 ```
 
-Extended example:
+Important rules:
+
+1. only `moving-average-cross` is available right now
+2. the symbol must already exist in the database
+3. the dates must be valid ISO style dates
+4. the start date must be earlier than the end date
+
+### `tradeforge start-api`
+
+Starts the local API.
 
 ```powershell
-tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2023-12-31 --short-window 20 --long-window 50 --order-size 10
+tradeforge start-api
 ```
 
-Current strategy specific parameters:
+If you want live reload while developing:
 
-* `--short-window`
-* `--long-window`
-* `--order-size`
+```powershell
+tradeforge start-api --reload
+```
 
-Current behavior notes:
+If you want it reachable from outside the machine or container:
 
-* Only `moving-average-cross` is available right now.
-* Backtests require at least two bars.
-* Signals generated on the final bar are not filled on that same final bar.
-* Orders still open when the run ends are marked as cancelled.
+```powershell
+tradeforge start-api --host 0.0.0.0 --port 8000
+```
 
 ### `tradeforge show-orders`
 
-Prints stored simulated orders.
+Shows the simulated orders saved in the local database.
 
 ```powershell
 tradeforge show-orders
@@ -287,7 +234,7 @@ tradeforge show-orders
 
 ### `tradeforge show-positions`
 
-Prints stored simulated positions.
+Shows the current simulated positions.
 
 ```powershell
 tradeforge show-positions
@@ -295,75 +242,127 @@ tradeforge show-positions
 
 ### `tradeforge show-pnl`
 
-Prints strategy run summaries with ending equity and total return.
+Shows basic results for completed strategy runs.
 
 ```powershell
 tradeforge show-pnl
 ```
 
-## Reports
+## Using Your Own CSV Data
 
-Each completed backtest writes a markdown report to:
+TradeForge expects a CSV file with these columns:
 
-```text
-data/reports/<strategy-run-id>.md
+```csv
+date,open,high,low,close,volume
+2023-01-03,130.28,130.90,124.17,125.07,112117500
+2023-01-04,126.89,128.66,125.08,126.36,89113600
 ```
 
-The report currently includes:
+What the columns mean:
 
-* Strategy name
-* Symbol
-* Date range
-* Run parameters
-* Summary metrics
-* Recorded trades
-* Final positions
+1. `date`
+   the time for the bar
+2. `open`
+   the first traded price in the bar
+3. `high`
+   the highest traded price in the bar
+4. `low`
+   the lowest traded price in the bar
+5. `close`
+   the last traded price in the bar
+6. `volume`
+   the traded volume for the bar
 
-## Database And Migration Model
-
-The repo now uses a simple versioned SQLite migration flow managed in `src/tradeforge/database/migrations.py`.
-
-Current behavior:
-
-* `tradeforge init-db` creates the local database folder if needed.
-* A `schema_migrations` table tracks applied schema versions.
-* The current migration set builds the baseline tables and indexes needed by the app.
-
-This is a real migration path, but it is still lightweight. It is not Alembic yet.
-
-## API
-
-The FastAPI app is intentionally small. It is useful for local inspection and as a base for a future dashboard or service layer.
-
-Run it locally:
+Import example:
 
 ```powershell
-uvicorn tradeforge.api.app:app --reload
+tradeforge import-csv --symbol MSFT --file .\data\imports\msft.csv
 ```
 
-Default local URL:
+Important behavior:
+
+1. dates are normalized to UTC
+2. invalid rows are rejected
+3. importing the same symbol and timestamp again updates the existing row
+
+## Where The Data Lives
+
+### Database
+
+By default, the local SQLite database lives here:
+
+```text
+data/tradeforge.db
+```
+
+### Reports
+
+Generated backtest reports are written here:
+
+```text
+data/reports/
+```
+
+### Input CSV Files
+
+If you want a simple place to keep your import files, use:
+
+```text
+data/imports/
+```
+
+## Local Settings
+
+You can configure the project with environment variables or a `.env` file.
+
+The repo includes `.env.example`.
+
+Current settings:
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `TRADEFORGE_DATABASE_URL` | database location | `sqlite:///data/tradeforge.db` |
+| `TRADEFORGE_STARTING_CASH` | starting backtest cash | `100000` |
+| `TRADEFORGE_FEE_PER_ORDER` | flat fee per order | `1.00` |
+| `TRADEFORGE_SLIPPAGE_BPS` | slippage in basis points | `1` |
+
+Example `.env`:
+
+```text
+TRADEFORGE_DATABASE_URL=sqlite:///data/tradeforge.db
+TRADEFORGE_STARTING_CASH=100000
+TRADEFORGE_FEE_PER_ORDER=1.00
+TRADEFORGE_SLIPPAGE_BPS=1
+```
+
+## Running The API
+
+Start it with:
+
+```powershell
+tradeforge start-api --reload
+```
+
+Then open:
 
 ```text
 http://localhost:8000
 ```
 
-Current endpoints:
+Useful API locations:
 
-* `GET /health`
-* `GET /symbols`
-* `GET /positions`
-* `GET /orders`
-* `GET /strategy-runs`
+* `http://localhost:8000/health`
+* `http://localhost:8000/symbols`
+* `http://localhost:8000/positions`
+* `http://localhost:8000/orders`
+* `http://localhost:8000/strategy-runs`
+* `http://localhost:8000/docs`
 
-Current endpoint intent:
+The `/docs` page is especially useful for new users because it shows the endpoints in the browser and now includes example responses.
 
-* `/health` returns a simple service check.
-* `/symbols` returns imported symbols.
-* `/positions` returns simulated positions.
-* `/orders` returns stored orders.
-* `/strategy-runs` returns completed or in progress run metadata and metrics.
+## Running With Docker
 
-## Docker
+If you prefer Docker:
 
 ### Build And Run
 
@@ -378,88 +377,129 @@ docker run --rm -p 8000:8000 --env-file .env -v "$(pwd)/data:/app/data" tradefor
 docker compose up --build -d
 ```
 
-Current container behavior:
+The container now starts the API through the same command surface used locally:
 
-* Builds from `python:3.12-slim`
-* Installs the package from the repo
-* Starts the API with Uvicorn
-* Runs database initialization before serving requests
-* Persists database and report output in the mounted `data` folder
+```text
+tradeforge start-api --host 0.0.0.0 --port 8000
+```
 
-## Proxmox Notes
+## How To Check That Everything Works
 
-If you want a simple always on local deployment in Proxmox:
+### Quick Human Check
 
-1. Create a small Debian or Ubuntu VM or LXC.
-2. Install Docker and Docker Compose.
-3. Clone the repo.
-4. Copy `.env.example` to `.env`.
-5. Run `docker compose up --build -d`.
+Run these:
 
-That gives you a persistent local service with app state stored in the mounted `data` path.
+```powershell
+tradeforge init-db
+tradeforge seed-sample-data
+tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2023-01-08 --short-window 2 --long-window 3 --order-size 2
+tradeforge show-orders
+tradeforge show-pnl
+```
 
-## Testing
+If those work, the project is basically healthy.
 
-Run the automated test suite:
+### Automated Test Suite
+
+Run:
 
 ```powershell
 python -m pytest -q
 ```
 
-GitHub Actions runs the same command on pushes to `main` and on pull requests with Python 3.13.
+The repo also has GitHub Actions CI that runs the same test command on pushes to `main` and pull requests.
 
-The current suite covers:
+## Common Problems
 
-* Database initialization and migration version tracking
-* CSV import upsert behavior
-* Market and limit order behavior
-* Invalid sell rejection
-* Backtest completion
-* Final bar no lookahead behavior
-* CLI seed and backtest flow
+### Problem: `tradeforge` command is not found
+
+Usually this means:
+
+1. the virtual environment is not activated
+2. the package was not installed yet
+
+Fix:
+
+```powershell
+. .\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+### Problem: backtest says the symbol is unknown
+
+This means the symbol is not in the database yet.
+
+Fix:
+
+1. run `tradeforge seed-sample-data`
+2. or import your own CSV with `tradeforge import-csv`
+
+### Problem: invalid date error
+
+Use dates like:
+
+```text
+2023-01-01
+```
+
+or full ISO datetime strings.
+
+### Problem: API page does not load
+
+Make sure the API is running:
+
+```powershell
+tradeforge start-api
+```
+
+Then open `http://localhost:8000/docs`.
+
+## For More Advanced Users
+
+Important repo areas:
+
+* `src/tradeforge/cli.py`
+* `src/tradeforge/api/app.py`
+* `src/tradeforge/database/`
+* `src/tradeforge/broker_sim/`
+* `src/tradeforge/backtesting/`
+* `specs/001-core-trading-foundation/`
+* `specs/002-live-market-data-valuation/`
+
+If you are planning larger work, use the GitHub Spec workflow in `specs/`.
 
 ## Current Limitations
 
-Important current limitations to keep in mind:
+This repo is still early stage in a few important ways:
 
-* One built in strategy
-* One symbol per backtest run
-* No portfolio allocation logic
-* No stop orders
-* No partial fills
-* No short selling model
-* No exchange calendar support
-* No corporate action handling
-* No risk engine
-* No event driven live paper adapter layer
+1. one built in strategy
+2. one symbol per run
+3. no stop orders
+4. no partial fills
+5. no short selling model
+6. no live quote ingestion yet
+7. no dashboard UI
 
-## Recommended Next Work
+## What Is Planned Next
 
 The highest value next steps are:
 
-1. Add configurable commission and symbol specific slippage models.
-2. Add stop orders, stop limit orders, and cancel workflows.
-3. Add partial fill logic with explicit execution rules.
-4. Add parameter sweep support for the moving average strategy.
-5. Add at least one more built in strategy.
-6. Add API tests and richer API contracts.
-7. Add a CLI command that starts the API directly.
+1. configurable commission and slippage models
+2. stop orders and cancel workflows
+3. partial fill logic
+4. more strategies
+5. live quote based valuation from the `002` spec package
 
-Good first candidates for the next numbered spec:
+Useful planning docs:
 
-1. Configurable commission and symbol specific slippage models.
-2. Stop orders and cancel workflows.
-3. Partial fill logic with explicit execution rules.
-4. Parameter sweep support for the moving average strategy.
-
-The next active numbered package is:
-
-* `specs/002-live-market-data-valuation/`
-* `specs/002-live-market-data-valuation/implementation-guide.md`
-* `specs/002-live-market-data-valuation/feed-options.md`
+* [specs/002-live-market-data-valuation/README.md](./specs/002-live-market-data-valuation/README.md)
+* [specs/002-live-market-data-valuation/implementation-guide.md](./specs/002-live-market-data-valuation/implementation-guide.md)
+* [specs/002-live-market-data-valuation/feed-options.md](./specs/002-live-market-data-valuation/feed-options.md)
 
 ## Disclaimer
 
 TradeForge is for research and education only.
 
-It is not financial advice. It does not make investment recommendations. It should not be used as live trading infrastructure.
+It is not financial advice.
+
+It should not be used as live trading infrastructure.

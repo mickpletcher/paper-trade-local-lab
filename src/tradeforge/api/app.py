@@ -12,19 +12,62 @@ from tradeforge.database.session import session_scope
 app = FastAPI(title="TradeForge API", version="0.1.0")
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="Service health",
+    responses={
+        200: {
+            "description": "Basic service health response.",
+            "content": {"application/json": {"example": {"status": "ok"}}},
+        }
+    },
+)
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/symbols")
+@app.get(
+    "/symbols",
+    summary="List imported symbols",
+    responses={
+        200: {
+            "description": "Imported symbols available in the local database.",
+            "content": {
+                "application/json": {
+                    "example": [{"id": "9a4d3fcb-98c5-4a18-9dd6-7dfbaed7f001", "ticker": "AAPL", "name": ""}]
+                }
+            },
+        }
+    },
+)
 def symbols() -> list[dict[str, str]]:
     init_db()
     with session_scope() as session:
         return [{"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))]
 
 
-@app.get("/positions")
+@app.get(
+    "/positions",
+    summary="List current simulated positions",
+    responses={
+        200: {
+            "description": "Current local paper positions.",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": "1736d089-5028-40f6-b753-f3fcba74a201",
+                            "symbol": "AAPL",
+                            "quantity": 2.0,
+                            "average_cost": 12.01,
+                            "realized_pnl": 0.0,
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
 def positions() -> list[dict[str, object]]:
     init_db()
     with session_scope() as session:
@@ -40,7 +83,29 @@ def positions() -> list[dict[str, object]]:
         ]
 
 
-@app.get("/orders")
+@app.get(
+    "/orders",
+    summary="List simulated orders",
+    responses={
+        200: {
+            "description": "Stored local simulated orders.",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": "f4b9d3cb-d8f5-4c4d-a9bb-1828d9722001",
+                            "symbol": "AAPL",
+                            "side": "buy",
+                            "order_type": "market",
+                            "quantity": 2.0,
+                            "status": "filled",
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
 def orders() -> list[dict[str, object]]:
     init_db()
     with session_scope() as session:
@@ -57,7 +122,33 @@ def orders() -> list[dict[str, object]]:
         ]
 
 
-@app.get("/strategy-runs")
+@app.get(
+    "/strategy-runs",
+    summary="List strategy runs",
+    responses={
+        200: {
+            "description": "Completed or in progress local backtest runs.",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": "61d7e6bf-2bf7-41ad-a5da-7f4ac01f2201",
+                            "strategy": "moving-average-cross",
+                            "symbol": "AAPL",
+                            "started_at": "2026-05-12T20:10:00Z",
+                            "completed_at": "2026-05-12T20:10:02Z",
+                            "metrics": {
+                                "starting_cash": 100000.0,
+                                "ending_equity": 100001.98,
+                                "total_return": 0.00002,
+                            },
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
 def strategy_runs() -> list[dict[str, object]]:
     init_db()
     with session_scope() as session:
