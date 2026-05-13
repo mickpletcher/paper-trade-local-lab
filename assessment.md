@@ -23,6 +23,7 @@ The current foundation now includes:
 9. Structured JSON logging plus an opt in metrics endpoint for long running API deployments.
 10. A first live quote valuation implementation using stored quotes, local valuation math, and quote or portfolio endpoints.
 11. A `002` spec package that now serves as the implementation and expansion plan for live quote based valuation while keeping execution local.
+12. A three layer documentation system with a landing page README, a canonical `docs/` tree, and a separate GitHub Wiki strategy for exploratory content.
 
 ## Architecture Snapshot
 
@@ -87,6 +88,7 @@ The repo now includes:
 * GitHub Actions CI
 * package and container build validation
 * GitHub Spec scaffolding for larger work
+* a durable documentation architecture designed for contributor growth and AI retrieval
 
 6. First live valuation slice is real
 
@@ -146,6 +148,7 @@ The first live quote implementation is built around Alpaca stock snapshots. Futu
 6. Add a background quote refresh path and quote staleness monitoring.
 7. Add at least one second quote provider after the Alpaca path is stable.
 8. Add data quality checks before import.
+9. Fill in the new `docs/` placeholders with concrete architecture, provider, plugin, and operator content as implementation grows.
 
 ## Verification Snapshot
 

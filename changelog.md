@@ -93,3 +93,10 @@
 * Added structured JSON logging for CLI and API execution paths.
 * Added an opt in `/metrics` endpoint for long running API deployments.
 * Expanded GitHub Actions CI to run Ruff, pytest, Python package builds, container image build validation, and GHCR image publishing on `main`.
+
+### Documentation architecture
+
+* Rewrote `README.md` into a concise landing page with badges, quick start, philosophy, and docs entry points.
+* Added a full `docs/` information architecture with section indexes for architecture, installation, configuration, strategies, backtesting, AI integration, market data, database, plugins, security, automation, API, roadmap, contributing, and FAQ.
+* Added docs governance, naming standards, AI documentation workflow guidance, and a GitHub Wiki strategy that separates durable docs from exploratory research.
+* Added `CONTRIBUTING.md`, Markdown lint configuration, and a `docs.yml` GitHub Actions workflow for docs automation.
