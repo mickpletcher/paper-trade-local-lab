@@ -83,6 +83,7 @@
 
 * Added `httpx` to the `dev` extras in `pyproject.toml` so the FastAPI `TestClient` dependency chain is installed in GitHub Actions and `tests/test_api.py` can collect correctly.
 * Updated the invalid date CLI test so it asserts `BadParameter` behavior directly and checks the stable CLI exit code instead of brittle Typer and Rich formatted output in CI.
+* Updated GitHub Actions workflow dependencies to Node 24 compatible major versions for checkout, setup Python, setup Node, and Docker publish actions so the Node.js 20 deprecation warnings are removed.
 
 ### Live quote valuation
 
