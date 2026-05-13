@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+import typer
 from typer.testing import CliRunner
 
-from tradeforge.cli import app
+from tradeforge.cli import _parse_date_option, app
 
 
 def test_seed_and_backtest_cli_flow(monkeypatch, tmp_path) -> None:
@@ -133,6 +135,9 @@ def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None
     monkeypatch.chdir(tmp_path)
     env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
 
+    with pytest.raises(typer.BadParameter, match="--start must be a valid ISO date or datetime string."):
+        _parse_date_option("--start", "not-a-date")
+
     result = runner.invoke(
         app,
         [
@@ -150,7 +155,7 @@ def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None
     )
 
     assert result.exit_code != 0
-    assert "--start must be a valid ISO date or datetime string." in result.output
+    assert "Usage: root run-backtest" in result.output
 
 
 def test_start_api_uses_uvicorn(monkeypatch, tmp_path) -> None:

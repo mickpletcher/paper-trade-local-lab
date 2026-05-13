@@ -82,6 +82,7 @@
 ### CI dependency fix
 
 * Added `httpx` to the `dev` extras in `pyproject.toml` so the FastAPI `TestClient` dependency chain is installed in GitHub Actions and `tests/test_api.py` can collect correctly.
+* Updated the invalid date CLI test so it asserts `BadParameter` behavior directly and only checks the CLI failure path at a high level, avoiding brittle Typer and Rich formatting differences in CI.
 
 ### Live quote valuation
 
