@@ -11,11 +11,19 @@ from sqlalchemy import select
 import uvicorn
 
 from tradeforge.backtesting.engine import BacktestEngine
+from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db as create_schema
-from tradeforge.database.models import Order, Position, StrategyRun, Symbol
+from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
+from tradeforge.market_data.live import (
+    QuoteProviderError,
+    get_default_refresh_symbols,
+    refresh_live_quotes,
+    serialize_quote,
+)
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
+from tradeforge.valuation.service import build_portfolio_valuation
 
 app = typer.Typer(help="TradeForge local paper trading and backtesting CLI.")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -79,6 +87,24 @@ def run_backtest(
     typer.echo(json.dumps(result, indent=2))
 
 
+@app.command("refresh-quotes")
+def refresh_quotes(
+    symbol: list[str] = typer.Option(None, "--symbol", "-s", help="Repeat to refresh specific symbols."),
+) -> None:
+    """Refresh latest quotes for open positions or the requested symbols."""
+    create_schema()
+    settings = get_settings()
+    with session_scope() as session:
+        symbols = symbol or get_default_refresh_symbols(session)
+        if not symbols:
+            raise typer.BadParameter("No symbols were provided and no open positions were found to refresh.")
+        try:
+            refreshed = refresh_live_quotes(session, symbols)
+        except QuoteProviderError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Refreshed {len(refreshed)} quotes using {settings.quote_provider}.")
+
+
 @app.command("start-api")
 def start_api(
     host: str = typer.Option("127.0.0.1", "--host"),
@@ -88,6 +114,30 @@ def start_api(
     """Start the local TradeForge API."""
     create_schema()
     uvicorn.run("tradeforge.api.app:app", host=host, port=port, reload=reload)
+
+
+@app.command("show-quotes")
+def show_quotes() -> None:
+    """Show the latest stored live quotes."""
+    create_schema()
+    settings = get_settings()
+    with session_scope() as session:
+        quotes = session.scalars(select(LiveQuote).order_by(LiveQuote.fetched_at.desc())).all()
+        if not quotes:
+            typer.echo("No live quotes.")
+            return
+        payload = [serialize_quote(quote, settings.quote_stale_after_seconds) for quote in quotes]
+    typer.echo(json.dumps(payload, indent=2))
+
+
+@app.command("show-valuation")
+def show_valuation() -> None:
+    """Show current local portfolio valuation from the latest quotes."""
+    create_schema()
+    settings = get_settings()
+    with session_scope() as session:
+        payload = build_portfolio_valuation(session, settings.quote_stale_after_seconds)
+    typer.echo(json.dumps(payload, indent=2))
 
 
 @app.command("show-positions")

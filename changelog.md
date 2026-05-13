@@ -78,3 +78,11 @@
 
 * Updated `assessment.md` to reflect the current repo baseline, including GitHub Spec, CI, API startup, and the live valuation planning package.
 * Rewrote `README.md` as a more novice friendly setup and usage guide with step by step Windows and Linux instructions, troubleshooting notes, and a simpler first run path.
+
+### Live quote valuation
+
+* Added `live_quotes` storage and migration support for quote data that stays separate from historical bars.
+* Added a normalized live quote provider contract and the first Alpaca snapshot based provider implementation.
+* Added `tradeforge refresh-quotes`, `tradeforge show-quotes`, and `tradeforge show-valuation`.
+* Added `/quotes` and `/portfolio` endpoints for live quote inspection and local portfolio valuation.
+* Added quote valuation tests and updated the repo docs, environment example, and `specs/002-live-market-data-valuation/tasks.md`.

@@ -8,6 +8,8 @@ It lets you do three main things on your own computer:
 2. run a strategy against that data
 3. inspect the simulated results
 
+It can also pull live market quotes for valuation so you can see how your locally tracked positions are doing without sending trades to a broker.
+
 TradeForge does not place live trades.
 
 TradeForge does not connect to a brokerage for execution.
@@ -42,6 +44,8 @@ TradeForge can currently:
 5. run historical backtests
 6. write markdown reports
 7. expose a small local API for inspection
+8. refresh live stock quotes for valuation
+9. calculate current local portfolio valuation from those quotes
 
 ## What This Project Does Not Do
 
@@ -49,7 +53,7 @@ TradeForge does not currently:
 
 1. place live trades
 2. connect to a broker for order execution
-3. stream live market data yet
+3. stream live market data in the background yet
 4. support stop orders or partial fills
 5. support multiple built in strategies
 6. provide a web dashboard UI
@@ -224,6 +228,33 @@ If you want it reachable from outside the machine or container:
 tradeforge start-api --host 0.0.0.0 --port 8000
 ```
 
+### `tradeforge refresh-quotes`
+
+Refreshes live quotes used for local valuation.
+
+If you do not pass any symbols, TradeForge looks for symbols in open local positions.
+
+```powershell
+tradeforge refresh-quotes
+tradeforge refresh-quotes --symbol AAPL --symbol MSFT
+```
+
+### `tradeforge show-quotes`
+
+Shows the latest stored live quotes.
+
+```powershell
+tradeforge show-quotes
+```
+
+### `tradeforge show-valuation`
+
+Shows current local position valuation using the latest stored live quotes.
+
+```powershell
+tradeforge show-valuation
+```
+
 ### `tradeforge show-orders`
 
 Shows the simulated orders saved in the local database.
@@ -325,6 +356,12 @@ Current settings:
 | `TRADEFORGE_STARTING_CASH` | starting backtest cash | `100000` |
 | `TRADEFORGE_FEE_PER_ORDER` | flat fee per order | `1.00` |
 | `TRADEFORGE_SLIPPAGE_BPS` | slippage in basis points | `1` |
+| `TRADEFORGE_QUOTE_PROVIDER` | live quote provider | `alpaca` |
+| `TRADEFORGE_QUOTE_STALE_AFTER_SECONDS` | quote stale threshold | `30` |
+| `TRADEFORGE_ALPACA_DATA_URL` | Alpaca market data base URL | `https://data.alpaca.markets` |
+| `TRADEFORGE_ALPACA_FEED` | Alpaca stock feed | `iex` |
+| `TRADEFORGE_ALPACA_API_KEY_ID` | Alpaca API key id | empty |
+| `TRADEFORGE_ALPACA_API_SECRET_KEY` | Alpaca API secret | empty |
 
 Example `.env`:
 
@@ -333,7 +370,79 @@ TRADEFORGE_DATABASE_URL=sqlite:///data/tradeforge.db
 TRADEFORGE_STARTING_CASH=100000
 TRADEFORGE_FEE_PER_ORDER=1.00
 TRADEFORGE_SLIPPAGE_BPS=1
+TRADEFORGE_QUOTE_PROVIDER=alpaca
+TRADEFORGE_QUOTE_STALE_AFTER_SECONDS=30
+TRADEFORGE_ALPACA_DATA_URL=https://data.alpaca.markets
+TRADEFORGE_ALPACA_FEED=iex
+TRADEFORGE_ALPACA_API_KEY_ID=
+TRADEFORGE_ALPACA_API_SECRET_KEY=
 ```
+
+## Live Market Data Setup
+
+TradeForge now supports a first live quote implementation for valuation.
+
+Important rule:
+
+1. quotes come from an external provider
+2. trading stays local
+3. fills stay local
+4. positions stay local
+
+The first implemented provider is Alpaca stock snapshot data.
+
+### What You Need
+
+You need Alpaca market data credentials:
+
+1. `TRADEFORGE_ALPACA_API_KEY_ID`
+2. `TRADEFORGE_ALPACA_API_SECRET_KEY`
+
+Add them to your `.env` file.
+
+Example:
+
+```text
+TRADEFORGE_ALPACA_API_KEY_ID=your_key_here
+TRADEFORGE_ALPACA_API_SECRET_KEY=your_secret_here
+```
+
+### How To Refresh Quotes
+
+After you already have local positions:
+
+```powershell
+tradeforge refresh-quotes
+tradeforge show-quotes
+tradeforge show-valuation
+```
+
+If you want to refresh a specific symbol even when there is no open position yet:
+
+```powershell
+tradeforge refresh-quotes --symbol AAPL
+```
+
+### What The Valuation Uses
+
+TradeForge stores live quotes separately from historical bars.
+
+It then calculates:
+
+1. mark price
+2. market value
+3. unrealized profit and loss
+4. total equity
+
+### Current Live Quote Limits
+
+The first implementation is intentionally small:
+
+1. stock quote valuation only
+2. Alpaca provider only
+3. polling style refresh
+4. no automatic background refresh loop yet
+5. no live trade routing
 
 ## Running The API
 
@@ -356,6 +465,8 @@ Useful API locations:
 * `http://localhost:8000/positions`
 * `http://localhost:8000/orders`
 * `http://localhost:8000/strategy-runs`
+* `http://localhost:8000/quotes`
+* `http://localhost:8000/portfolio`
 * `http://localhost:8000/docs`
 
 The `/docs` page is especially useful for new users because it shows the endpoints in the browser and now includes example responses.
@@ -398,6 +509,14 @@ tradeforge show-pnl
 ```
 
 If those work, the project is basically healthy.
+
+If you configured Alpaca credentials and want to verify live valuation too:
+
+```powershell
+tradeforge refresh-quotes
+tradeforge show-quotes
+tradeforge show-valuation
+```
 
 ### Automated Test Suite
 
@@ -477,8 +596,9 @@ This repo is still early stage in a few important ways:
 3. no stop orders
 4. no partial fills
 5. no short selling model
-6. no live quote ingestion yet
-7. no dashboard UI
+6. no automatic live quote background scheduler yet
+7. only one live quote provider is implemented right now
+8. no dashboard UI
 
 ## What Is Planned Next
 
@@ -489,6 +609,7 @@ The highest value next steps are:
 3. partial fill logic
 4. more strategies
 5. live quote based valuation from the `002` spec package
+6. more live quote providers and a background refresh path
 
 Useful planning docs:
 

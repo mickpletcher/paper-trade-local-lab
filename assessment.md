@@ -20,7 +20,8 @@ The current foundation now includes:
 6. A small FastAPI app with documented endpoint examples.
 7. GitHub Actions CI that runs the Python test suite on pushes and pull requests.
 8. A repo level GitHub Spec workflow with numbered spec packages.
-9. A `002` spec package for future live quote based valuation while keeping execution local.
+9. A first live quote valuation implementation using stored quotes, local valuation math, and quote or portfolio endpoints.
+10. A `002` spec package that now serves as the implementation and expansion plan for live quote based valuation while keeping execution local.
 
 ## Architecture Snapshot
 
@@ -85,6 +86,10 @@ The repo now includes:
 * GitHub Actions CI
 * GitHub Spec scaffolding for larger work
 
+6. First live valuation slice is real
+
+The repo can now refresh live quotes, store them separately from historical bars, and calculate current local portfolio valuation from those quotes.
+
 ## Current Constraints
 
 1. Single built in strategy
@@ -103,9 +108,9 @@ The broker supports market and limit orders only. There is no stop order flow, p
 
 The API is useful for inspection, but it still does not have a deeper contract layer, pagination, auth, or versioning.
 
-5. No live valuation implementation yet
+5. Live quote support is still narrow
 
-The repo has a detailed plan for live quote based valuation, but that work is still in the spec stage and not implemented.
+The first live valuation implementation is stock quote focused, provider limited, and refreshes on demand rather than through a background scheduler.
 
 ## Risks To Watch
 
@@ -125,6 +130,10 @@ This repo can easily drift into live execution ideas if the local only rule is n
 
 CSV import still assumes clean OHLCV data. Broader source support will need stronger validation, duplicate handling, and gap checks.
 
+5. Provider coupling risk
+
+The first live quote implementation is built around Alpaca stock snapshots. Future provider additions need to keep the normalized quote boundary clean.
+
 ## Recommended Next Steps
 
 1. Add configurable commission and symbol specific slippage models.
@@ -132,8 +141,9 @@ CSV import still assumes clean OHLCV data. Broader source support will need stro
 3. Add partial fill logic with explicit execution rules.
 4. Add at least one more built in strategy.
 5. Add richer API coverage beyond the current OpenAPI example layer.
-6. Implement the first milestone from `specs/002-live-market-data-valuation/`.
-7. Add data quality checks before import.
+6. Add a background quote refresh path and quote staleness monitoring.
+7. Add at least one second quote provider after the Alpaca path is stable.
+8. Add data quality checks before import.
 
 ## Verification Snapshot
 
@@ -141,7 +151,7 @@ Current local verification after the latest completed changes:
 
 1. Python package installs under Python 3.13.
 2. The automated test suite passes.
-3. Current result at the time of this update is `16 passed`.
+3. Current result at the time of this update is `19 passed`.
 
 ## Bottom Line
 

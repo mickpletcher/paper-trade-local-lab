@@ -46,6 +46,7 @@ class Symbol(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     price_bars: Mapped[list["PriceBar"]] = relationship(back_populates="symbol")
+    live_quotes: Mapped[list["LiveQuote"]] = relationship(back_populates="symbol")
 
 
 class PriceBar(Base):
@@ -177,3 +178,27 @@ class AccountSnapshot(Base):
     equity: Mapped[float] = mapped_column(Float)
     realized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
     unrealized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class LiveQuote(Base):
+    __tablename__ = "live_quotes"
+    __table_args__ = (
+        UniqueConstraint("symbol_id", "provider", name="uq_live_quotes_symbol_provider"),
+        Index("ix_live_quotes_symbol_provider", "symbol_id", "provider"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    symbol_id: Mapped[str] = mapped_column(ForeignKey("symbols.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(64), index=True)
+    quote_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    last_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bid_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ask_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bid_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ask_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    previous_close: Mapped[float | None] = mapped_column(Float, nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    raw_payload_json: Mapped[str] = mapped_column(Text, default="{}")
+
+    symbol: Mapped[Symbol] = relationship(back_populates="live_quotes")

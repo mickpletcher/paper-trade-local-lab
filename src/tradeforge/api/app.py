@@ -4,10 +4,14 @@ import json
 
 from fastapi import FastAPI
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
+from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
-from tradeforge.database.models import Order, Position, StrategyRun, Symbol
+from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
+from tradeforge.market_data.live import serialize_quote
+from tradeforge.valuation.service import build_portfolio_valuation
 
 app = FastAPI(title="TradeForge API", version="0.1.0")
 
@@ -44,6 +48,88 @@ def symbols() -> list[dict[str, str]]:
     init_db()
     with session_scope() as session:
         return [{"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))]
+
+
+@app.get(
+    "/quotes",
+    summary="List latest live quotes",
+    responses={
+        200: {
+            "description": "Latest live quotes used for local valuation.",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "symbol": "AAPL",
+                            "provider": "alpaca",
+                            "quote_timestamp": "2026-05-12T20:15:00Z",
+                            "fetched_at": "2026-05-12T20:15:01Z",
+                            "last_price": 188.61,
+                            "bid_price": 188.6,
+                            "ask_price": 188.62,
+                            "mark_price": 188.61,
+                            "previous_close": 187.12,
+                            "currency": "USD",
+                            "age_seconds": 1,
+                            "is_stale": False,
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
+def quotes() -> list[dict[str, object]]:
+    init_db()
+    settings = get_settings()
+    with session_scope() as session:
+        items = session.scalars(select(LiveQuote).options(selectinload(LiveQuote.symbol)).order_by(LiveQuote.fetched_at.desc())).all()
+        return [serialize_quote(item, settings.quote_stale_after_seconds) for item in items]
+
+
+@app.get(
+    "/portfolio",
+    summary="Show current local portfolio valuation",
+    responses={
+        200: {
+            "description": "Local position valuation using the latest stored quotes.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "cash": 9975.98,
+                        "market_value": 377.22,
+                        "total_equity": 10353.2,
+                        "unrealized_pnl": 6.4,
+                        "positions_count": 1,
+                        "stale_quotes": 0,
+                        "positions": [
+                            {
+                                "symbol": "AAPL",
+                                "strategy_run_id": "61d7e6bf-2bf7-41ad-a5da-7f4ac01f2201",
+                                "quantity": 2.0,
+                                "average_cost": 185.41,
+                                "realized_pnl": 0.0,
+                                "quote_provider": "alpaca",
+                                "quote_timestamp": "2026-05-12T20:15:00Z",
+                                "fetched_at": "2026-05-12T20:15:01Z",
+                                "age_seconds": 1,
+                                "is_stale": False,
+                                "mark_price": 188.61,
+                                "market_value": 377.22,
+                                "unrealized_pnl": 6.4,
+                            }
+                        ],
+                    }
+                }
+            },
+        }
+    },
+)
+def portfolio() -> dict[str, object]:
+    init_db()
+    settings = get_settings()
+    with session_scope() as session:
+        return build_portfolio_valuation(session, settings.quote_stale_after_seconds)
 
 
 @app.get(

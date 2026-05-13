@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     starting_cash: float = Field(default=100_000.0, alias="TRADEFORGE_STARTING_CASH")
     fee_per_order: float = Field(default=1.0, alias="TRADEFORGE_FEE_PER_ORDER")
     slippage_bps: float = Field(default=1.0, alias="TRADEFORGE_SLIPPAGE_BPS")
+    quote_provider: str = Field(default="alpaca", alias="TRADEFORGE_QUOTE_PROVIDER")
+    quote_stale_after_seconds: int = Field(default=30, alias="TRADEFORGE_QUOTE_STALE_AFTER_SECONDS")
+    alpaca_data_url: str = Field(default="https://data.alpaca.markets", alias="TRADEFORGE_ALPACA_DATA_URL")
+    alpaca_feed: str = Field(default="iex", alias="TRADEFORGE_ALPACA_FEED")
+    alpaca_api_key_id: str | None = Field(default=None, alias="TRADEFORGE_ALPACA_API_KEY_ID")
+    alpaca_api_secret_key: str | None = Field(default=None, alias="TRADEFORGE_ALPACA_API_SECRET_KEY")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

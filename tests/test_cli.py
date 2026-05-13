@@ -174,3 +174,25 @@ def test_start_api_uses_uvicorn(monkeypatch) -> None:
         "port": 9000,
         "reload": True,
     }
+
+
+def test_refresh_quotes_uses_requested_symbols(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+    seen: dict[str, object] = {}
+
+    def fake_refresh_live_quotes(session, symbols):
+        seen["symbols"] = symbols
+        return [object()]
+
+    seed_result = runner.invoke(app, ["seed-sample-data"], env=env, catch_exceptions=False)
+    assert seed_result.exit_code == 0
+
+    monkeypatch.setattr("tradeforge.cli.refresh_live_quotes", fake_refresh_live_quotes)
+
+    result = runner.invoke(app, ["refresh-quotes", "--symbol", "AAPL"], env=env, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert seen["symbols"] == ["AAPL"]
+    assert "Refreshed 1 quotes" in result.stdout

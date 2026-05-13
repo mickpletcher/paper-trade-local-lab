@@ -176,6 +176,36 @@ MIGRATIONS: tuple[MigrationStep, ...] = (
             "CREATE INDEX ix_account_snapshots_run_timestamp ON account_snapshots (strategy_run_id, timestamp)",
         ),
     ),
+    MigrationStep(
+        version=2,
+        name="live_quotes",
+        statements=(
+            """
+            CREATE TABLE live_quotes (
+                id TEXT PRIMARY KEY,
+                symbol_id TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                quote_timestamp DATETIME NOT NULL,
+                last_price FLOAT,
+                bid_price FLOAT,
+                ask_price FLOAT,
+                bid_size INTEGER,
+                ask_size INTEGER,
+                previous_close FLOAT,
+                currency TEXT,
+                fetched_at DATETIME NOT NULL,
+                raw_payload_json TEXT NOT NULL,
+                CONSTRAINT uq_live_quotes_symbol_provider UNIQUE (symbol_id, provider),
+                FOREIGN KEY(symbol_id) REFERENCES symbols (id)
+            )
+            """,
+            "CREATE INDEX ix_live_quotes_symbol_id ON live_quotes (symbol_id)",
+            "CREATE INDEX ix_live_quotes_provider ON live_quotes (provider)",
+            "CREATE INDEX ix_live_quotes_quote_timestamp ON live_quotes (quote_timestamp)",
+            "CREATE INDEX ix_live_quotes_fetched_at ON live_quotes (fetched_at)",
+            "CREATE INDEX ix_live_quotes_symbol_provider ON live_quotes (symbol_id, provider)",
+        ),
+    ),
 )
 
 
