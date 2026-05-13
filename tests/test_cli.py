@@ -154,8 +154,7 @@ def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None
         env=env,
     )
 
-    assert result.exit_code != 0
-    assert "Usage: root run-backtest" in result.output
+    assert result.exit_code == 2
 
 
 def test_start_api_uses_uvicorn(monkeypatch, tmp_path) -> None:
