@@ -452,6 +452,12 @@ Good first candidates for the next numbered spec:
 3. Partial fill logic with explicit execution rules.
 4. Parameter sweep support for the moving average strategy.
 
+The next active numbered package is:
+
+* `specs/002-live-market-data-valuation/`
+* `specs/002-live-market-data-valuation/implementation-guide.md`
+* `specs/002-live-market-data-valuation/feed-options.md`
+
 ## Disclaimer
 
 TradeForge is for research and education only.

@@ -58,3 +58,10 @@
 
 * Added `.github/workflows/ci.yml` to run `python -m pytest -q` on pushes to `main` and on pull requests using Python 3.13.
 * Updated `README.md` testing documentation to note the GitHub Actions validation path.
+
+### New spec package
+
+* Added `specs/002-live-market-data-valuation/` with `requirements.md`, `spec.md`, `plan.md`, and `tasks.md`.
+* Defined the next planned feature boundary as live quote based valuation only, with all trading and execution remaining local.
+* Added `specs/002-live-market-data-valuation/implementation-guide.md` with provider options and a detailed adapter, storage, valuation, API, and testing implementation plan.
+* Added `specs/002-live-market-data-valuation/feed-options.md` to rank providers as easy, best, and later for TradeForge.
