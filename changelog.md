@@ -79,6 +79,10 @@
 * Updated `assessment.md` to reflect the current repo baseline, including GitHub Spec, CI, API startup, and the live valuation planning package.
 * Rewrote `README.md` as a more novice friendly setup and usage guide with step by step Windows and Linux instructions, troubleshooting notes, and a simpler first run path.
 
+### CI dependency fix
+
+* Added `httpx` to the `dev` extras in `pyproject.toml` so the FastAPI `TestClient` dependency chain is installed in GitHub Actions and `tests/test_api.py` can collect correctly.
+
 ### Live quote valuation
 
 * Added `live_quotes` storage and migration support for quote data that stays separate from historical bars.
