@@ -8,8 +8,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Runtime settings for the local TradeForge app."""
-
     database_url: str = Field(default="sqlite:///data/tradeforge.db", alias="TRADEFORGE_DATABASE_URL")
     starting_cash: float = Field(default=100_000.0, alias="TRADEFORGE_STARTING_CASH")
     fee_per_order: float = Field(default=1.0, alias="TRADEFORGE_FEE_PER_ORDER")
@@ -20,6 +18,9 @@ class Settings(BaseSettings):
     alpaca_feed: str = Field(default="iex", alias="TRADEFORGE_ALPACA_FEED")
     alpaca_api_key_id: str | None = Field(default=None, alias="TRADEFORGE_ALPACA_API_KEY_ID")
     alpaca_api_secret_key: str | None = Field(default=None, alias="TRADEFORGE_ALPACA_API_SECRET_KEY")
+    log_level: str = Field(default="INFO", alias="TRADEFORGE_LOG_LEVEL")
+    log_format: str = Field(default="json", alias="TRADEFORGE_LOG_FORMAT")
+    enable_metrics: bool = Field(default=False, alias="TRADEFORGE_ENABLE_METRICS")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

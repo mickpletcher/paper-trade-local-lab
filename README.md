@@ -125,7 +125,7 @@ This installs:
 tradeforge init-db
 ```
 
-This creates the local SQLite database structure.
+This creates the local SQLite database structure and applies the latest Alembic revision.
 
 ### Step 6: Load The Built In Sample Data
 
@@ -173,6 +173,22 @@ Use this first.
 
 ```powershell
 tradeforge init-db
+```
+
+### `tradeforge db-current`
+
+Shows the currently applied Alembic revision and the repo head revision.
+
+```powershell
+tradeforge db-current
+```
+
+### `tradeforge db-revision`
+
+Creates a new Alembic revision file for the next schema change.
+
+```powershell
+tradeforge db-revision --message "add new table"
 ```
 
 ### `tradeforge seed-sample-data`
@@ -362,6 +378,9 @@ Current settings:
 | `TRADEFORGE_ALPACA_FEED` | Alpaca stock feed | `iex` |
 | `TRADEFORGE_ALPACA_API_KEY_ID` | Alpaca API key id | empty |
 | `TRADEFORGE_ALPACA_API_SECRET_KEY` | Alpaca API secret | empty |
+| `TRADEFORGE_LOG_LEVEL` | app log level | `INFO` |
+| `TRADEFORGE_LOG_FORMAT` | `json` or `plain` log output | `json` |
+| `TRADEFORGE_ENABLE_METRICS` | enables the `/metrics` endpoint | `false` |
 
 Example `.env`:
 
@@ -376,6 +395,9 @@ TRADEFORGE_ALPACA_DATA_URL=https://data.alpaca.markets
 TRADEFORGE_ALPACA_FEED=iex
 TRADEFORGE_ALPACA_API_KEY_ID=
 TRADEFORGE_ALPACA_API_SECRET_KEY=
+TRADEFORGE_LOG_LEVEL=INFO
+TRADEFORGE_LOG_FORMAT=json
+TRADEFORGE_ENABLE_METRICS=false
 ```
 
 ## Live Market Data Setup
@@ -469,7 +491,13 @@ Useful API locations:
 * `http://localhost:8000/portfolio`
 * `http://localhost:8000/docs`
 
+If you enable metrics in `.env`, this endpoint is also available:
+
+* `http://localhost:8000/metrics`
+
 The `/docs` page is especially useful for new users because it shows the endpoints in the browser and now includes example responses.
+
+The API now writes structured logs to stderr by default. That makes container logs and long running local runs easier to filter and forward.
 
 ## Running With Docker
 
@@ -523,10 +551,18 @@ tradeforge show-valuation
 Run:
 
 ```powershell
+ruff check .
+python -m build
 python -m pytest -q
 ```
 
-The repo also has GitHub Actions CI that runs the same test command on pushes to `main` and pull requests.
+To validate the container image locally:
+
+```powershell
+docker build -t tradeforge .
+```
+
+GitHub Actions now runs lint, tests, package build validation, and container build validation on pull requests and pushes. Pushes to `main` also publish the container image to GHCR.
 
 ## Common Problems
 

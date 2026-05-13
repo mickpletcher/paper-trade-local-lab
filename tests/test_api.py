@@ -94,3 +94,22 @@ def test_quotes_and_portfolio_endpoints(monkeypatch, tmp_path) -> None:
     assert quotes_response.json()[0]["symbol"] == "AAPL"
     assert portfolio_response.json()["market_value"] == 330.0
     assert portfolio_response.json()["total_equity"] == 9330.0
+
+
+def test_metrics_endpoint_is_opt_in(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+    init_db()
+
+    client = TestClient(app)
+    disabled_response = client.get("/metrics")
+
+    assert disabled_response.status_code == 404
+
+    monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
+    client.get("/health")
+    enabled_response = client.get("/metrics")
+
+    assert enabled_response.status_code == 200
+    assert "tradeforge_http_requests_total" in enabled_response.text
+    assert 'path="/health"' in enabled_response.text

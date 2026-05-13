@@ -9,6 +9,7 @@ description = "Local-first paper trading and strategy testing platform."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.14",
   "fastapi>=0.111",
   "pandas>=2.2",
   "pydantic>=2.7",
@@ -19,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.2", "pytest-cov>=5.0"]
+dev = ["build>=1.2", "pytest>=8.2", "pytest-cov>=5.0", "ruff>=0.11.0"]
 
 [project.scripts]
 tradeforge = "tradeforge.cli:app"
@@ -28,8 +29,12 @@ tradeforge = "tradeforge.cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-tradeforge = ["sample_data/*.csv"]
+tradeforge = ["alembic/env.py", "alembic/script.py.mako", "alembic/versions/*.py", "sample_data/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

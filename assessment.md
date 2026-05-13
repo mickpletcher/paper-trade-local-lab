@@ -13,15 +13,16 @@ The repo is in a strong MVP state and is more complete than a basic prototype.
 The current foundation now includes:
 
 1. A Typer CLI for database setup, sample data seeding, CSV import, backtest execution, API startup, and result inspection.
-2. A versioned SQLite migration path tracked through `schema_migrations`.
+2. An Alembic based SQLite migration workflow with versioned revision files and CLI inspection commands.
 3. A simulated broker with cash, positions, fills, fees, slippage, and basic trade tracking.
 4. A historical backtest engine for the built in moving average crossover strategy.
 5. Markdown report output for completed strategy runs.
 6. A small FastAPI app with documented endpoint examples.
-7. GitHub Actions CI that runs the Python test suite on pushes and pull requests.
+7. GitHub Actions CI that now runs lint, tests, package build validation, container build validation, and container publishing on `main`.
 8. A repo level GitHub Spec workflow with numbered spec packages.
-9. A first live quote valuation implementation using stored quotes, local valuation math, and quote or portfolio endpoints.
-10. A `002` spec package that now serves as the implementation and expansion plan for live quote based valuation while keeping execution local.
+9. Structured JSON logging plus an opt in metrics endpoint for long running API deployments.
+10. A first live quote valuation implementation using stored quotes, local valuation math, and quote or portfolio endpoints.
+11. A `002` spec package that now serves as the implementation and expansion plan for live quote based valuation while keeping execution local.
 
 ## Architecture Snapshot
 
@@ -81,9 +82,10 @@ The repo now has:
 
 The repo now includes:
 
-* versioned SQLite migrations
+* formal Alembic migrations
 * automated tests
 * GitHub Actions CI
+* package and container build validation
 * GitHub Spec scaffolding for larger work
 
 6. First live valuation slice is real
@@ -116,7 +118,7 @@ The first live valuation implementation is stock quote focused, provider limited
 
 1. Schema drift
 
-The repo now has migrations, but future data model changes must keep using that path consistently.
+The repo now has a formal migration path, but future data model changes must keep landing through Alembic revisions instead of direct table edits.
 
 2. Execution realism drift
 
@@ -140,7 +142,7 @@ The first live quote implementation is built around Alpaca stock snapshots. Futu
 2. Add stop orders, stop limit orders, and cancel workflows.
 3. Add partial fill logic with explicit execution rules.
 4. Add at least one more built in strategy.
-5. Add richer API coverage beyond the current OpenAPI example layer.
+5. Add richer API coverage and versioning beyond the current inspection layer.
 6. Add a background quote refresh path and quote staleness monitoring.
 7. Add at least one second quote provider after the Alpaca path is stable.
 8. Add data quality checks before import.
@@ -151,7 +153,7 @@ Current local verification after the latest completed changes:
 
 1. Python package installs under Python 3.13.
 2. The automated test suite passes.
-3. Current result at the time of this update is `19 passed`.
+3. Current result at the time of this update is `21 passed`.
 
 ## Bottom Line
 

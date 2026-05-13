@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
+from time import perf_counter
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -11,9 +14,44 @@ from tradeforge.database.migrations import init_db
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
 from tradeforge.market_data.live import serialize_quote
+from tradeforge.telemetry import get_logger, log_event, metrics_registry, setup_logging
 from tradeforge.valuation.service import build_portfolio_valuation
 
 app = FastAPI(title="TradeForge API", version="0.1.0")
+setup_logging()
+logger = get_logger(__name__)
+
+
+@app.middleware("http")
+async def telemetry_middleware(request: Request, call_next):
+    started_at = perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_seconds = perf_counter() - started_at
+        metrics_registry.record_http_request(request.method, request.url.path, 500, duration_seconds)
+        log_event(
+            logger,
+            logging.ERROR,
+            "request_failed",
+            method=request.method,
+            path=request.url.path,
+            status_code=500,
+            duration_ms=round(duration_seconds * 1000, 3),
+        )
+        raise
+    duration_seconds = perf_counter() - started_at
+    metrics_registry.record_http_request(request.method, request.url.path, response.status_code, duration_seconds)
+    log_event(
+        logger,
+        logging.INFO,
+        "request_completed",
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=round(duration_seconds * 1000, 3),
+    )
+    return response
 
 
 @app.get(
@@ -28,6 +66,14 @@ app = FastAPI(title="TradeForge API", version="0.1.0")
 )
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/metrics", summary="Show process metrics", response_class=PlainTextResponse)
+def metrics() -> PlainTextResponse:
+    settings = get_settings()
+    if not settings.enable_metrics:
+        raise HTTPException(status_code=404, detail="Metrics are disabled.")
+    return PlainTextResponse(metrics_registry.render_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @app.get(

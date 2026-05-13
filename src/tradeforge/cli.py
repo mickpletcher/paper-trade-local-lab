@@ -12,7 +12,7 @@ import uvicorn
 
 from tradeforge.backtesting.engine import BacktestEngine
 from tradeforge.config import get_settings
-from tradeforge.database.migrations import init_db as create_schema
+from tradeforge.database.migrations import create_revision, get_current_version, get_head_version, init_db as create_schema
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
@@ -23,10 +23,12 @@ from tradeforge.market_data.live import (
     serialize_quote,
 )
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
+from tradeforge.telemetry import get_logger, log_event, setup_logging
 from tradeforge.valuation.service import build_portfolio_valuation
 
 app = typer.Typer(help="TradeForge local paper trading and backtesting CLI.")
-logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+setup_logging()
+logger = get_logger(__name__)
 AVAILABLE_STRATEGIES = {"moving-average-cross"}
 
 
@@ -34,7 +36,34 @@ AVAILABLE_STRATEGIES = {"moving-average-cross"}
 def init_db() -> None:
     """Create the local SQLite schema."""
     create_schema()
+    log_event(logger, logging.INFO, "database_upgraded", current_version=get_current_version(), head_version=get_head_version())
     typer.echo("Initialized TradeForge database.")
+
+
+@app.command("db-current")
+def db_current() -> None:
+    create_schema()
+    typer.echo(
+        json.dumps(
+            {
+                "current_version": get_current_version(),
+                "head_version": get_head_version(),
+            },
+            indent=2,
+        )
+    )
+
+
+@app.command("db-revision")
+def db_revision(
+    message: str = typer.Option(..., "--message", "-m"),
+    autogenerate: bool = typer.Option(True, "--autogenerate/--empty"),
+) -> None:
+    path = create_revision(message=message, autogenerate=autogenerate)
+    if path is None:
+        raise typer.Exit(code=1)
+    log_event(logger, logging.INFO, "database_revision_created", message_text=message, path=path, autogenerate=autogenerate)
+    typer.echo(path)
 
 
 @app.command("import-csv")
@@ -81,9 +110,19 @@ def run_backtest(
         raise typer.BadParameter("The start date must be earlier than the end date.")
     normalized_symbol = symbol.strip().upper()
     strategy_obj = MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
+    log_event(
+        logger,
+        logging.INFO,
+        "backtest_started",
+        strategy=strategy_name,
+        symbol=normalized_symbol,
+        start=start_at.isoformat(),
+        end=end_at.isoformat(),
+    )
     with session_scope() as session:
         _ensure_symbol_exists(session, normalized_symbol)
         result = BacktestEngine(session, strategy_obj, normalized_symbol, start_at, end_at).run()
+    log_event(logger, logging.INFO, "backtest_completed", strategy_run_id=result["strategy_run_id"], metrics=result["metrics"])
     typer.echo(json.dumps(result, indent=2))
 
 
@@ -102,6 +141,14 @@ def refresh_quotes(
             refreshed = refresh_live_quotes(session, symbols)
         except QuoteProviderError as exc:
             raise typer.BadParameter(str(exc)) from exc
+    log_event(
+        logger,
+        logging.INFO,
+        "quotes_refreshed",
+        provider=settings.quote_provider,
+        symbols=[item.upper() for item in symbols],
+        refreshed_count=len(refreshed),
+    )
     typer.echo(f"Refreshed {len(refreshed)} quotes using {settings.quote_provider}.")
 
 
@@ -113,6 +160,17 @@ def start_api(
 ) -> None:
     """Start the local TradeForge API."""
     create_schema()
+    settings = get_settings()
+    log_event(
+        logger,
+        logging.INFO,
+        "api_starting",
+        host=host,
+        port=port,
+        reload=reload,
+        metrics_enabled=settings.enable_metrics,
+        log_format=settings.log_format,
+    )
     uvicorn.run("tradeforge.api.app:app", host=host, port=port, reload=reload)
 
 

@@ -16,7 +16,7 @@ def write_markdown_report(
     reports_dir.mkdir(parents=True, exist_ok=True)
     path = reports_dir / f"{run.id}.md"
     lines = [
-        f"# TradeForge Backtest Report",
+        "# TradeForge Backtest Report",
         "",
         f"Strategy: {run.strategy.name}",
         f"Symbol: {run.symbol.ticker}",

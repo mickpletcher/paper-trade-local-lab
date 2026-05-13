@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import inspect, select
 
-from tradeforge.database.migrations import get_current_version
+from tradeforge.database.migrations import get_current_version, get_head_version
 from tradeforge.database.models import Symbol
 from tradeforge.market_data.importer import import_ohlcv_csv
 
@@ -10,7 +10,7 @@ from tradeforge.market_data.importer import import_ohlcv_csv
 def test_database_initialization_creates_tables(engine) -> None:
     tables = set(inspect(engine).get_table_names())
     assert {
-        "schema_migrations",
+        "alembic_version",
         "symbols",
         "price_bars",
         "orders",
@@ -20,7 +20,8 @@ def test_database_initialization_creates_tables(engine) -> None:
         "strategy_runs",
         "live_quotes",
     }.issubset(tables)
-    assert get_current_version(engine) == 2
+    assert get_current_version(engine) == "002_live_quotes"
+    assert get_head_version() == "002_live_quotes"
 
 
 def test_csv_import_upserts_bars(session, tmp_path) -> None:

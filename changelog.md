@@ -38,7 +38,7 @@
 * Added sell side inventory validation so the local simulator rejects sells that would create inventory out of thin air.
 * Added regression tests for final bar execution behavior, sell side validation, migrations, and an end to end CLI flow.
 * Added a bundled sample AAPL dataset plus the `tradeforge seed-sample-data` command for repeatable local setup.
-* Replaced ad hoc schema creation with versioned SQLite migrations tracked in `schema_migrations`.
+* Replaced ad hoc schema creation with the first versioned SQLite migration path.
 
 ### Assessment and roadmap maintenance
 
@@ -86,3 +86,10 @@
 * Added `tradeforge refresh-quotes`, `tradeforge show-quotes`, and `tradeforge show-valuation`.
 * Added `/quotes` and `/portfolio` endpoints for live quote inspection and local portfolio valuation.
 * Added quote valuation tests and updated the repo docs, environment example, and `specs/002-live-market-data-valuation/tasks.md`.
+
+### Deployment and observability
+
+* Replaced the hand rolled migration runner with Alembic revisions and added `tradeforge db-current` plus `tradeforge db-revision`.
+* Added structured JSON logging for CLI and API execution paths.
+* Added an opt in `/metrics` endpoint for long running API deployments.
+* Expanded GitHub Actions CI to run Ruff, pytest, Python package builds, container image build validation, and GHCR image publishing on `main`.
