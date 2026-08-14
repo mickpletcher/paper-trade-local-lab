@@ -23,7 +23,7 @@ def test_openapi_contains_endpoint_examples() -> None:
     quotes_example = document["paths"]["/quotes"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
     portfolio_example = document["paths"]["/portfolio"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
 
-    assert health_example == {"status": "ok"}
+    assert health_example == {"status": "ok", "database": "ok"}
     assert orders_example[0]["status"] == "filled"
     assert strategy_runs_example[0]["strategy"] == "moving-average-cross"
     assert quotes_example[0]["provider"] == "alpaca"
@@ -87,11 +87,14 @@ def test_quotes_and_portfolio_endpoints(monkeypatch, tmp_path) -> None:
     client = TestClient(app)
 
     quotes_response = client.get("/quotes")
-    portfolio_response = client.get("/portfolio")
+    portfolio_response = client.get("/portfolio", params={"strategy_run_id": run.id})
+    unknown_portfolio_response = client.get("/portfolio", params={"strategy_run_id": "missing"})
 
     assert quotes_response.status_code == 200
     assert portfolio_response.status_code == 200
+    assert unknown_portfolio_response.status_code == 404
     assert quotes_response.json()[0]["symbol"] == "AAPL"
+    assert portfolio_response.json()["strategy_run_id"] == run.id
     assert portfolio_response.json()["market_value"] == 330.0
     assert portfolio_response.json()["total_equity"] == 9330.0
 
@@ -113,3 +116,15 @@ def test_metrics_endpoint_is_opt_in(monkeypatch, tmp_path) -> None:
     assert enabled_response.status_code == 200
     assert "tradeforge_http_requests_total" in enabled_response.text
     assert 'path="/health"' in enabled_response.text
+
+
+def test_api_lifespan_initializes_database_and_health_checks_it(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+
+    with TestClient(app) as client:
+        response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "database": "ok"}
+    assert (tmp_path / "data" / "tradeforge.db").exists()

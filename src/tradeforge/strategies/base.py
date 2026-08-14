@@ -18,11 +18,16 @@ class StrategySignal:
 @dataclass
 class StrategyContext:
     bars: list[PriceBar]
-    has_position: bool = False
+    position_quantity: float = 0.0
+    pending_buy_quantity: float = 0.0
+    pending_sell_quantity: float = 0.0
 
 
 class BaseStrategy(ABC):
     name: str
+
+    def get_order_cancellations(self, bar: PriceBar, context: StrategyContext) -> list[OrderSide]:
+        return []
 
     @abstractmethod
     def on_bar(self, bar: PriceBar, context: StrategyContext) -> StrategySignal | None:

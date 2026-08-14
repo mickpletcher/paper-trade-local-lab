@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from sqlalchemy import inspect, select, text
 
 from tradeforge.database.migrations import get_current_version, get_head_version
@@ -45,3 +46,21 @@ def test_csv_import_upserts_bars(session, tmp_path) -> None:
     symbol = session.scalar(select(Symbol).where(Symbol.ticker == "AAPL"))
     assert symbol is not None
     assert len(symbol.price_bars) == 2
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        "2023-01-01,-1,110,99,105,1000",
+        "2023-01-01,100,98,99,105,1000",
+        "2023-01-01,100,110,101,99,1000",
+        "2023-01-01,100,110,99,105,-1",
+        "2023-01-01,100,110,99,105,1.5",
+    ],
+)
+def test_csv_import_rejects_invalid_ohlcv_rows(session, tmp_path, row) -> None:
+    csv_path = tmp_path / "invalid.csv"
+    csv_path.write_text(f"date,open,high,low,close,volume\n{row}\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="CSV row 2"):
+        import_ohlcv_csv(session, "AAPL", csv_path)

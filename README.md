@@ -38,8 +38,9 @@ TradeForge is built for teams and solo builders who want:
 * per order commission reconciliation and symbol specific slippage rules
 * historical backtesting and markdown report output
 * live quote refresh for local valuation
+* unattended CSV import, quote refresh, verified backup, and failure reporting
 * structured logging and optional metrics output
-* CI for linting, tests, builds, and container validation
+* CI for linting, lock drift, Python 3.11 and 3.13 tests, builds, and container health
 
 ## Architecture Summary
 
@@ -92,7 +93,7 @@ Planned visual assets:
 ```powershell
 py -3.13 -m venv .venv
 . .\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
+python -m pip install --constraint requirements.lock -e ".[dev]"
 tradeforge init-db
 tradeforge seed-sample-data
 ```
@@ -100,8 +101,8 @@ tradeforge seed-sample-data
 ### Container setup
 
 ```powershell
-docker build -t tradeforge .
-docker run --rm -p 8000:8000 --env-file .env -v "${PWD}/data:/app/data" tradeforge
+Copy-Item .env.example .env
+docker compose up --build --detach
 ```
 
 For platform specific setup guides:
@@ -123,6 +124,13 @@ Inspect the results:
 tradeforge show-orders
 tradeforge show-pnl
 tradeforge start-api --reload
+```
+
+Run the full maintenance path now or register it daily:
+
+```powershell
+tradeforge run-maintenance
+.\scripts\Install-TradeForgeScheduledTask.ps1 -RunNow
 ```
 
 Then open:

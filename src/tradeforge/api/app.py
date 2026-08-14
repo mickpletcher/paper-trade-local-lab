@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
+from contextlib import asynccontextmanager
 from time import perf_counter
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 
 from tradeforge.config import get_settings
@@ -17,7 +18,14 @@ from tradeforge.market_data.live import serialize_quote
 from tradeforge.telemetry import get_logger, log_event, metrics_registry, setup_logging
 from tradeforge.valuation.service import build_portfolio_valuation
 
-app = FastAPI(title="TradeForge API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="TradeForge API", version="0.1.0", lifespan=lifespan)
 setup_logging()
 logger = get_logger(__name__)
 
@@ -60,12 +68,17 @@ async def telemetry_middleware(request: Request, call_next):
     responses={
         200: {
             "description": "Basic service health response.",
-            "content": {"application/json": {"example": {"status": "ok"}}},
+            "content": {"application/json": {"example": {"status": "ok", "database": "ok"}}},
         }
     },
 )
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    try:
+        with session_scope() as session:
+            session.execute(text("SELECT 1"))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Database health check failed.") from exc
+    return {"status": "ok", "database": "ok"}
 
 
 @app.get("/metrics", summary="Show process metrics", response_class=PlainTextResponse)
@@ -91,7 +104,6 @@ def metrics() -> PlainTextResponse:
     },
 )
 def symbols() -> list[dict[str, str]]:
-    init_db()
     with session_scope() as session:
         return [{"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))]
 
@@ -126,7 +138,6 @@ def symbols() -> list[dict[str, str]]:
     },
 )
 def quotes() -> list[dict[str, object]]:
-    init_db()
     settings = get_settings()
     with session_scope() as session:
         items = session.scalars(select(LiveQuote).options(selectinload(LiveQuote.symbol)).order_by(LiveQuote.fetched_at.desc())).all()
@@ -142,6 +153,7 @@ def quotes() -> list[dict[str, object]]:
             "content": {
                 "application/json": {
                     "example": {
+                        "strategy_run_id": "61d7e6bf-2bf7-41ad-a5da-7f4ac01f2201",
                         "cash": 9975.98,
                         "market_value": 377.22,
                         "total_equity": 10353.2,
@@ -171,11 +183,13 @@ def quotes() -> list[dict[str, object]]:
         }
     },
 )
-def portfolio() -> dict[str, object]:
-    init_db()
+def portfolio(strategy_run_id: str | None = None) -> dict[str, object]:
     settings = get_settings()
     with session_scope() as session:
-        return build_portfolio_valuation(session, settings.quote_stale_after_seconds)
+        try:
+            return build_portfolio_valuation(session, settings.quote_stale_after_seconds, strategy_run_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.get(
@@ -201,7 +215,6 @@ def portfolio() -> dict[str, object]:
     },
 )
 def positions() -> list[dict[str, object]]:
-    init_db()
     with session_scope() as session:
         return [
             {
@@ -239,7 +252,6 @@ def positions() -> list[dict[str, object]]:
     },
 )
 def orders() -> list[dict[str, object]]:
-    init_db()
     with session_scope() as session:
         return [
             {
@@ -282,7 +294,6 @@ def orders() -> list[dict[str, object]]:
     },
 )
 def strategy_runs() -> list[dict[str, object]]:
-    init_db()
     with session_scope() as session:
         return [
             {

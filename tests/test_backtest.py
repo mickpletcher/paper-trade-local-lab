@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import select
 
 from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
-from tradeforge.database.models import AccountSnapshot, Fill, Order, OrderSide, OrderStatus, OrderType, StrategyRun
+from tradeforge.database.models import AccountSnapshot, Fill, Order, OrderSide, OrderStatus, OrderType, Position, StrategyRun
 from tradeforge.strategies.base import BaseStrategy, StrategyContext, StrategySignal
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
 
@@ -20,11 +20,32 @@ def test_moving_average_strategy_signal_generation(session, symbol) -> None:
     bars = [add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)]
     strategy = MovingAverageCrossStrategy(short_window=2, long_window=3, order_size=7)
 
-    signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, has_position=False))
+    signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, position_quantity=0))
 
     assert signal is not None
     assert signal.quantity == 7
     assert signal.side.value == "buy"
+
+
+def test_moving_average_strategy_caps_exit_to_position_quantity(session, symbol) -> None:
+    closes = [1, 3, 1]
+    bars = [add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)]
+    strategy = MovingAverageCrossStrategy(short_window=1, long_window=2, order_size=10)
+
+    signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, position_quantity=2.5))
+
+    assert signal is not None
+    assert signal.quantity == 2.5
+    assert signal.side is OrderSide.SELL
+
+
+@pytest.mark.parametrize(
+    ("short_window", "long_window", "order_size"),
+    [(0, 2, 1), (2, 2, 1), (3, 2, 1), (1, 2, 0), (1, 2, float("inf"))],
+)
+def test_moving_average_strategy_rejects_invalid_parameters(short_window, long_window, order_size) -> None:
+    with pytest.raises(ValueError):
+        MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
 
 
 def test_backtest_run_completion(session, symbol, monkeypatch, tmp_path) -> None:
@@ -85,6 +106,61 @@ def test_last_bar_signal_is_not_filled_on_same_bar(session, symbol, monkeypatch,
     assert order is not None
     assert order.status == OrderStatus.CANCELLED.value
     assert fills == []
+
+
+def test_backtest_cancels_partially_filled_entry_before_exit(session, symbol, monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    closes = [3, 1, 3, 1, 1]
+    for index, close in enumerate(closes):
+        bar = add_bar(session, symbol, index + 1, close, close + 1, max(close - 1, 0.1), close)
+        if index >= 3:
+            bar.volume = 8
+    engine = BacktestEngine(
+        session,
+        MovingAverageCrossStrategy(short_window=1, long_window=2, order_size=10),
+        "AAPL",
+        datetime(2023, 1, 1, tzinfo=timezone.utc),
+        datetime(2023, 1, 5, tzinfo=timezone.utc),
+        starting_cash=10_000,
+    )
+
+    engine.run()
+
+    orders = session.scalars(select(Order).order_by(Order.submitted_at.asc())).all()
+    position = session.scalar(select(Position))
+    assert position is not None
+    assert position.quantity == 0
+    assert [(order.side, order.filled_quantity, order.status) for order in orders] == [
+        (OrderSide.BUY.value, 2, OrderStatus.CANCELLED.value),
+        (OrderSide.SELL.value, 2, OrderStatus.FILLED.value),
+    ]
+
+
+def test_backtest_cancels_unfilled_entry_when_signal_reverses(session, symbol, monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    closes = [3, 1, 3, 1, 1]
+    for index, close in enumerate(closes):
+        bar = add_bar(session, symbol, index + 1, close, close + 1, max(close - 1, 0.1), close)
+        if index == 3:
+            bar.volume = 0
+    engine = BacktestEngine(
+        session,
+        MovingAverageCrossStrategy(short_window=1, long_window=2, order_size=10),
+        "AAPL",
+        datetime(2023, 1, 1, tzinfo=timezone.utc),
+        datetime(2023, 1, 5, tzinfo=timezone.utc),
+        starting_cash=10_000,
+    )
+
+    engine.run()
+
+    order = session.scalar(select(Order))
+    position = session.scalar(select(Position))
+    assert order is not None
+    assert position is not None
+    assert order.filled_quantity == 0
+    assert order.status == OrderStatus.CANCELLED.value
+    assert position.quantity == 0
 
 
 def test_unknown_commission_model_is_rejected() -> None:

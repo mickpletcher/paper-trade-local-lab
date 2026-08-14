@@ -12,5 +12,7 @@ build/
 data/*.db
 data/reports/*.md
 !data/reports/.gitkeep
+data/backups/
+data/automation/
 !data/imports/.gitkeep
 *.code-workspace

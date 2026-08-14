@@ -5,11 +5,13 @@ import logging
 from datetime import datetime, timezone
 from importlib.resources import as_file, files
 from pathlib import Path
+from typing import Optional
 
 import typer
 from sqlalchemy import select
 import uvicorn
 
+from tradeforge.automation import MaintenanceError, run_maintenance
 from tradeforge.backtesting.engine import BacktestEngine
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import create_revision, get_current_version, get_head_version, init_db as create_schema
@@ -109,7 +111,10 @@ def run_backtest(
     if start_at >= end_at:
         raise typer.BadParameter("The start date must be earlier than the end date.")
     normalized_symbol = symbol.strip().upper()
-    strategy_obj = MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
+    try:
+        strategy_obj = MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     log_event(
         logger,
         logging.INFO,
@@ -152,6 +157,20 @@ def refresh_quotes(
     typer.echo(f"Refreshed {len(refreshed)} quotes using {settings.quote_provider}.")
 
 
+@app.command("run-maintenance")
+def run_maintenance_command() -> None:
+    """Import queued data, refresh open positions, back up SQLite, and write a run report."""
+    try:
+        result = run_maintenance()
+    except MaintenanceError as exc:
+        if exc.report_path is not None:
+            typer.echo(f"Maintenance failed. Report: {exc.report_path}", err=True)
+        else:
+            typer.echo(f"Maintenance failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(json.dumps(result, indent=2))
+
+
 @app.command("start-api")
 def start_api(
     host: str = typer.Option("127.0.0.1", "--host"),
@@ -159,7 +178,6 @@ def start_api(
     reload: bool = typer.Option(False, "--reload"),
 ) -> None:
     """Start the local TradeForge API."""
-    create_schema()
     settings = get_settings()
     log_event(
         logger,
@@ -189,12 +207,15 @@ def show_quotes() -> None:
 
 
 @app.command("show-valuation")
-def show_valuation() -> None:
+def show_valuation(strategy_run_id: Optional[str] = typer.Option(None, "--strategy-run-id")) -> None:
     """Show current local portfolio valuation from the latest quotes."""
     create_schema()
     settings = get_settings()
     with session_scope() as session:
-        payload = build_portfolio_valuation(session, settings.quote_stale_after_seconds)
+        try:
+            payload = build_portfolio_valuation(session, settings.quote_stale_after_seconds, strategy_run_id)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps(payload, indent=2))
 
 

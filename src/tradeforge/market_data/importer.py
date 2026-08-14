@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from math import isfinite
 
 import pandas as pd
 from sqlalchemy import select
@@ -29,6 +30,16 @@ def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> in
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
     if frame.isna().any().any():
         raise ValueError("CSV contains missing or invalid OHLCV data")
+
+    for row_number, row in enumerate(frame.itertuples(index=False), start=2):
+        prices = [float(row.open), float(row.high), float(row.low), float(row.close)]
+        volume = float(row.volume)
+        if not all(isfinite(price) and price > 0 for price in prices):
+            raise ValueError(f"CSV row {row_number} contains a nonpositive or nonfinite price")
+        if row.high < row.low or not row.low <= row.open <= row.high or not row.low <= row.close <= row.high:
+            raise ValueError(f"CSV row {row_number} contains invalid OHLC relationships")
+        if not isfinite(volume) or volume < 0 or not volume.is_integer():
+            raise ValueError(f"CSV row {row_number} volume must be a nonnegative integer")
 
     frame = frame.sort_values("date")
     db_symbol = get_or_create_symbol(session, symbol)

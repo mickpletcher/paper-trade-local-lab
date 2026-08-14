@@ -18,6 +18,8 @@ TradeForge enables SQLite foreign key enforcement on every application engine co
 
 Schema changes must use the packaged Alembic revisions. Revision `003_execution_realism` adds stop state, partial fill state, and cumulative commission state to orders.
 
+`tradeforge run-maintenance` uses SQLite's online backup API, verifies `PRAGMA integrity_check`, atomically promotes the backup, and retains the configured newest copies. Backups and maintenance reports are local ignored data. Automated restore drills remain future work.
+
 ## Suggested Future Topics
 
 * schema-overview.md

@@ -6,11 +6,13 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Automation And Reliability
 
-* Add scheduled quote refresh with staleness checks, retry with backoff, and failure alerts.
-* Add scheduled market data imports with validation, idempotency, and run summaries.
-* Add automated SQLite backup, restore verification, retention, and failure reporting.
-* Add container health checks and automatic restart behavior.
 * Add automatic GitHub issue creation for repeated governance or CI failures without creating duplicates.
+* Add a maintenance concurrency lock so overlapping scheduled runs fail safely.
+* Add automatic restore drills from the newest backup with recovery time reporting.
+* Add import quarantine and acknowledgement so successful files are not reprocessed indefinitely.
+* Add Teams and email escalation adapters with retry and duplicate suppression.
+* Add maintenance report retention and a local health summary command.
+* Add randomized retry jitter and a provider circuit breaker for extended quote outages.
 
 ### Trading Safety And Data Quality
 
@@ -30,8 +32,10 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add parameter sweeps for the moving average strategy.
 * Add breakout, mean reversion, and RSI strategies.
 * Add portfolio sizing models including fixed fractional and volatility targeting.
+* Add account level aggregation and deliberate multi run portfolio reporting.
 * Add walk forward optimization, Monte Carlo reshuffling, and stress tests.
 * Add deterministic replay seeds, immutable input snapshots, and artifact checksums.
+* Add idempotency keys for externally submitted order intents and maintenance runs.
 
 ### Interfaces And Integrations
 
@@ -66,6 +70,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add semantic release automation with migration and benchmark gates.
 * Add secrets rotation and least privilege service identities.
 * Add disaster recovery drills with measured recovery objectives.
+* Add signed release provenance and software bill of materials publication.
+* Add isolated locked environment smoke tests for every declared Python version before dependency update merges.
 
 ### Extended Markets And Connectors
 
