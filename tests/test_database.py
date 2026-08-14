@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, text
 
 from tradeforge.database.migrations import get_current_version, get_head_version
 from tradeforge.database.models import Symbol
@@ -8,7 +8,8 @@ from tradeforge.market_data.importer import import_ohlcv_csv
 
 
 def test_database_initialization_creates_tables(engine) -> None:
-    tables = set(inspect(engine).get_table_names())
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
     assert {
         "alembic_version",
         "symbols",
@@ -20,8 +21,15 @@ def test_database_initialization_creates_tables(engine) -> None:
         "strategy_runs",
         "live_quotes",
     }.issubset(tables)
-    assert get_current_version(engine) == "002_live_quotes"
-    assert get_head_version() == "002_live_quotes"
+    order_columns = {column["name"] for column in inspector.get_columns("orders")}
+    assert {"stop_price", "filled_quantity", "commission_paid", "triggered_at"}.issubset(order_columns)
+    assert get_current_version(engine) == "003_execution_realism"
+    assert get_head_version() == "003_execution_realism"
+
+
+def test_sqlite_foreign_keys_are_enabled(engine) -> None:
+    with engine.connect() as connection:
+        assert connection.scalar(text("PRAGMA foreign_keys")) == 1
 
 
 def test_csv_import_upserts_bars(session, tmp_path) -> None:

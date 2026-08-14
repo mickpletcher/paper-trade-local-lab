@@ -19,3 +19,4 @@ Current baseline package:
 
 * `001-core-trading-foundation`
 * `002-live-market-data-valuation`
+* `003-execution-correctness`

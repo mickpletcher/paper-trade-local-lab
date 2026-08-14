@@ -39,9 +39,10 @@ Expose the feature to operators:
 When implemented, update:
 
 1. `README.md`
-2. `changelog.md`
-3. `assessment.md`
-4. `future-upgrades.md`
+2. `CHANGELOG.md`
+3. `ASSESSMENT.md`
+4. `FUTURE-UPGRADES.md`
+5. `COMPLETED-UPGRADES.md`
 
 ## Rollback Notes
 

@@ -43,7 +43,8 @@ def test_seed_and_backtest_cli_flow(monkeypatch, tmp_path) -> None:
     )
     assert backtest_result.exit_code == 0
     payload = json.loads(backtest_result.stdout)
-    assert payload["metrics"]["number_of_trades"] == 2
+    assert payload["metrics"]["number_of_fills"] == 2
+    assert payload["metrics"]["number_of_trades"] == 1
     assert payload["metrics"]["ending_equity"] > 0
     assert (tmp_path / payload["report_path"]).exists()
 

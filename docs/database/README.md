@@ -12,6 +12,12 @@ This section documents schema ownership, migrations, storage behavior, and reten
 * backup and restore
 * future storage direction
 
+## Current SQLite Rules
+
+TradeForge enables SQLite foreign key enforcement on every application engine connection.
+
+Schema changes must use the packaged Alembic revisions. Revision `003_execution_realism` adds stop state, partial fill state, and cumulative commission state to orders.
+
 ## Suggested Future Topics
 
 * schema-overview.md

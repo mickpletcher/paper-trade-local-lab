@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from math import isfinite
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tradeforge.backtesting.metrics import calculate_metrics
 from tradeforge.broker_sim.account import SimAccount
-from tradeforge.broker_sim.execution import SimBroker
+from tradeforge.broker_sim.execution import FixedCommissionModel, PerShareCommissionModel, SimBroker
 from tradeforge.broker_sim.orders import OrderRequest
 from tradeforge.broker_sim.portfolio import get_or_create_position
 from tradeforge.config import get_settings
@@ -34,8 +35,10 @@ class BacktestEngine:
         self.start = _ensure_utc(start)
         self.end = _ensure_utc(end)
         self.starting_cash = starting_cash if starting_cash is not None else settings.starting_cash
-        self.fee_per_order = settings.fee_per_order
-        self.slippage_bps = settings.slippage_bps
+        self.commission_model = _build_commission_model(settings)
+        self.default_slippage_bps = settings.slippage_bps
+        self.symbol_slippage_rules = _parse_symbol_slippage_rules(settings.symbol_slippage_rules_json)
+        self.max_bar_fill_ratio = settings.max_bar_fill_ratio
 
     def run(self) -> dict[str, object]:
         symbol = self.session.scalar(select(Symbol).where(Symbol.ticker == self.symbol_ticker))
@@ -57,6 +60,12 @@ class BacktestEngine:
             for key, value in vars(self.strategy).items()
             if isinstance(value, (str, int, float, bool)) and key != "name"
         }
+        parameters["execution"] = {
+            "commission": _commission_parameters(self.commission_model),
+            "default_slippage_bps": self.default_slippage_bps,
+            "symbol_slippage_rules": self.symbol_slippage_rules,
+            "max_bar_fill_ratio": self.max_bar_fill_ratio,
+        }
         run = StrategyRun(
             strategy_id=strategy_model.id,
             symbol_id=symbol.id,
@@ -68,7 +77,15 @@ class BacktestEngine:
         self.session.flush()
 
         account = SimAccount.with_starting_cash(self.starting_cash)
-        broker = SimBroker(self.session, account, self.fee_per_order, self.slippage_bps)
+        broker = SimBroker(
+            self.session,
+            account,
+            commission_model=self.commission_model,
+            default_slippage_bps=self.default_slippage_bps,
+            symbol_slippage_rules=self.symbol_slippage_rules,
+            max_bar_fill_ratio=self.max_bar_fill_ratio,
+            strategy_run_id=run.id,
+        )
         history: list[PriceBar] = []
         snapshots: list[AccountSnapshot] = []
 
@@ -99,11 +116,12 @@ class BacktestEngine:
                         order_type=signal.order_type,
                         quantity=signal.quantity,
                         limit_price=signal.limit_price,
+                        stop_price=signal.stop_price,
                     ),
                     submitted_at=bar.timestamp,
                 )
 
-        broker.cancel_open_orders(strategy_run_id=run.id, symbol_id=symbol.id)
+        broker.cancel_open_orders(symbol_id=symbol.id)
         position = get_or_create_position(self.session, symbol.id, run.id)
         ending_equity = account.cash + position.quantity * bars[-1].close
         fills = list(self.session.scalars(select(Fill).where(Fill.strategy_run_id == run.id)))
@@ -131,3 +149,44 @@ def _ensure_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _build_commission_model(settings) -> FixedCommissionModel | PerShareCommissionModel:
+    model_name = settings.commission_model.strip().lower()
+    if model_name == "per_share":
+        return PerShareCommissionModel(rate_per_share=settings.commission_per_share, minimum_fee=settings.commission_minimum)
+    if model_name == "fixed":
+        return FixedCommissionModel(fee_per_order=settings.fee_per_order)
+    raise ValueError("TRADEFORGE_COMMISSION_MODEL must be 'fixed' or 'per_share'.")
+
+
+def _commission_parameters(model: FixedCommissionModel | PerShareCommissionModel) -> dict[str, float | str]:
+    if isinstance(model, PerShareCommissionModel):
+        return {
+            "model": "per_share",
+            "rate_per_share": model.rate_per_share,
+            "minimum_fee": model.minimum_fee,
+        }
+    return {"model": "fixed", "fee_per_order": model.fee_per_order}
+
+
+def _parse_symbol_slippage_rules(raw_rules: str) -> dict[str, float]:
+    try:
+        payload = json.loads(raw_rules or "{}")
+    except json.JSONDecodeError as exc:
+        raise ValueError("TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON must contain valid JSON.") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON must be a JSON object keyed by ticker.")
+    rules: dict[str, float] = {}
+    for symbol, raw_bps in payload.items():
+        ticker = str(symbol).strip().upper()
+        if not ticker:
+            raise ValueError("TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON cannot contain an empty ticker.")
+        try:
+            bps = float(raw_bps)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Slippage for {ticker} must be numeric.") from exc
+        if not isfinite(bps) or not 0 <= bps < 10_000:
+            raise ValueError(f"Slippage for {ticker} must be between 0 and 10000 basis points.")
+        rules[ticker] = bps
+    return rules
