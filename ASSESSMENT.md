@@ -22,7 +22,7 @@ The container runs as an unprivileged user, includes a database aware health che
 
 `tradeforge run-maintenance` creates SQLite parent paths, initializes or upgrades the database, imports every `data/imports/<TICKER>.csv`, refreshes quotes for open positions with capped retry, creates and integrity checks a SQLite backup, applies retention, and writes success or failure JSON reports. An optional webhook reports failures. A PowerShell installer registers the job daily with retry and catch up behavior.
 
-GitHub Actions runs Ruff lint and format checks, lock drift checks, Python 3.11 and 3.13 tests, package builds, live container validation, documentation and governance checks, dependency review, scheduled vulnerability audits, tag driven releases, and GHCR publishing. Markdown validation uses one PowerShell wrapper in Windows and CI. Protected `main` requires strict checks, linear history, resolved conversations, and pull requests. Only squash merge is enabled.
+GitHub Actions runs Ruff lint and format checks, lock drift checks, Python 3.11 and 3.13 tests, package builds, live container validation, documentation and governance checks, dependency review v5, scheduled vulnerability audits, tag driven releases, and GHCR publishing. Markdown validation uses one PowerShell wrapper in Windows and CI. Protected `main` requires strict checks, linear history, resolved conversations, and pull requests. Only squash merge is enabled.
 
 The local equivalent is:
 
