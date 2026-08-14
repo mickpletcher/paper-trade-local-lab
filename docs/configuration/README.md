@@ -24,6 +24,19 @@ This section defines runtime settings, profiles, defaults, and configuration gua
 
 Invalid, negative, nonfinite, or unsupported execution settings fail before a backtest starts.
 
+## Current Quote And Automation Settings
+
+* `TRADEFORGE_QUOTE_RETRY_ATTEMPTS` controls transient provider attempts from 1 through 10.
+* `TRADEFORGE_QUOTE_RETRY_BASE_SECONDS` controls exponential backoff from zero through 60 seconds.
+* `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` caps each backoff delay from zero through 300 seconds.
+* `TRADEFORGE_IMPORT_DIR` holds scheduled `<TICKER>.csv` inputs.
+* `TRADEFORGE_BACKUP_DIR` holds integrity checked SQLite backups.
+* `TRADEFORGE_AUTOMATION_REPORT_DIR` holds timestamped and latest JSON run reports.
+* `TRADEFORGE_BACKUP_RETENTION_COUNT` keeps the newest 1 through 365 backups.
+* `TRADEFORGE_FAILURE_WEBHOOK_URL` optionally receives failed maintenance reports.
+
+Use `.env.example` as the inventory. Never commit `.env` or generated data.
+
 ## Suggested Future Topics
 
 * environment-variables.md

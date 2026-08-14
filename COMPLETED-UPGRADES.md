@@ -4,6 +4,23 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-14
 
+* Closed automated review findings for no-fill reversals, first run database paths, Linux container storage, bounded retries, and linear quote validation.
+* Made dependency lock generation deterministic across operating systems by targeting the minimum supported Python version.
+* Protected `main` with strict required checks, linear history, resolved conversations, squash only merges, and branch cleanup.
+* Pinned transitive dependencies, build tooling, Actions, Markdownlint, and the Docker base image with automated drift checks and Dependabot updates.
+* Added Python 3.11 and 3.13 CI coverage plus live container health validation.
+* Hardened the container with a nonroot user, database health check, loopback only Compose binding, restart policy, read only root, and dropped capabilities.
+* Added unattended maintenance for idempotent CSV imports, open position quote refresh, run summaries, and optional failure webhooks.
+* Added integrity verified SQLite backups with configurable retention and a daily Windows Task Scheduler installer.
+* Added retry with exponential backoff and exact requested symbol completeness enforcement to live quote refresh.
+* Added pending order quantities to strategy context and cancellation of stale opposite orders during signal reversals.
+* Added explicit or latest strategy run portfolio selection and deterministic newest quote selection.
+* Added OHLC relationship, finite positive price, and nonnegative integer volume validation to CSV imports.
+* Added fail fast validation for moving average window and order size parameters.
+* Moved API migrations to application startup and made health checks verify database connectivity.
+* Corrected Alpaca multi-symbol snapshot parsing and added provider response contract coverage.
+* Made strategy signals quantity aware and capped moving average exits to available inventory.
+* Preserved the latest cash snapshot for fully closed strategy runs in portfolio valuation.
 * Added a PowerShell governance validator for the four required living files and their change set synchronization.
 * Added push, pull request, manual, and weekly governance validation in GitHub Actions.
 * Normalized the required root filenames and made the future upgrade backlog tracked project state.

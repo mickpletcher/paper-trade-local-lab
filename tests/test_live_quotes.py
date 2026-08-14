@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from types import SimpleNamespace
+from urllib.error import URLError
+from unittest.mock import MagicMock
+
+import pytest
 
 from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun
-from tradeforge.market_data.live import NormalizedQuote, refresh_live_quotes
+from tradeforge.market_data.live import AlpacaSnapshotQuoteProvider, NormalizedQuote, QuoteProviderError, refresh_live_quotes
 from tradeforge.valuation.service import build_portfolio_valuation
 
 
@@ -13,6 +19,72 @@ class FakeQuoteProvider:
 
     def get_latest_quotes(self, symbols: list[str]) -> list[NormalizedQuote]:
         return [quote for quote in self.quotes if quote.symbol in symbols]
+
+
+def test_alpaca_provider_parses_root_symbol_map(monkeypatch) -> None:
+    payload = {
+        "AAPL": {
+            "latestTrade": {"p": 188.61, "t": "2026-05-12T20:15:00Z"},
+            "latestQuote": {"bp": 188.6, "ap": 188.62, "bs": 10, "as": 12, "t": "2026-05-12T20:15:00Z"},
+            "minuteBar": {"c": 188.59, "t": "2026-05-12T20:15:00Z"},
+            "prevDailyBar": {"c": 187.12},
+        }
+    }
+    response = MagicMock()
+    response.read.return_value = json.dumps(payload).encode("utf-8")
+    response.__enter__.return_value = response
+    monkeypatch.setattr("tradeforge.market_data.live.urlopen", lambda request, timeout: response)
+    settings = SimpleNamespace(
+        alpaca_data_url="https://data.alpaca.markets",
+        alpaca_feed="iex",
+        alpaca_api_key_id="test-key",
+        alpaca_api_secret_key="test-secret",
+        quote_retry_attempts=3,
+        quote_retry_base_seconds=0,
+        quote_retry_max_seconds=30,
+    )
+
+    quotes = AlpacaSnapshotQuoteProvider(settings).get_latest_quotes(["AAPL"])
+
+    assert len(quotes) == 1
+    assert quotes[0].symbol == "AAPL"
+    assert quotes[0].last_price == 188.61
+    assert quotes[0].bid_price == 188.6
+    assert quotes[0].ask_price == 188.62
+    assert quotes[0].previous_close == 187.12
+    assert json.loads(quotes[0].raw_payload_json) == payload["AAPL"]
+
+
+def test_alpaca_provider_retries_transient_failures(monkeypatch) -> None:
+    payload = {"AAPL": {"latestTrade": {"p": 188.61, "t": "2026-05-12T20:15:00Z"}}}
+    response = MagicMock()
+    response.read.return_value = json.dumps(payload).encode("utf-8")
+    response.__enter__.return_value = response
+    attempts = iter([URLError("temporary failure"), response])
+
+    def fake_urlopen(request, timeout):
+        result = next(attempts)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr("tradeforge.market_data.live.urlopen", fake_urlopen)
+    delays: list[float] = []
+    monkeypatch.setattr("tradeforge.market_data.live.sleep", delays.append)
+    settings = SimpleNamespace(
+        alpaca_data_url="https://data.alpaca.markets",
+        alpaca_feed="iex",
+        alpaca_api_key_id="test-key",
+        alpaca_api_secret_key="test-secret",
+        quote_retry_attempts=2,
+        quote_retry_base_seconds=60,
+        quote_retry_max_seconds=30,
+    )
+
+    quotes = AlpacaSnapshotQuoteProvider(settings).get_latest_quotes(["AAPL"])
+
+    assert quotes[0].last_price == 188.61
+    assert delays == [30]
 
 
 def test_refresh_live_quotes_upserts_existing_rows(session, symbol) -> None:
@@ -53,6 +125,13 @@ def test_refresh_live_quotes_upserts_existing_rows(session, symbol) -> None:
     assert quotes[0].last_price == 102.5
     assert quotes[0].bid_size == 15
     assert quotes[0].raw_payload_json == '{"second": true}'
+
+
+def test_refresh_live_quotes_rejects_incomplete_provider_response(session, symbol) -> None:
+    with pytest.raises(QuoteProviderError, match="missing: AAPL"):
+        refresh_live_quotes(session, ["AAPL"], provider=FakeQuoteProvider([]))
+
+    assert session.query(LiveQuote).all() == []
 
 
 def test_build_portfolio_valuation_marks_positions_to_market(session, symbol) -> None:
@@ -110,3 +189,152 @@ def test_build_portfolio_valuation_marks_positions_to_market(session, symbol) ->
     assert payload["unrealized_pnl"] == 10.0
     assert payload["positions"][0]["symbol"] == "AAPL"
     assert payload["positions"][0]["mark_price"] == 105.0
+
+
+def test_portfolio_uses_newest_quote_across_providers(session, symbol) -> None:
+    strategy = Strategy(name="quote-selection")
+    session.add(strategy)
+    session.flush()
+    run = StrategyRun(
+        strategy_id=strategy.id,
+        symbol_id=symbol.id,
+        start_date=datetime(2026, 5, 12, 19, 0, tzinfo=UTC),
+        end_date=datetime(2026, 5, 12, 20, 0, tzinfo=UTC),
+    )
+    session.add(run)
+    session.flush()
+    session.add(Position(strategy_run_id=run.id, symbol_id=symbol.id, quantity=1, average_cost=75, realized_pnl=0))
+    session.add(
+        AccountSnapshot(
+            strategy_run_id=run.id,
+            timestamp=datetime(2026, 5, 12, 20, 0, tzinfo=UTC),
+            cash=1000,
+            equity=1075,
+            realized_pnl=0,
+            unrealized_pnl=0,
+        )
+    )
+    session.add_all(
+        [
+            LiveQuote(
+                symbol_id=symbol.id,
+                provider="newer-provider",
+                quote_timestamp=datetime(2026, 5, 12, 20, 1, tzinfo=UTC),
+                fetched_at=datetime(2026, 5, 12, 20, 1, tzinfo=UTC),
+                last_price=100,
+                raw_payload_json="{}",
+            ),
+            LiveQuote(
+                symbol_id=symbol.id,
+                provider="inserted-last-but-older",
+                quote_timestamp=datetime(2026, 5, 12, 19, 59, tzinfo=UTC),
+                fetched_at=datetime(2026, 5, 12, 19, 59, tzinfo=UTC),
+                last_price=50,
+                raw_payload_json="{}",
+            ),
+        ]
+    )
+    session.flush()
+
+    payload = build_portfolio_valuation(session, stale_after_seconds=30, strategy_run_id=run.id)
+
+    assert payload["market_value"] == 100
+    assert payload["positions"][0]["quote_provider"] == "newer-provider"
+
+
+def test_build_portfolio_valuation_preserves_cash_for_flat_runs(session, symbol) -> None:
+    strategy = Strategy(name="flat-live-valuation")
+    session.add(strategy)
+    session.flush()
+    run = StrategyRun(
+        strategy_id=strategy.id,
+        symbol_id=symbol.id,
+        start_date=datetime(2026, 5, 12, 19, 0, tzinfo=UTC),
+        end_date=datetime(2026, 5, 12, 20, 0, tzinfo=UTC),
+        completed_at=datetime(2026, 5, 12, 20, 1, tzinfo=UTC),
+    )
+    session.add(run)
+    session.flush()
+    session.add(
+        Position(
+            strategy_run_id=run.id,
+            symbol_id=symbol.id,
+            quantity=0,
+            average_cost=0.0,
+            realized_pnl=250.0,
+        )
+    )
+    session.add(
+        AccountSnapshot(
+            strategy_run_id=run.id,
+            timestamp=datetime(2026, 5, 12, 19, 30, tzinfo=UTC),
+            cash=10_000.0,
+            equity=10_000.0,
+            realized_pnl=0.0,
+            unrealized_pnl=0.0,
+        )
+    )
+    session.add(
+        AccountSnapshot(
+            strategy_run_id=run.id,
+            timestamp=datetime(2026, 5, 12, 20, 0, tzinfo=UTC),
+            cash=10_250.0,
+            equity=10_250.0,
+            realized_pnl=250.0,
+            unrealized_pnl=0.0,
+        )
+    )
+    session.flush()
+
+    payload = build_portfolio_valuation(session, stale_after_seconds=30)
+
+    assert payload["cash"] == 10_250.0
+    assert payload["market_value"] == 0.0
+    assert payload["total_equity"] == 10_250.0
+    assert payload["positions_count"] == 0
+    assert payload["positions"] == []
+
+
+def test_portfolio_valuation_scopes_cash_to_requested_run(session, symbol) -> None:
+    strategy = Strategy(name="run-scoping")
+    session.add(strategy)
+    session.flush()
+    runs = [
+        StrategyRun(
+            strategy_id=strategy.id,
+            symbol_id=symbol.id,
+            started_at=datetime(2026, 5, 12, 18 + index, 0, tzinfo=UTC),
+            start_date=datetime(2026, 5, 12, 18 + index, 0, tzinfo=UTC),
+            end_date=datetime(2026, 5, 12, 19 + index, 0, tzinfo=UTC),
+        )
+        for index in range(2)
+    ]
+    session.add_all(runs)
+    session.flush()
+    session.add_all(
+        [
+            AccountSnapshot(
+                strategy_run_id=run.id,
+                timestamp=run.end_date,
+                cash=cash,
+                equity=cash,
+                realized_pnl=0,
+                unrealized_pnl=0,
+            )
+            for run, cash in zip(runs, [10_100, 10_200], strict=True)
+        ]
+    )
+    session.flush()
+
+    first = build_portfolio_valuation(session, stale_after_seconds=30, strategy_run_id=runs[0].id)
+    latest = build_portfolio_valuation(session, stale_after_seconds=30)
+
+    assert first["strategy_run_id"] == runs[0].id
+    assert first["cash"] == 10_100
+    assert latest["strategy_run_id"] == runs[1].id
+    assert latest["cash"] == 10_200
+
+
+def test_portfolio_valuation_rejects_unknown_run(session) -> None:
+    with pytest.raises(ValueError, match="Unknown strategy run"):
+        build_portfolio_valuation(session, stale_after_seconds=30, strategy_run_id="missing")

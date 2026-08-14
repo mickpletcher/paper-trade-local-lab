@@ -12,6 +12,12 @@ This section documents HTTP contracts, compatibility boundaries, and future vers
 * error handling
 * metrics and health endpoints
 
+## Current Runtime Contract
+
+Alembic migrations run once during FastAPI startup. `/health` executes a database probe and returns HTTP 503 when storage is unavailable. `/portfolio` accepts `strategy_run_id`; without it, valuation selects the newest run. Unknown run IDs return HTTP 404.
+
+The API is read only and currently unauthenticated. The CLI default and Compose profile bind it to loopback. Do not expose it to an untrusted network.
+
 ## Suggested Future Topics
 
 * endpoint-reference.md

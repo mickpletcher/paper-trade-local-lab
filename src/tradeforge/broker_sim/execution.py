@@ -133,18 +133,35 @@ class SimBroker:
         self.session.flush()
         return True
 
-    def cancel_open_orders(self, symbol_id: str | None = None) -> int:
+    def cancel_open_orders(self, symbol_id: str | None = None, side: OrderSide | None = None) -> int:
         query = self.session.query(Order).filter(
             Order.strategy_run_id == self.strategy_run_id,
             Order.status.in_([OrderStatus.OPEN.value, OrderStatus.PARTIALLY_FILLED.value]),
         )
         if symbol_id is not None:
             query = query.filter(Order.symbol_id == symbol_id)
+        if side is not None:
+            query = query.filter(Order.side == side.value)
         orders = query.all()
         for order in orders:
             order.status = OrderStatus.CANCELLED.value
         self.session.flush()
         return len(orders)
+
+    def get_pending_quantities(self, symbol_id: str) -> dict[OrderSide, float]:
+        orders = (
+            self.session.query(Order)
+            .filter(
+                Order.symbol_id == symbol_id,
+                Order.strategy_run_id == self.strategy_run_id,
+                Order.status.in_([OrderStatus.OPEN.value, OrderStatus.PARTIALLY_FILLED.value]),
+            )
+            .all()
+        )
+        quantities = {OrderSide.BUY: 0.0, OrderSide.SELL: 0.0}
+        for order in orders:
+            quantities[OrderSide(order.side)] += max(order.quantity - order.filled_quantity, 0.0)
+        return quantities
 
     def _match_execution(self, order: Order, bar: PriceBar, available_volume: float) -> MatchedExecution | None:
         remaining_quantity = max(order.quantity - order.filled_quantity, 0.0)

@@ -162,6 +162,21 @@ def test_cancel_order_marks_open_order_cancelled(session, symbol) -> None:
     assert order.status == OrderStatus.CANCELLED.value
 
 
+def test_pending_quantities_and_side_cancellation_are_scoped(session, symbol) -> None:
+    account = SimAccount.with_starting_cash(10_000)
+    broker = SimBroker(session, account, fee_per_order=0, slippage_bps=0)
+    buy = broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.LIMIT, 5, limit_price=90))
+    sell = broker.submit_order(OrderRequest(symbol.id, OrderSide.SELL, OrderType.LIMIT, 2, limit_price=110))
+
+    pending = broker.get_pending_quantities(symbol.id)
+    cancelled = broker.cancel_open_orders(symbol.id, OrderSide.BUY)
+
+    assert pending == {OrderSide.BUY: 5, OrderSide.SELL: 2}
+    assert cancelled == 1
+    assert buy.status == OrderStatus.CANCELLED.value
+    assert sell.status == OrderStatus.OPEN.value
+
+
 def test_bar_fill_ratio_is_one_aggregate_budget(session, symbol) -> None:
     bar = add_bar(session, symbol, 1, 100, 101, 99, 100)
     bar.volume = 100

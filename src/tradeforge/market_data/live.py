@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from time import sleep
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -51,6 +53,9 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
         self.feed = settings.alpaca_feed
         self.api_key_id = settings.alpaca_api_key_id
         self.api_secret_key = settings.alpaca_api_secret_key
+        self.retry_attempts = settings.quote_retry_attempts
+        self.retry_base_seconds = settings.quote_retry_base_seconds
+        self.retry_max_seconds = settings.quote_retry_max_seconds
 
     def get_latest_quotes(self, symbols: list[str]) -> list[NormalizedQuote]:
         if not self.api_key_id or not self.api_secret_key:
@@ -69,20 +74,27 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
                 "Accept": "application/json",
             },
         )
-        try:
-            with urlopen(request, timeout=15) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            raise QuoteProviderError(f"Alpaca quote refresh failed with HTTP {exc.code}.") from exc
-        except URLError as exc:
-            raise QuoteProviderError(f"Alpaca quote refresh failed: {exc.reason}.") from exc
+        for attempt in range(self.retry_attempts):
+            try:
+                with urlopen(request, timeout=15) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                break
+            except HTTPError as exc:
+                if exc.code not in {429, 500, 502, 503, 504} or attempt + 1 >= self.retry_attempts:
+                    raise QuoteProviderError(f"Alpaca quote refresh failed with HTTP {exc.code}.") from exc
+            except (URLError, TimeoutError, json.JSONDecodeError) as exc:
+                if attempt + 1 >= self.retry_attempts:
+                    raise QuoteProviderError(f"Alpaca quote refresh failed: {exc}.") from exc
+            sleep(min(self.retry_base_seconds * (2**attempt), self.retry_max_seconds))
 
-        snapshots = payload.get("snapshots", {})
+        if not isinstance(payload, dict):
+            raise QuoteProviderError("Alpaca quote refresh returned an invalid response.")
+        snapshots = payload
         fetched_at = datetime.now(UTC)
         normalized: list[NormalizedQuote] = []
         for symbol in symbols:
             snapshot = snapshots.get(symbol)
-            if not snapshot:
+            if not isinstance(snapshot, dict) or not snapshot:
                 continue
             latest_trade = snapshot.get("latestTrade") or {}
             latest_quote = snapshot.get("latestQuote") or {}
@@ -132,9 +144,23 @@ def refresh_live_quotes(session: Session, symbols: list[str], provider: QuotePro
 
     quote_provider = provider or get_quote_provider()
     quotes = quote_provider.get_latest_quotes(normalized_symbols)
+    returned_symbols = [quote.symbol.strip().upper() for quote in quotes]
+    symbol_counts = Counter(returned_symbols)
+    duplicate_symbols = sorted(symbol for symbol, count in symbol_counts.items() if count > 1)
+    missing_provider_symbols = sorted(set(normalized_symbols).difference(returned_symbols))
+    unexpected_symbols = sorted(set(returned_symbols).difference(normalized_symbols))
+    if duplicate_symbols or missing_provider_symbols or unexpected_symbols:
+        details = []
+        if missing_provider_symbols:
+            details.append(f"missing: {', '.join(missing_provider_symbols)}")
+        if unexpected_symbols:
+            details.append(f"unexpected: {', '.join(unexpected_symbols)}")
+        if duplicate_symbols:
+            details.append(f"duplicate: {', '.join(duplicate_symbols)}")
+        raise QuoteProviderError(f"Quote provider returned an invalid symbol set ({'; '.join(details)}).")
     persisted: list[LiveQuote] = []
     for quote in quotes:
-        symbol_model = symbol_map[quote.symbol]
+        symbol_model = symbol_map[quote.symbol.strip().upper()]
         existing = session.scalar(
             select(LiveQuote).where(LiveQuote.symbol_id == symbol_model.id, LiveQuote.provider == quote.provider)
         )

@@ -21,6 +21,8 @@ This section documents replay logic, simulation assumptions, reports, and result
 5. Marketable limits use the bar open when it improves the requested limit.
 6. Fixed commissions and per share minimums are reconciled once per order across partial fills.
 7. One trade row represents one position lifecycle from the first entry until the position returns to zero.
+8. Strategy context includes actual position quantity and remaining open buy and sell quantities.
+9. A reversal cancels open opposite side orders even when current inventory does not permit a replacement order.
 
 Backtest metrics report fills, completed trades, and open trades separately.
 

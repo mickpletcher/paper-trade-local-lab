@@ -13,7 +13,7 @@ from tradeforge.broker_sim.execution import FixedCommissionModel, PerShareCommis
 from tradeforge.broker_sim.orders import OrderRequest
 from tradeforge.broker_sim.portfolio import get_or_create_position
 from tradeforge.config import get_settings
-from tradeforge.database.models import AccountSnapshot, Fill, Position, PriceBar, Strategy, StrategyRun, Symbol, Trade
+from tradeforge.database.models import AccountSnapshot, Fill, OrderSide, Position, PriceBar, Strategy, StrategyRun, Symbol, Trade
 from tradeforge.reporting.reports import write_markdown_report
 from tradeforge.strategies.base import BaseStrategy, StrategyContext
 
@@ -106,8 +106,22 @@ class BacktestEngine:
             snapshots.append(snapshot)
 
             history.append(bar)
-            signal = self.strategy.on_bar(bar, StrategyContext(bars=history, has_position=position.quantity > 0))
+            pending = broker.get_pending_quantities(symbol.id)
+            context = StrategyContext(
+                bars=history,
+                position_quantity=position.quantity,
+                pending_buy_quantity=pending[OrderSide.BUY],
+                pending_sell_quantity=pending[OrderSide.SELL],
+            )
+            for cancellation_side in self.strategy.get_order_cancellations(bar, context):
+                broker.cancel_open_orders(symbol_id=symbol.id, side=cancellation_side)
+            signal = self.strategy.on_bar(
+                bar,
+                context,
+            )
             if signal is not None:
+                opposite_side = OrderSide.SELL if signal.side is OrderSide.BUY else OrderSide.BUY
+                broker.cancel_open_orders(symbol_id=symbol.id, side=opposite_side)
                 broker.submit_order(
                     OrderRequest(
                         symbol_id=symbol.id,

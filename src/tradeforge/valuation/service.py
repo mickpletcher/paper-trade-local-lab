@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from tradeforge.database.models import AccountSnapshot, LiveQuote, Position
+from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, StrategyRun
 from tradeforge.market_data.live import serialize_quote
 
 
@@ -26,15 +25,31 @@ class PositionValuation:
     unrealized_pnl: float | None
 
 
-def build_portfolio_valuation(session: Session, stale_after_seconds: int) -> dict[str, object]:
+def build_portfolio_valuation(
+    session: Session,
+    stale_after_seconds: int,
+    strategy_run_id: str | None = None,
+) -> dict[str, object]:
+    selected_run_id = _resolve_strategy_run_id(session, strategy_run_id)
     positions = list(
         session.scalars(
-            select(Position).options(selectinload(Position.symbol)).where(Position.quantity != 0).order_by(Position.updated_at.desc())
+            select(Position)
+            .options(selectinload(Position.symbol))
+            .where(Position.strategy_run_id == selected_run_id, Position.quantity != 0)
+            .order_by(Position.updated_at.desc())
+        )
+    ) if selected_run_id is not None else []
+    quotes = list(
+        session.scalars(
+            select(LiveQuote)
+            .options(selectinload(LiveQuote.symbol))
+            .order_by(LiveQuote.symbol_id.asc(), LiveQuote.fetched_at.desc(), LiveQuote.id.desc())
         )
     )
-    quotes = list(session.scalars(select(LiveQuote).options(selectinload(LiveQuote.symbol))))
-    quote_map = {quote.symbol_id: quote for quote in quotes}
-    cash_by_run = _load_latest_cash_by_run(session, positions)
+    quote_map: dict[str, LiveQuote] = {}
+    for quote in quotes:
+        quote_map.setdefault(quote.symbol_id, quote)
+    cash = _load_latest_cash(session, selected_run_id)
 
     position_payloads: list[dict[str, object]] = []
     total_market_value = 0.0
@@ -72,8 +87,9 @@ def build_portfolio_valuation(session: Session, stale_after_seconds: int) -> dic
             }
         )
 
-    total_cash = round(sum(cash_by_run.values()), 2)
+    total_cash = round(cash, 2)
     return {
+        "strategy_run_id": selected_run_id,
         "cash": total_cash,
         "market_value": round(total_market_value, 2),
         "total_equity": round(total_cash + total_market_value, 2),
@@ -84,21 +100,21 @@ def build_portfolio_valuation(session: Session, stale_after_seconds: int) -> dic
     }
 
 
-def _load_latest_cash_by_run(session: Session, positions: Iterable[Position]) -> dict[str, float]:
-    run_ids = sorted({position.strategy_run_id for position in positions if position.strategy_run_id})
-    if not run_ids:
-        return {}
+def _resolve_strategy_run_id(session: Session, requested_run_id: str | None) -> str | None:
+    if requested_run_id is not None:
+        if session.get(StrategyRun, requested_run_id) is None:
+            raise ValueError(f"Unknown strategy run: {requested_run_id}")
+        return requested_run_id
+    return session.scalar(select(StrategyRun.id).order_by(StrategyRun.started_at.desc(), StrategyRun.id.desc()).limit(1))
 
-    snapshots = list(
-        session.scalars(
-            select(AccountSnapshot)
-            .where(AccountSnapshot.strategy_run_id.in_(run_ids))
-            .order_by(AccountSnapshot.strategy_run_id.asc(), AccountSnapshot.timestamp.desc())
-        )
+
+def _load_latest_cash(session: Session, strategy_run_id: str | None) -> float:
+    if strategy_run_id is None:
+        return 0.0
+    snapshot = session.scalar(
+        select(AccountSnapshot)
+        .where(AccountSnapshot.strategy_run_id == strategy_run_id)
+        .order_by(AccountSnapshot.timestamp.desc(), AccountSnapshot.id.desc())
+        .limit(1)
     )
-    cash_by_run: dict[str, float] = {}
-    for snapshot in snapshots:
-        if snapshot.strategy_run_id is None or snapshot.strategy_run_id in cash_by_run:
-            continue
-        cash_by_run[snapshot.strategy_run_id] = snapshot.cash
-    return cash_by_run
+    return 0.0 if snapshot is None else snapshot.cash

@@ -131,6 +131,35 @@ def test_run_backtest_rejects_invalid_date_range(monkeypatch, tmp_path) -> None:
     assert "start date must be earlier than the end date" in result.output
 
 
+def test_run_backtest_rejects_invalid_strategy_parameters(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    result = runner.invoke(
+        app,
+        [
+            "run-backtest",
+            "--strategy",
+            "moving-average-cross",
+            "--symbol",
+            "AAPL",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-08",
+            "--short-window",
+            "3",
+            "--long-window",
+            "2",
+        ],
+        env=env,
+    )
+
+    assert result.exit_code == 2
+    assert "short_window must be less than long_window" in result.output
+
+
 def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None:
     runner = CliRunner()
     monkeypatch.chdir(tmp_path)

@@ -2,13 +2,34 @@
 
 ## Purpose
 
-TradeForge uses GitHub Actions for repeatable validation, packaging, documentation checks, governance enforcement, and container publishing. Pull requests and pushes trigger the required checks automatically.
+TradeForge uses one local maintenance command and GitHub Actions for repeatable operations. Both paths stop on failure and publish diagnostic state.
+
+## Local Maintenance
+
+`tradeforge run-maintenance` performs these steps in order:
+
+1. initialize or migrate the configured database
+2. validate and upsert each `data/imports/<TICKER>.csv`
+3. refresh quotes for every open position with retry and completeness checks
+4. create and integrity check an online SQLite backup
+5. remove backups beyond `TRADEFORGE_BACKUP_RETENTION_COUNT`
+6. write a timestamped report and `data/automation/latest.json`
+
+A failed step returns exit code 1, writes a failure report, and posts JSON to `TRADEFORGE_FAILURE_WEBHOOK_URL` when configured. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` so one delay cannot exceed the scheduled execution budget. Databases, backups, reports, imported files, and credentials remain untracked.
+
+Install the daily Windows task from an activated environment:
+
+```powershell
+.\scripts\Install-TradeForgeScheduledTask.ps1 -DailyAt "02:00" -RunNow
+```
+
+Task Scheduler starts missed runs when the host returns and retries failures three times at five minute intervals.
 
 ## Workflow Inventory
 
 | Workflow | Triggers | Result |
 | --- | --- | --- |
-| CI | Pull request and push to `main` | Runs Ruff, Pytest, package build, and container build. Publishes the container to GHCR after a successful `main` build. |
+| CI | Pull request and push to `main` | Checks Ruff and lock drift, tests Python 3.11 and 3.13, builds the package, starts and health checks the container, then publishes to GHCR after a successful `main` build. |
 | Docs | Pull request and push to `main` | Lints durable documentation and verifies every documentation section entry point. |
 | Governance | Pull request, push to `main`, manual dispatch, and Monday schedule | Validates the four living root files and rejects change sets that omit one. |
 
@@ -31,7 +52,7 @@ Run the same check before handoff:
 
 ## Failure Behavior
 
-A failed check stops the workflow and reports the specific missing file or invalid structure in the job log. No workflow silently edits governance content because the assessment, rationale, and roadmap priority require project context.
+A failed check stops the workflow and reports the specific error in the job log. Protected `main` requires strict CI, Docs, and Governance results, resolved conversations, linear history, and a pull request. Only squash merging is enabled.
 
 Repeated CI issue creation and notification routing remain tracked in `FUTURE-UPGRADES.md`.
 

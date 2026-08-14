@@ -12,6 +12,12 @@ This section defines privacy, trust boundaries, secret handling, and future hard
 * threat assumptions
 * plugin and AI safety constraints
 
+## Current Controls
+
+`.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. Supported API launch paths bind to loopback because authentication is not implemented.
+
+The image uses a digest pinned Python base and an unprivileged UID. Compose adds a read only root filesystem, no added Linux capabilities, `no-new-privileges`, and automatic restart. GitHub Actions are SHA pinned and default to read only repository permissions except GHCR publishing.
+
 ## Suggested Future Topics
 
 * local-trust-boundary.md

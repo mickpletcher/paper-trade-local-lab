@@ -2,6 +2,174 @@
 
 ## 2026-08-14
 
+### Addressed automated review reliability findings
+
+Summary: Cancelled wholly unfilled orders on reversal, created custom SQLite parent directories, switched Compose to an initialized managed volume, capped quote backoff, and made symbol duplicate detection linear.
+
+Why: Protected review identified edge cases that could leave stale orders active, break first run maintenance or Linux containers, overrun schedules, or scale poorly.
+
+### Made dependency lock drift checks host independent
+
+Summary: Forced uv lock generation to the minimum supported Python 3.11 baseline in both the recorded command and CI comparison.
+
+Why: Regenerating under Python 3.13 omitted conditional Python 3.11 packages and caused a false lock drift failure.
+
+### Protected the default branch and standardized merges
+
+Summary: Required strict CI, Docs, and Governance checks on `main`, enforced linear history and resolved conversations, disabled force pushes and deletion, enabled squash only merges, and enabled branch cleanup.
+
+Why: Repository safety must be enforced by GitHub instead of depending on each contributor to remember the process.
+
+### Added unattended maintenance orchestration
+
+Summary: Added `tradeforge run-maintenance` to initialize the database, process queued symbol CSV files, refresh open position quotes, back up SQLite, and emit a machine readable run report.
+
+Why: Routine data and persistence work should run as one deterministic job without manual command sequencing.
+
+### Added verified SQLite backup retention
+
+Summary: Added online SQLite backups through the native backup API, integrity checks before promotion, atomic file replacement, and configurable newest copy retention.
+
+Why: A copied database is not a valid recovery artifact until it passes an integrity check and retention is automatic.
+
+### Added maintenance failure reporting
+
+Summary: Added durable success and failure JSON reports plus optional generic webhook notification without masking the original job failure.
+
+Why: Scheduled jobs must fail visibly and preserve enough state for diagnosis.
+
+### Added daily Windows scheduling
+
+Summary: Added a PowerShell installer for a daily Task Scheduler job with missed run catch up and three automatic retries.
+
+Why: Maintenance should run on a trigger and recover from transient host failures without an operator launching it.
+
+### Cancelled stale orders during strategy reversals
+
+Summary: Added pending buy and sell quantities to strategy context, blocked duplicate signals, and cancelled open opposite side orders before submitting a reversal.
+
+Why: A partially filled entry must not keep consuming later liquidity after the strategy has emitted an exit.
+
+### Isolated portfolio valuation by strategy run
+
+Summary: Added explicit run selection, latest run defaulting, run scoped cash and positions, unknown run errors, and the selected run ID in valuation output.
+
+Why: Cash and equity from independent simulations must never be summed into one fictitious portfolio.
+
+### Selected quotes deterministically
+
+Summary: Ordered quotes by fetched time and stable ID before choosing the newest provider value for each symbol.
+
+Why: Insertion order must not decide which market price values a position.
+
+### Enforced complete quote refreshes with retry
+
+Summary: Added exponential retry for transient Alpaca failures and rejected missing, duplicate, or unexpected provider symbols before persistence.
+
+Why: Partial or transient provider responses must not silently look like a successful refresh.
+
+### Validated imported OHLCV invariants
+
+Summary: Rejected nonfinite or nonpositive prices, invalid high and low relationships, and negative or fractional volume with row specific errors.
+
+Why: Impossible candles corrupt backtests and must fail at the ingestion boundary.
+
+### Validated moving average parameters
+
+Summary: Required positive windows, a short window smaller than the long window, and a positive finite order size with CLI errors.
+
+Why: Invalid strategy configuration should fail before creating a run.
+
+### Moved API migrations to startup
+
+Summary: Added FastAPI lifespan initialization, removed per request migration checks, and made `/health` execute a database connectivity probe.
+
+Why: Schema work belongs at process startup and health must represent the database dependency.
+
+### Locked dependency and build inputs
+
+Summary: Added a universal transitive constraint lock, exact build tools, SHA pinned Actions, pinned Markdownlint, a digest pinned Python image, CI lock drift detection, and Dependabot configuration.
+
+Why: Lower bounds and mutable tags make local, CI, and container builds nondeterministic.
+
+### Expanded automated compatibility checks
+
+Summary: Added Python 3.11 and 3.13 test jobs and required the built container to reach healthy state before CI succeeds.
+
+Why: The declared Python range and deployable image need executable verification.
+
+### Hardened container runtime defaults
+
+Summary: Ran the image as an unprivileged user, added a database aware health check, excluded secrets, and added loopback only Compose with restart, read only root, no added capabilities, and no new privileges.
+
+Why: The prior image ran as root, exposed an unauthenticated API broadly, and could fail silently.
+
+### Added regression coverage for the remaining assessment findings
+
+Summary: Added tests for order reversals, parameter rejection, quote retry and completeness, run scoped valuation, deterministic quote choice, invalid candles, API startup, and maintenance recovery artifacts.
+
+Why: Each corrected failure mode needs a durable executable contract.
+
+### Updated operational and project documentation
+
+Summary: Updated the README, installation, configuration, automation, API, market data, database, backtesting, security, assessment, roadmap, and completion history for the current implementation.
+
+Why: Operators and the four living project files must describe the code that now exists.
+
+### Corrected Alpaca snapshot response parsing
+
+Summary: Parsed the multi-symbol snapshot response as the root ticker map and rejected non-object payloads.
+
+Why: Looking for a nonexistent top-level `snapshots` field discarded valid provider quotes.
+
+### Added Alpaca response contract coverage
+
+Summary: Added a provider-level test for a root-keyed AAPL snapshot with trade, quote, minute bar, and previous close data.
+
+Why: Fake normalized quotes did not exercise the external provider wire format.
+
+### Updated live quote parsing project tracking
+
+Summary: Refreshed the assessment, completed work history, and future quote completeness backlog after correcting the Alpaca adapter.
+
+Why: The living project files must reflect current provider behavior and its remaining failure-detection gap.
+
+### Sized moving average exits to available inventory
+
+Summary: Replaced the strategy context position flag with the actual quantity and capped crossover sell signals to that inventory.
+
+Why: Partial fills must not produce oversized sell orders that the broker rejects.
+
+### Added partial-position exit regression coverage
+
+Summary: Added a moving average crossover test that verifies a ten share target exits only the available two and a half shares.
+
+Why: Existing signal tests covered entries but not exit sizing after partial fills.
+
+### Updated strategy position project tracking
+
+Summary: Refreshed the assessment, completed work history, and future pending-order awareness backlog for quantity-aware strategy signals.
+
+Why: The living project files must reflect both the corrected behavior and the remaining execution context limitation.
+
+### Preserved cash for flat strategy runs
+
+Summary: Loaded the latest cash snapshot for every strategy run independently from the open position query.
+
+Why: Fully closed runs must retain their cash and equity in portfolio valuation.
+
+### Added flat-run valuation regression coverage
+
+Summary: Added a portfolio valuation test for a completed round trip with cash and no open position.
+
+Why: The zero cash regression was not covered by the existing open position valuation test.
+
+### Updated portfolio valuation project tracking
+
+Summary: Refreshed the assessment, completed work history, and future portfolio scoping backlog for the corrected valuation behavior.
+
+Why: The living project files must describe the repository and remaining work after every implementation change.
+
 ### Included staged files in local governance checks
 
 Summary: Added the staged Git diff to `-CheckWorkingTree` change set detection.
