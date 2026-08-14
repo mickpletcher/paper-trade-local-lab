@@ -33,6 +33,9 @@ TradeForge is built for teams and solo builders who want:
 * SQLite storage with Alembic migrations
 * CSV import and seeded sample data
 * simulated broker execution for local paper trading
+* stop, stop limit, and cancel capable order simulation with aggregate volume aware partial fills
+* limit price protection, marketable price improvement, and persistent stop triggers
+* per order commission reconciliation and symbol specific slippage rules
 * historical backtesting and markdown report output
 * live quote refresh for local valuation
 * structured logging and optional metrics output
@@ -131,9 +134,13 @@ Then open:
 Core entry points:
 
 * [docs/README.md](./docs/README.md)
-* [assessment.md](./assessment.md)
-* [changelog.md](./changelog.md)
+* [ASSESSMENT.md](./ASSESSMENT.md)
+* [CHANGELOG.md](./CHANGELOG.md)
+* [FUTURE-UPGRADES.md](./FUTURE-UPGRADES.md)
+* [COMPLETED-UPGRADES.md](./COMPLETED-UPGRADES.md)
 * [specs/README.md](./specs/README.md)
+
+Repository governance is checked automatically on pushes, pull requests, and a weekly schedule. Run `./scripts/Test-ProjectGovernance.ps1 -CheckWorkingTree` before handing off local changes.
 
 High value technical sections:
 
@@ -159,6 +166,7 @@ Tracked roadmap docs:
 * [docs/roadmap/README.md](./docs/roadmap/README.md)
 * [docs/roadmap/documentation-roadmap.md](./docs/roadmap/documentation-roadmap.md)
 * [specs/002-live-market-data-valuation/README.md](./specs/002-live-market-data-valuation/README.md)
+* [specs/003-execution-correctness/README.md](./specs/003-execution-correctness/README.md)
 
 ## GitHub Wiki
 

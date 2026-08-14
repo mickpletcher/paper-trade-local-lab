@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
+import pytest
 from sqlalchemy import select
 
-from tradeforge.backtesting.engine import BacktestEngine
+from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
 from tradeforge.database.models import AccountSnapshot, Fill, Order, OrderSide, OrderStatus, OrderType, StrategyRun
 from tradeforge.strategies.base import BaseStrategy, StrategyContext, StrategySignal
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
@@ -43,7 +46,11 @@ def test_backtest_run_completion(session, symbol, monkeypatch, tmp_path) -> None
 
     assert result["strategy_run_id"]
     assert result["metrics"]["ending_equity"] > 0
-    assert session.scalar(select(StrategyRun)) is not None
+    run = session.scalar(select(StrategyRun))
+    assert run is not None
+    execution_parameters = json.loads(run.parameters_json)["execution"]
+    assert execution_parameters["commission"] == {"model": "fixed", "fee_per_order": 1.0}
+    assert execution_parameters["max_bar_fill_ratio"] == 0.25
     assert len(session.scalars(select(AccountSnapshot)).all()) == len(closes)
     assert (tmp_path / result["report_path"]).exists()
 
@@ -78,3 +85,21 @@ def test_last_bar_signal_is_not_filled_on_same_bar(session, symbol, monkeypatch,
     assert order is not None
     assert order.status == OrderStatus.CANCELLED.value
     assert fills == []
+
+
+def test_unknown_commission_model_is_rejected() -> None:
+    settings = SimpleNamespace(
+        commission_model="unknown",
+        commission_per_share=0.0,
+        commission_minimum=0.0,
+        fee_per_order=1.0,
+    )
+
+    with pytest.raises(ValueError, match="TRADEFORGE_COMMISSION_MODEL"):
+        _build_commission_model(settings)
+
+
+@pytest.mark.parametrize("raw_rules", ['{"AAPL": -1}', '{"AAPL": "not-a-number"}', '{"": 1}'])
+def test_invalid_symbol_slippage_rules_are_rejected(raw_rules) -> None:
+    with pytest.raises(ValueError):
+        _parse_symbol_slippage_rules(raw_rules)

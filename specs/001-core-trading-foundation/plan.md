@@ -34,7 +34,7 @@ Baseline verification should include:
 
 1. `python -m pytest -q`
 2. Review of `README.md`
-3. Review of `assessment.md`
+3. Review of `ASSESSMENT.md`
 4. Review of migration version state
 
 ## Documentation Updates
@@ -42,9 +42,10 @@ Baseline verification should include:
 When future specs modify this baseline, update:
 
 1. `README.md`
-2. `changelog.md`
-3. `assessment.md` if project state materially changes
-4. `future-upgrades.md` if roadmap items are completed or reprioritized
+2. `CHANGELOG.md`
+3. `ASSESSMENT.md`
+4. `FUTURE-UPGRADES.md`
+5. `COMPLETED-UPGRADES.md`
 
 ## Rollback Notes
 

@@ -27,7 +27,7 @@ def get_or_create_position(session: Session, symbol_id: str, strategy_run_id: st
 
 
 def apply_fill_to_position(position: Position, side: OrderSide, quantity: float, price: float, fee: float = 0.0) -> PositionUpdate:
-    realized = -fee
+    realized = 0.0
     closed_quantity = 0.0
 
     if side is OrderSide.BUY:
@@ -37,7 +37,7 @@ def apply_fill_to_position(position: Position, side: OrderSide, quantity: float,
     else:
         sell_quantity = min(quantity, position.quantity)
         closed_quantity = sell_quantity
-        realized += (price - position.average_cost) * sell_quantity
+        realized = (price - position.average_cost) * sell_quantity - fee
         position.quantity -= sell_quantity
         if position.quantity <= 0:
             position.quantity = 0.0

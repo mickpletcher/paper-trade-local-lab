@@ -12,6 +12,18 @@ This section defines runtime settings, profiles, defaults, and configuration gua
 * config validation
 * sample `.env` patterns
 
+## Current Execution Settings
+
+* `TRADEFORGE_STARTING_CASH` must be greater than zero.
+* `TRADEFORGE_COMMISSION_MODEL` must be `fixed` or `per_share`.
+* `TRADEFORGE_FEE_PER_ORDER` is charged once when a fixed commission order receives its first fill.
+* `TRADEFORGE_COMMISSION_PER_SHARE` and `TRADEFORGE_COMMISSION_MINIMUM` are reconciled across all fills for one order.
+* `TRADEFORGE_SLIPPAGE_BPS` applies the default adverse fill adjustment.
+* `TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON` maps uppercase tickers to nonnegative basis point overrides.
+* `TRADEFORGE_MAX_BAR_FILL_RATIO` must be between zero and one and limits aggregate fills against each bar.
+
+Invalid, negative, nonfinite, or unsupported execution settings fail before a backtest starts.
+
 ## Suggested Future Topics
 
 * environment-variables.md

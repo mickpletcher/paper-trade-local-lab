@@ -4,18 +4,22 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 import pytest
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import PriceBar, Symbol
+from tradeforge.database.session import get_engine
 
 
 @pytest.fixture()
-def engine() -> Engine:
-    engine = create_engine("sqlite:///:memory:", future=True)
+def engine() -> Iterator[Engine]:
+    engine = get_engine("sqlite:///:memory:")
     init_db(engine)
-    return engine
+    try:
+        yield engine
+    finally:
+        engine.dispose()
 
 
 @pytest.fixture()

@@ -1,0 +1,43 @@
+name: Governance
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 11 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate project governance
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          $baseRef = switch ($env:EVENT_NAME) {
+            "pull_request" { $env:PR_BASE_SHA }
+            "push" { $env:PUSH_BASE_SHA }
+            default { $null }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($baseRef) -or $baseRef -match "^0+$") {
+            ./scripts/Test-ProjectGovernance.ps1
+          }
+          else {
+            ./scripts/Test-ProjectGovernance.ps1 -BaseRef $baseRef
+          }

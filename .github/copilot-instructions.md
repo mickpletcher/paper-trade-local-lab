@@ -17,7 +17,9 @@ Future work must preserve that boundary unless a spec explicitly expands the rep
 5. Do not add fake compatibility shims for replaced behavior.
 6. Keep tests close to behavior changes. Non trivial changes should add or update tests in the same task.
 7. When changing schema or persisted behavior, update the migration flow instead of bypassing it.
-8. Treat `assessment.md` as the repo level state summary and `future-upgrades.md` as local planning input.
+8. Default to triggered or scheduled automation, self healing, and explicit failure reporting instead of manual operator steps.
+9. Treat the four root governance files as required parts of every change: `CHANGELOG.md`, `ASSESSMENT.md`, `FUTURE-UPGRADES.md`, and `COMPLETED-UPGRADES.md`.
+10. Run `./scripts/Test-ProjectGovernance.ps1 -CheckWorkingTree` before handing off a change.
 
 ## When To Use GitHub Spec
 
@@ -81,9 +83,12 @@ Keep live brokerage ideas behind future specs. Do not blend live execution conce
 When a spec changes current repo behavior, update:
 
 * `README.md`
-* `changelog.md`
-* `assessment.md` if the repo state materially changed
-* `future-upgrades.md` if roadmap items were completed or reprioritized
+* `CHANGELOG.md`
+* `ASSESSMENT.md`
+* `FUTURE-UPGRADES.md`
+* `COMPLETED-UPGRADES.md`
+
+Every changelog entry must state the change and why. When a future upgrade is completed, move it to `COMPLETED-UPGRADES.md` with the completion date and add a replacement idea to the appropriate future tier.
 
 ## Verification Expectations
 

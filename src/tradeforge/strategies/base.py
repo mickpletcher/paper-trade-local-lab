@@ -12,6 +12,7 @@ class StrategySignal:
     order_type: OrderType
     quantity: float
     limit_price: float | None = None
+    stop_price: float | None = None
 
 
 @dataclass
