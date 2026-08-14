@@ -27,7 +27,8 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Run Markdown lint
-        run: npm run lint:markdown
+        shell: pwsh
+        run: ./scripts/Test-Markdown.ps1
 
   links:
     runs-on: ubuntu-latest

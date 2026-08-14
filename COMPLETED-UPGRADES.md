@@ -4,6 +4,12 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-14
 
+* Removed an undeclared Pytest plugin setting so clean test runs are warning free.
+* Locked Pip Audit and its transitive dependencies for reproducible local and scheduled security checks.
+* Added one path safe PowerShell Markdown validation command shared by Windows operators and CI.
+* Reconciled the open security audit and dependency branches without regressing the newer trading correctness fixes.
+* Upgraded the digest pinned container runtime to Python 3.14 slim.
+* Upgraded checkout, Python setup, Node setup, and uv setup workflows to their current commit pinned major versions.
 * Closed automated review findings for no-fill reversals, first run database paths, Linux container storage, bounded retries, and linear quote validation.
 * Made dependency lock generation deterministic across operating systems by targeting the minimum supported Python version.
 * Protected `main` with strict required checks, linear history, resolved conversations, squash only merges, and branch cleanup.

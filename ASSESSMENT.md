@@ -14,7 +14,7 @@ SQLite is versioned through Alembic at revision `003_execution_realism`. Reports
 
 ## Build And Dependencies
 
-The application requires Python 3.11 or newer and uses Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Pydantic Settings, and Uvicorn. `requirements.lock` pins transitive runtime and development dependencies from a host independent Python 3.11 baseline. Build tooling, GitHub Actions, Markdownlint, and the Docker base image are version or digest pinned. Dependabot tracks Python, npm, Actions, and Docker updates.
+The application requires Python 3.11 or newer and uses Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Pydantic Settings, and Uvicorn. `requirements.lock` pins runtime, development, and security audit dependencies from a host independent Python 3.11 baseline. Build tooling, GitHub Actions, Markdownlint, and the Python 3.14 slim container base are version or digest pinned. Dependabot tracks Python, npm, Actions, and Docker updates.
 
 The container runs as an unprivileged user, includes a database aware health check, excludes `.env`, and uses a persistent host data directory with automatic restart.
 
@@ -22,13 +22,14 @@ The container runs as an unprivileged user, includes a database aware health che
 
 `tradeforge run-maintenance` creates SQLite parent paths, initializes or upgrades the database, imports every `data/imports/<TICKER>.csv`, refreshes quotes for open positions with capped retry, creates and integrity checks a SQLite backup, applies retention, and writes success or failure JSON reports. An optional webhook reports failures. A PowerShell installer registers the job daily with retry and catch up behavior.
 
-GitHub Actions runs Ruff lint and format checks, lock drift checks, Python 3.11 and 3.13 tests, package builds, live container validation, documentation and governance checks, dependency review, scheduled vulnerability audits, tag driven releases, and GHCR publishing. Protected `main` requires strict checks, linear history, resolved conversations, and pull requests. Only squash merge is enabled.
+GitHub Actions runs Ruff lint and format checks, lock drift checks, Python 3.11 and 3.13 tests, package builds, live container validation, documentation and governance checks, dependency review, scheduled vulnerability audits, tag driven releases, and GHCR publishing. Markdown validation uses one PowerShell wrapper in Windows and CI. Protected `main` requires strict checks, linear history, resolved conversations, and pull requests. Only squash merge is enabled.
 
 The local equivalent is:
 
 ```powershell
 python -m pytest -q
 python -m ruff check .
+./scripts/Test-Markdown.ps1
 ./scripts/Test-ProjectGovernance.ps1 -CheckWorkingTree
 ```
 
@@ -46,4 +47,4 @@ python -m ruff check .
 
 ## Health
 
-Overall health is good for a local research MVP. The local suite has 68 passing tests on Python 3.11. Ruff, package build, migration tests, dependency audit, Markdown checks, and governance validation pass. GitHub validates Python 3.11 and 3.13 plus container runtime health because Docker is unavailable on this workstation.
+Overall health is good for a local research MVP. The local suite has 73 warning free passing tests on Python 3.13. Ruff, package build, migration tests, dependency audit, Markdown checks, and governance validation pass. GitHub validates Python 3.11 and 3.13 plus container runtime health because Docker is unavailable on this workstation.

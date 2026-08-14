@@ -2,6 +2,60 @@
 
 ## 2026-08-14
 
+### Removed orphaned Pytest configuration
+
+Summary: Removed the `pytest-asyncio` loop scope setting because the project neither declares that plugin nor contains asynchronous tests.
+
+Why: Clean Python environments should run the suite without unknown configuration warnings.
+
+### Regenerated the security audit dependency lock
+
+Summary: Regenerated the universal Python 3.11 lock after adding Pip Audit and captured its complete transitive dependency tree.
+
+Why: Security jobs and local installs must use the same deterministic dependency set as the declared development tools.
+
+### Made Markdown validation safe for Windows workspace paths
+
+Summary: Added a PowerShell Markdownlint wrapper that invokes the locked Node module directly and made CI and contributor guidance use it.
+
+Why: `npm run` misparses Windows repository paths containing `&`, so the documented local validation command failed in this workspace.
+
+### Reconciled the open hardening and dependency branches
+
+Summary: Combined the repository security audit with the current trading fixes, retained the newer correctness behavior in every conflict, and normalized the added workflows to the current dependency set.
+
+Why: The stale draft overlapped newer fixes and could not be merged safely without explicit conflict resolution and full validation.
+
+### Upgraded the Python container runtime
+
+Summary: Updated the digest pinned container base from Python 3.12 slim to Python 3.14 slim and declared Python 3.14 package support.
+
+Why: The container should track a current supported runtime while remaining immutable and executable in CI.
+
+### Upgraded checkout automation
+
+Summary: Updated every `actions/checkout` reference from v6 to v7.0.1 at its full commit SHA.
+
+Why: All workflows should use one current, immutable checkout implementation.
+
+### Upgraded Python setup automation
+
+Summary: Updated every `actions/setup-python` reference from v6 to v7.0.0 at its full commit SHA.
+
+Why: Python setup should stay on the maintained Node runtime and remain consistent across CI, security, and release jobs.
+
+### Upgraded Node setup automation
+
+Summary: Updated `actions/setup-node` from v6 to v7.0.0 at its full commit SHA.
+
+Why: Documentation validation should use the maintained action runtime without mutable tags.
+
+### Upgraded uv setup automation
+
+Summary: Updated `astral-sh/setup-uv` from v7 to v9.0.0 at its full commit SHA while retaining the pinned uv tool version.
+
+Why: The lock drift gate should use the maintained setup action without changing the deterministic compiler version.
+
 ### Addressed automated review reliability findings
 
 Summary: Cancelled wholly unfilled orders on reversal, created custom SQLite parent directories, switched Compose to an initialized managed volume, capped quote backoff, and made symbol duplicate detection linear.

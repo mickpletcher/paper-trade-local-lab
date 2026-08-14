@@ -29,7 +29,7 @@ ruff format --check .
 python -m pytest --cov=tradeforge --cov-report=term-missing -q
 python -m build
 pip-audit --local --skip-editable
-npm run lint:markdown
+./scripts/Test-Markdown.ps1
 ./scripts/Test-ProjectGovernance.ps1 -CheckWorkingTree
 ```
 
