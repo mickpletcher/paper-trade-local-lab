@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-14
 
+* Upgraded the commit pinned dependency review gate to v5.0.0.
 * Removed an undeclared Pytest plugin setting so clean test runs are warning free.
 * Locked Pip Audit and its transitive dependencies for reproducible local and scheduled security checks.
 * Added one path safe PowerShell Markdown validation command shared by Windows operators and CI.

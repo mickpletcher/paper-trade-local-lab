@@ -2,6 +2,12 @@
 
 ## 2026-08-14
 
+### Upgraded dependency review automation
+
+Summary: Updated `actions/dependency-review-action` from v4.9.0 to v5.0.0 at its full commit SHA.
+
+Why: Pull request dependency policy should run on the current maintained action without mutable references.
+
 ### Removed orphaned Pytest configuration
 
 Summary: Removed the `pytest-asyncio` loop scope setting because the project neither declares that plugin nor contains asynchronous tests.
