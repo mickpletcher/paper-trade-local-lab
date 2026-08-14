@@ -21,6 +21,13 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Corrected Alpaca multi-symbol snapshot parsing and added provider response contract coverage.
 * Made strategy signals quantity aware and capped moving average exits to available inventory.
 * Preserved the latest cash snapshot for fully closed strategy runs in portfolio valuation.
+* Completed a repository and GitHub configuration audit with verified settings, access limitations, and manual follow-up actions.
+* Added security, support, conduct, ownership, issue, pull request, and dependency maintenance files.
+* Added dependency review, scheduled Python audits, deterministic Markdown tooling, and tag-driven GitHub release automation.
+* Pinned every committed GitHub Action to a full commit SHA and added Dependabot maintenance for those pins.
+* Hardened the Alpaca data URL boundary to HTTPS hosts without embedded credentials and added regression coverage.
+* Added deterministic Ruff format enforcement and normalized the existing formatting baseline.
+* Expanded Python package metadata, local ignore rules, and operator-facing installation, configuration, security, and automation documentation.
 * Added a PowerShell governance validator for the four required living files and their change set synchronization.
 * Added push, pull request, manual, and weekly governance validation in GitHub Actions.
 * Normalized the required root filenames and made the future upgrade backlog tracked project state.

@@ -1,45 +1,46 @@
 # Security
 
-## Purpose
+## Trust Model
 
-This section defines privacy, trust boundaries, secret handling, and future hardening requirements.
+TradeForge is a local research application. It does not place live trades, but its database, reports, strategies, logs, and provider credentials can still be sensitive.
 
-## Intended Contents
+The default CLI API binding is loopback-only. The container binds to all interfaces inside the container and publishes port `8000` on the host. Because the API has no authentication, expose it only on a trusted network or behind an authenticated reverse proxy.
 
-* local trust model
-* secret handling
-* data privacy
-* threat assumptions
-* plugin and AI safety constraints
+## Credentials
+
+Copy `.env.example` to an ignored local `.env` file and store Alpaca credentials there only for development. Production-like deployments should inject secrets from the host or a secret manager. Never place credentials in Docker images, command output, issues, reports, or committed configuration.
+
+The Alpaca data endpoint is constrained to HTTPS and rejects embedded URL credentials. Provider errors do not include credential values.
 
 ## Current Controls
 
-`.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. Supported API launch paths bind to loopback because authentication is not implemented.
+`.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. The image uses a digest pinned Python base, an unprivileged UID, and a database aware health check. Supported local launch paths must remain behind loopback or another trusted network boundary because authentication is not implemented.
 
-The image uses a digest pinned Python base and an unprivileged UID. Compose adds a read only root filesystem, no added Linux capabilities, `no-new-privileges`, and automatic restart. GitHub Actions are SHA pinned and default to read only repository permissions except GHCR publishing.
+GitHub Actions are SHA pinned and default to read only repository permissions except workflows that publish GHCR images or GitHub releases.
 
-## Suggested Future Topics
+## Repository Controls
 
-* local-trust-boundary.md
-* secrets-management.md
-* threat-model.md
-* privacy-guarantees.md
-* dependency-review.md
+The repository uses:
 
-## Naming Conventions
+* CodeQL default setup for Python and GitHub Actions
+* dependency graph updates and pull-request dependency review
+* scheduled Python dependency audits
+* Dependabot version updates for Python, npm, Actions, and Docker
+* least-privilege workflow permissions and commit-pinned actions
+* private vulnerability reporting
 
-* trust docs use `boundary`
-* risk docs use `threat` or `risk`
-* secret docs use `secret` or `credential`
+Branch protection, secret-scanning status, push protection, and default Actions permissions must also be verified in GitHub settings because those controls are not stored in the repository.
 
-## File Examples
+## Data Protection
 
-* `threat-model.md`
-* `secrets-management.md`
-* `privacy-guarantees.md`
+`.gitignore` and `.dockerignore` exclude local credentials, databases, reports, caches, and build output. Operators remain responsible for file permissions, encrypted backups, log retention, and network controls.
+
+## Reporting
+
+Follow the root [security policy](../../SECURITY.md) for private vulnerability reports.
 
 ## Cross Links
 
 * [configuration](../configuration/README.md)
 * [plugins](../plugins/README.md)
-* [ai-integration](../ai-integration/README.md)
+* [AI integration](../ai-integration/README.md)

@@ -31,14 +31,18 @@ def build_portfolio_valuation(
     strategy_run_id: str | None = None,
 ) -> dict[str, object]:
     selected_run_id = _resolve_strategy_run_id(session, strategy_run_id)
-    positions = list(
-        session.scalars(
-            select(Position)
-            .options(selectinload(Position.symbol))
-            .where(Position.strategy_run_id == selected_run_id, Position.quantity != 0)
-            .order_by(Position.updated_at.desc())
+    positions = (
+        list(
+            session.scalars(
+                select(Position)
+                .options(selectinload(Position.symbol))
+                .where(Position.strategy_run_id == selected_run_id, Position.quantity != 0)
+                .order_by(Position.updated_at.desc())
+            )
         )
-    ) if selected_run_id is not None else []
+        if selected_run_id is not None
+        else []
+    )
     quotes = list(
         session.scalars(
             select(LiveQuote)
@@ -61,7 +65,9 @@ def build_portfolio_valuation(
         serialized_quote = serialize_quote(quote, stale_after_seconds) if quote is not None else None
         mark_price = serialized_quote["mark_price"] if serialized_quote is not None else None
         market_value = None if mark_price is None else round(position.quantity * float(mark_price), 2)
-        unrealized_pnl = None if mark_price is None else round((float(mark_price) - position.average_cost) * position.quantity, 2)
+        unrealized_pnl = (
+            None if mark_price is None else round((float(mark_price) - position.average_cost) * position.quantity, 2)
+        )
         if market_value is not None:
             total_market_value += market_value
         if unrealized_pnl is not None:
@@ -105,7 +111,9 @@ def _resolve_strategy_run_id(session: Session, requested_run_id: str | None) -> 
         if session.get(StrategyRun, requested_run_id) is None:
             raise ValueError(f"Unknown strategy run: {requested_run_id}")
         return requested_run_id
-    return session.scalar(select(StrategyRun.id).order_by(StrategyRun.started_at.desc(), StrategyRun.id.desc()).limit(1))
+    return session.scalar(
+        select(StrategyRun.id).order_by(StrategyRun.started_at.desc(), StrategyRun.id.desc()).limit(1)
+    )
 
 
 def _load_latest_cash(session: Session, strategy_run_id: str | None) -> float:

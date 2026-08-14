@@ -8,7 +8,16 @@ import pytest
 from sqlalchemy import select
 
 from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
-from tradeforge.database.models import AccountSnapshot, Fill, Order, OrderSide, OrderStatus, OrderType, Position, StrategyRun
+from tradeforge.database.models import (
+    AccountSnapshot,
+    Fill,
+    Order,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    Position,
+    StrategyRun,
+)
 from tradeforge.strategies.base import BaseStrategy, StrategyContext, StrategySignal
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
 
@@ -17,7 +26,9 @@ from tests.conftest import add_bar
 
 def test_moving_average_strategy_signal_generation(session, symbol) -> None:
     closes = [10, 9, 8, 12]
-    bars = [add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)]
+    bars = [
+        add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)
+    ]
     strategy = MovingAverageCrossStrategy(short_window=2, long_window=3, order_size=7)
 
     signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, position_quantity=0))
@@ -29,7 +40,9 @@ def test_moving_average_strategy_signal_generation(session, symbol) -> None:
 
 def test_moving_average_strategy_caps_exit_to_position_quantity(session, symbol) -> None:
     closes = [1, 3, 1]
-    bars = [add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)]
+    bars = [
+        add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)
+    ]
     strategy = MovingAverageCrossStrategy(short_window=1, long_window=2, order_size=10)
 
     signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, position_quantity=2.5))

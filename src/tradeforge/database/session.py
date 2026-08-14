@@ -23,6 +23,7 @@ def get_engine(database_url: str | None = None) -> Engine:
         engine_options["poolclass"] = NullPool
     engine = create_engine(url, connect_args=connect_args, future=True, **engine_options)
     if is_sqlite:
+
         @event.listens_for(engine, "connect")
         def enable_sqlite_foreign_keys(dbapi_connection, connection_record) -> None:
             cursor = dbapi_connection.cursor()

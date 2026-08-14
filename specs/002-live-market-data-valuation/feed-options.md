@@ -38,7 +38,7 @@ These are good follow on providers after the first stock valuation path works.
 
 ## Detailed Ranking
 
-## Easy
+## Easiest Providers
 
 ### 1. Alpaca
 
@@ -117,9 +117,9 @@ Official references:
 * [API Documentation](https://www.alphavantage.co/documentation/)
 * [Alpha Vantage](https://www.alphavantage.co/)
 
-## Best
+## Best Overall Providers
 
-### 1. Alpaca
+### Best Overall: Alpaca
 
 Why it ranks first overall:
 
@@ -169,7 +169,7 @@ Why it is not first:
 1. Alpaca is cleaner for a first U.S. stock valuation milestone
 2. Polygon is stronger if real time U.S. market data quality is the main priority
 
-## Later
+## Later Providers
 
 ### 1. Coinbase
 
@@ -254,7 +254,7 @@ For this repo, the cleanest order is:
 ## Decision Matrix
 
 | Provider | Easy | Best | Later | Best use in TradeForge |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Alpaca | Yes | Yes | No | First stock valuation provider |
 | Polygon | No | Yes | No | Rich U.S. equity real time feed |
 | Twelve Data | Yes | Yes | No | Broad multi asset expansion |

@@ -170,6 +170,60 @@ Summary: Refreshed the assessment, completed work history, and future portfolio 
 
 Why: The living project files must describe the repository and remaining work after every implementation change.
 
+### Hardened the market data endpoint boundary
+
+Summary: Restricted the configurable Alpaca data URL to HTTPS hosts without embedded credentials and added regression tests for unsafe schemes and malformed URLs.
+
+Why: An operator-controlled URL must not allow `urlopen` to read local files or send provider headers through an unexpected URL scheme.
+
+### Added automated dependency maintenance
+
+Summary: Added grouped weekly Dependabot updates for Python, npm documentation tooling, GitHub Actions, and Docker dependencies.
+
+Why: Dependency and action updates must arrive automatically instead of relying on the maintainer to check four ecosystems manually.
+
+### Pinned workflow actions and documentation tooling
+
+Summary: Replaced mutable action tags with full commit SHAs and added a locked npm manifest for Markdownlint.
+
+Why: Immutable workflow references and integrity-checked tooling reduce supply-chain drift while remaining updateable through Dependabot.
+
+### Added pull request security gates
+
+Summary: Added dependency review for pull requests plus a scheduled and manually dispatchable Python vulnerability audit.
+
+Why: New vulnerable dependencies must fail visibly before merge and the installed dependency set needs recurring checks between code changes.
+
+### Added tag-driven release automation
+
+Summary: Added a workflow that validates semantic version tags against `pyproject.toml`, reruns release checks, builds artifacts, and creates a GitHub release.
+
+Why: Releases should be reproducible and gated instead of assembled manually from an unverified working tree.
+
+### Added repository security and community files
+
+Summary: Added the security policy, support guide, code of conduct, code ownership, issue forms, and pull request template.
+
+Why: Contributors need explicit reporting channels, review ownership, sanitized issue intake, and a consistent pull request contract.
+
+### Expanded project and package metadata
+
+Summary: Added Python package licensing, authorship, classifiers, keywords, project URLs, security audit tooling, and broader local ignore rules.
+
+Why: Built artifacts and local workflows must describe the project accurately and exclude generated or sensitive files consistently.
+
+### Replaced security and installation placeholders
+
+Summary: Rewrote the installation, configuration, security, automation, contribution, and README guidance around real commands and current trust boundaries.
+
+Why: Canonical documentation must describe the system operators actually run rather than future documentation placeholders.
+
+### Added deterministic format enforcement
+
+Summary: Added `ruff format --check` to CI and release validation and normalized the existing Python formatting drift.
+
+Why: Formatting must fail automatically and produce the same result locally and in GitHub Actions.
+
 ### Included staged files in local governance checks
 
 Summary: Added the staged Git diff to `-CheckWorkingTree` change set detection.

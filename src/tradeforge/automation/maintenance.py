@@ -12,7 +12,12 @@ from tradeforge.config import Settings, get_settings
 from tradeforge.database.migrations import init_db
 from tradeforge.database.session import get_engine, session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
-from tradeforge.market_data.live import QuoteProvider, get_default_refresh_symbols, get_quote_provider, refresh_live_quotes
+from tradeforge.market_data.live import (
+    QuoteProvider,
+    get_default_refresh_symbols,
+    get_quote_provider,
+    refresh_live_quotes,
+)
 
 
 class MaintenanceError(RuntimeError):
@@ -91,9 +96,10 @@ def backup_sqlite_database(
     temporary = destination.with_suffix(".tmp")
 
     try:
-        with closing(sqlite3.connect(source)) as source_connection, closing(
-            sqlite3.connect(temporary)
-        ) as backup_connection:
+        with (
+            closing(sqlite3.connect(source)) as source_connection,
+            closing(sqlite3.connect(temporary)) as backup_connection,
+        ):
             source_connection.backup(backup_connection)
         with closing(sqlite3.connect(temporary)) as verification_connection:
             integrity = verification_connection.execute("PRAGMA integrity_check").fetchone()

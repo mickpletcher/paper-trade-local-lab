@@ -21,12 +21,13 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
+          cache: npm
 
       - name: Install Markdown tooling
-        run: npm install --no-save markdownlint-cli2@0.23.2
+        run: npm ci --ignore-scripts
 
       - name: Run Markdown lint
-        run: npx markdownlint-cli2 "README.md" "CONTRIBUTING.md" "ASSESSMENT.md" "CHANGELOG.md" "FUTURE-UPGRADES.md" "COMPLETED-UPGRADES.md" "docs/**/*.md" ".github/prompts/**/*.md"
+        run: npm run lint:markdown
 
   links:
     runs-on: ubuntu-latest

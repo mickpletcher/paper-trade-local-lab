@@ -170,7 +170,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["strategy_run_id"], ["strategy_runs.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_account_snapshots_run_timestamp", "account_snapshots", ["strategy_run_id", "timestamp"], unique=False)
+    op.create_index(
+        "ix_account_snapshots_run_timestamp", "account_snapshots", ["strategy_run_id", "timestamp"], unique=False
+    )
     op.create_index("ix_account_snapshots_strategy_run_id", "account_snapshots", ["strategy_run_id"], unique=False)
     op.create_index("ix_account_snapshots_timestamp", "account_snapshots", ["timestamp"], unique=False)
 
