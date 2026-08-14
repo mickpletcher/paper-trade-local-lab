@@ -2,8 +2,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
+from tradeforge.config import Settings
 from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun
-from tradeforge.market_data.live import NormalizedQuote, refresh_live_quotes
+from tradeforge.market_data.live import (
+    AlpacaSnapshotQuoteProvider,
+    NormalizedQuote,
+    QuoteProviderError,
+    refresh_live_quotes,
+)
 from tradeforge.valuation.service import build_portfolio_valuation
 
 
@@ -13,6 +21,30 @@ class FakeQuoteProvider:
 
     def get_latest_quotes(self, symbols: list[str]) -> list[NormalizedQuote]:
         return [quote for quote in self.quotes if quote.symbol in symbols]
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://data.alpaca.markets",
+        "file:///etc/passwd",
+        "https:///missing-host",
+        "https://user:password@data.alpaca.markets",  # pragma: allowlist secret
+    ],
+)
+def test_alpaca_provider_rejects_unsafe_base_urls(base_url: str) -> None:
+    settings = Settings(TRADEFORGE_ALPACA_DATA_URL=base_url)
+
+    with pytest.raises(QuoteProviderError, match="must be an HTTPS URL"):
+        AlpacaSnapshotQuoteProvider(settings)
+
+
+def test_alpaca_provider_accepts_https_base_url() -> None:
+    settings = Settings(TRADEFORGE_ALPACA_DATA_URL="https://data.alpaca.markets/")
+
+    provider = AlpacaSnapshotQuoteProvider(settings)
+
+    assert provider.base_url == "https://data.alpaca.markets"
 
 
 def test_refresh_live_quotes_upserts_existing_rows(session, symbol) -> None:

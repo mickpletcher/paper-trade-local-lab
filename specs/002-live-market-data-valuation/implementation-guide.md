@@ -209,6 +209,7 @@ Recommended normalized object:
 from dataclasses import dataclass
 from datetime import datetime
 
+
 @dataclass
 class LiveQuote:
     symbol: str
@@ -239,6 +240,7 @@ Recommended base contract:
 
 ```python
 from abc import ABC, abstractmethod
+
 
 class QuoteProvider(ABC):
     name: str

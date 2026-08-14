@@ -47,7 +47,9 @@ class BacktestEngine:
         bars = list(
             self.session.scalars(
                 select(PriceBar)
-                .where(PriceBar.symbol_id == symbol.id, PriceBar.timestamp >= self.start, PriceBar.timestamp <= self.end)
+                .where(
+                    PriceBar.symbol_id == symbol.id, PriceBar.timestamp >= self.start, PriceBar.timestamp <= self.end
+                )
                 .order_by(PriceBar.timestamp.asc())
             )
         )
@@ -126,7 +128,9 @@ class BacktestEngine:
         ending_equity = account.cash + position.quantity * bars[-1].close
         fills = list(self.session.scalars(select(Fill).where(Fill.strategy_run_id == run.id)))
         trades = list(self.session.scalars(select(Trade).where(Trade.strategy_run_id == run.id)))
-        metrics = calculate_metrics(self.starting_cash, ending_equity, fills, trades, position, snapshots, bars[-1].close)
+        metrics = calculate_metrics(
+            self.starting_cash, ending_equity, fills, trades, position, snapshots, bars[-1].close
+        )
         run.completed_at = datetime.now(timezone.utc)
         run.metrics_json = json.dumps(metrics)
         self.session.flush()
@@ -154,7 +158,9 @@ def _ensure_utc(value: datetime) -> datetime:
 def _build_commission_model(settings) -> FixedCommissionModel | PerShareCommissionModel:
     model_name = settings.commission_model.strip().lower()
     if model_name == "per_share":
-        return PerShareCommissionModel(rate_per_share=settings.commission_per_share, minimum_fee=settings.commission_minimum)
+        return PerShareCommissionModel(
+            rate_per_share=settings.commission_per_share, minimum_fee=settings.commission_minimum
+        )
     if model_name == "fixed":
         return FixedCommissionModel(fee_per_order=settings.fee_per_order)
     raise ValueError("TRADEFORGE_COMMISSION_MODEL must be 'fixed' or 'per_share'.")

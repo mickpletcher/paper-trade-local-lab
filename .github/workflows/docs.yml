@@ -15,25 +15,26 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
+          cache: npm
 
       - name: Install Markdown tooling
-        run: npm install --no-save markdownlint-cli2
+        run: npm ci --ignore-scripts
 
       - name: Run Markdown lint
-        run: npx markdownlint-cli2 "README.md" "CONTRIBUTING.md" "ASSESSMENT.md" "CHANGELOG.md" "FUTURE-UPGRADES.md" "COMPLETED-UPGRADES.md" "docs/**/*.md" ".github/prompts/**/*.md"
+        run: npm run lint:markdown
 
   links:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Verify docs section entry points
         run: |

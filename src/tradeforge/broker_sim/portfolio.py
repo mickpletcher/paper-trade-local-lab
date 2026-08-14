@@ -26,7 +26,9 @@ def get_or_create_position(session: Session, symbol_id: str, strategy_run_id: st
     return position
 
 
-def apply_fill_to_position(position: Position, side: OrderSide, quantity: float, price: float, fee: float = 0.0) -> PositionUpdate:
+def apply_fill_to_position(
+    position: Position, side: OrderSide, quantity: float, price: float, fee: float = 0.0
+) -> PositionUpdate:
     realized = 0.0
     closed_quantity = 0.0
 

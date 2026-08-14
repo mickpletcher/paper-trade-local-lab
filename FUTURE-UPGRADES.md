@@ -11,6 +11,10 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add automated SQLite backup, restore verification, retention, and failure reporting.
 * Add container health checks and automatic restart behavior.
 * Add automatic GitHub issue creation for repeated governance or CI failures without creating duplicates.
+* Apply the proposed solo-maintainer `main` ruleset with pull requests, required checks, conversation resolution, deletion and force-push blocking, and an owner bypass after explicit approval.
+* Verify Dependabot alerts and security updates, secret scanning and push protection, default read-only Actions permissions, and the Actions allowlist in GitHub settings.
+* Pin the runtime container base image by digest and publish an SBOM plus build provenance for release and GHCR artifacts.
+* Add a reproducible Python application lock strategy and use it for container builds and scheduled dependency audits.
 
 ### Trading Safety And Data Quality
 
@@ -41,6 +45,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add a second live quote provider with automatic failover.
 * Add Interactive Brokers, Alpaca, and OANDA paper adapters behind the canonical interface.
 * Add structured notification adapters for failed scheduled jobs.
+* Add authentication and transport guidance before supporting API access outside a trusted local network.
+* Add protected deployment environments if the project gains hosted deployment targets or production secrets.
 
 ### Market Coverage
 

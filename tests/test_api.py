@@ -19,9 +19,13 @@ def test_openapi_contains_endpoint_examples() -> None:
     document = response.json()
     health_example = document["paths"]["/health"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
     orders_example = document["paths"]["/orders"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
-    strategy_runs_example = document["paths"]["/strategy-runs"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
+    strategy_runs_example = document["paths"]["/strategy-runs"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["example"]
     quotes_example = document["paths"]["/quotes"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
-    portfolio_example = document["paths"]["/portfolio"]["get"]["responses"]["200"]["content"]["application/json"]["example"]
+    portfolio_example = document["paths"]["/portfolio"]["get"]["responses"]["200"]["content"]["application/json"][
+        "example"
+    ]
 
     assert health_example == {"status": "ok"}
     assert orders_example[0]["status"] == "filled"

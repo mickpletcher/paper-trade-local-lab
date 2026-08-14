@@ -34,7 +34,9 @@ class MetricsRegistry:
             "# HELP tradeforge_http_requests_total Total HTTP requests processed.",
             "# TYPE tradeforge_http_requests_total counter",
         ]
-        for metric, value in sorted(counts.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)):
+        for metric, value in sorted(
+            counts.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)
+        ):
             lines.append(
                 f'tradeforge_http_requests_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {value}'
             )
@@ -44,7 +46,9 @@ class MetricsRegistry:
                 "# TYPE tradeforge_http_request_duration_seconds_total counter",
             ]
         )
-        for metric, value in sorted(durations.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)):
+        for metric, value in sorted(
+            durations.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)
+        ):
             lines.append(
                 f'tradeforge_http_request_duration_seconds_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {value:.6f}'
             )

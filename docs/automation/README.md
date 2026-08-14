@@ -11,6 +11,8 @@ TradeForge uses GitHub Actions for repeatable validation, packaging, documentati
 | CI | Pull request and push to `main` | Runs Ruff, Pytest, package build, and container build. Publishes the container to GHCR after a successful `main` build. |
 | Docs | Pull request and push to `main` | Lints durable documentation and verifies every documentation section entry point. |
 | Governance | Pull request, push to `main`, manual dispatch, and Monday schedule | Validates the four living root files and rejects change sets that omit one. |
+| Security | Pull request, manual dispatch, and Monday schedule | Reviews dependency changes and audits the installed Python dependency set for known vulnerabilities. |
+| Release | Semantic version tag | Validates the tag against package metadata, reruns release checks, builds artifacts, and creates a GitHub release. |
 
 ## Governance Contract
 
@@ -37,7 +39,11 @@ Repeated CI issue creation and notification routing remain tracked in `FUTURE-UP
 
 ## Security Boundary
 
-Workflows use read only repository permissions unless publishing requires GHCR package write access. Local databases, reports, `.env`, and credentials remain excluded from Git.
+Workflows use read only repository permissions unless publishing requires GHCR package or GitHub release write access. External actions are pinned to full commit SHAs and Dependabot keeps those references current. Local databases, reports, `.env`, and credentials remain excluded from Git.
+
+## Release Tags
+
+Push a `vMAJOR.MINOR.PATCH` tag only after the value matches `project.version` in `pyproject.toml`. The release workflow rejects mismatched tags and uploads the built wheel and source distribution to the GitHub release.
 
 ## Cross Links
 

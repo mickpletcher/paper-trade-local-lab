@@ -17,7 +17,9 @@ from tests.conftest import add_bar
 
 def test_moving_average_strategy_signal_generation(session, symbol) -> None:
     closes = [10, 9, 8, 12]
-    bars = [add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)]
+    bars = [
+        add_bar(session, symbol, index + 1, close, close + 1, close - 1, close) for index, close in enumerate(closes)
+    ]
     strategy = MovingAverageCrossStrategy(short_window=2, long_window=3, order_size=7)
 
     signal = strategy.on_bar(bars[-1], StrategyContext(bars=bars, has_position=False))

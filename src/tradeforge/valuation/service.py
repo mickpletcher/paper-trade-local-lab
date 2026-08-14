@@ -29,7 +29,10 @@ class PositionValuation:
 def build_portfolio_valuation(session: Session, stale_after_seconds: int) -> dict[str, object]:
     positions = list(
         session.scalars(
-            select(Position).options(selectinload(Position.symbol)).where(Position.quantity != 0).order_by(Position.updated_at.desc())
+            select(Position)
+            .options(selectinload(Position.symbol))
+            .where(Position.quantity != 0)
+            .order_by(Position.updated_at.desc())
         )
     )
     quotes = list(session.scalars(select(LiveQuote).options(selectinload(LiveQuote.symbol))))
@@ -46,7 +49,9 @@ def build_portfolio_valuation(session: Session, stale_after_seconds: int) -> dic
         serialized_quote = serialize_quote(quote, stale_after_seconds) if quote is not None else None
         mark_price = serialized_quote["mark_price"] if serialized_quote is not None else None
         market_value = None if mark_price is None else round(position.quantity * float(mark_price), 2)
-        unrealized_pnl = None if mark_price is None else round((float(mark_price) - position.average_cost) * position.quantity, 2)
+        unrealized_pnl = (
+            None if mark_price is None else round((float(mark_price) - position.average_cost) * position.quantity, 2)
+        )
         if market_value is not None:
             total_market_value += market_value
         if unrealized_pnl is not None:
