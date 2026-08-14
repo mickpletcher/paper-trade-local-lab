@@ -31,9 +31,7 @@ class Settings(BaseSettings):
     enable_metrics: bool = Field(default=False, alias="TRADEFORGE_ENABLE_METRICS")
     import_dir: Path = Field(default=Path("data/imports"), alias="TRADEFORGE_IMPORT_DIR")
     backup_dir: Path = Field(default=Path("data/backups"), alias="TRADEFORGE_BACKUP_DIR")
-    automation_report_dir: Path = Field(
-        default=Path("data/automation"), alias="TRADEFORGE_AUTOMATION_REPORT_DIR"
-    )
+    automation_report_dir: Path = Field(default=Path("data/automation"), alias="TRADEFORGE_AUTOMATION_REPORT_DIR")
     backup_retention_count: int = Field(default=7, ge=1, le=365, alias="TRADEFORGE_BACKUP_RETENTION_COUNT")
     failure_webhook_url: str | None = Field(default=None, alias="TRADEFORGE_FAILURE_WEBHOOK_URL")
 

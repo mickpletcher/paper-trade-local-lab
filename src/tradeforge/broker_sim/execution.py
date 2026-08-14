@@ -285,14 +285,18 @@ class SimBroker:
         if side is OrderSide.BUY:
             total_cost = gross + fee
             if total_cost > self.account.cash + 1e-9:
-                order.status = OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
+                order.status = (
+                    OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
+                )
                 return None
             self.account.cash -= total_cost
         else:
             remaining_position = max(position.quantity, 0.0)
             remaining_order_quantity = max(order.quantity - order.filled_quantity, 0.0)
             if remaining_order_quantity > remaining_position + 1e-9:
-                order.status = OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
+                order.status = (
+                    OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
+                )
                 return None
             quantity = min(quantity, remaining_position)
             if quantity <= 0:

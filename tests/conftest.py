@@ -37,7 +37,9 @@ def symbol(session: Session) -> Symbol:
     return item
 
 
-def add_bar(session: Session, symbol: Symbol, day: int, open_: float, high: float, low: float, close: float) -> PriceBar:
+def add_bar(
+    session: Session, symbol: Symbol, day: int, open_: float, high: float, low: float, close: float
+) -> PriceBar:
     bar = PriceBar(
         symbol_id=symbol.id,
         timestamp=datetime(2023, 1, day, tzinfo=timezone.utc),

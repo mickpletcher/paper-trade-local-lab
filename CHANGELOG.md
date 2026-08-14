@@ -2,6 +2,60 @@
 
 ## 2026-08-14
 
+### Removed orphaned Pytest configuration
+
+Summary: Removed the `pytest-asyncio` loop scope setting because the project neither declares that plugin nor contains asynchronous tests.
+
+Why: Clean Python environments should run the suite without unknown configuration warnings.
+
+### Regenerated the security audit dependency lock
+
+Summary: Regenerated the universal Python 3.11 lock after adding Pip Audit and captured its complete transitive dependency tree.
+
+Why: Security jobs and local installs must use the same deterministic dependency set as the declared development tools.
+
+### Made Markdown validation safe for Windows workspace paths
+
+Summary: Added a PowerShell Markdownlint wrapper that invokes the locked Node module directly and made CI and contributor guidance use it.
+
+Why: `npm run` misparses Windows repository paths containing `&`, so the documented local validation command failed in this workspace.
+
+### Reconciled the open hardening and dependency branches
+
+Summary: Combined the repository security audit with the current trading fixes, retained the newer correctness behavior in every conflict, and normalized the added workflows to the current dependency set.
+
+Why: The stale draft overlapped newer fixes and could not be merged safely without explicit conflict resolution and full validation.
+
+### Upgraded the Python container runtime
+
+Summary: Updated the digest pinned container base from Python 3.12 slim to Python 3.14 slim and declared Python 3.14 package support.
+
+Why: The container should track a current supported runtime while remaining immutable and executable in CI.
+
+### Upgraded checkout automation
+
+Summary: Updated every `actions/checkout` reference from v6 to v7.0.1 at its full commit SHA.
+
+Why: All workflows should use one current, immutable checkout implementation.
+
+### Upgraded Python setup automation
+
+Summary: Updated every `actions/setup-python` reference from v6 to v7.0.0 at its full commit SHA.
+
+Why: Python setup should stay on the maintained Node runtime and remain consistent across CI, security, and release jobs.
+
+### Upgraded Node setup automation
+
+Summary: Updated `actions/setup-node` from v6 to v7.0.0 at its full commit SHA.
+
+Why: Documentation validation should use the maintained action runtime without mutable tags.
+
+### Upgraded uv setup automation
+
+Summary: Updated `astral-sh/setup-uv` from v7 to v9.0.0 at its full commit SHA while retaining the pinned uv tool version.
+
+Why: The lock drift gate should use the maintained setup action without changing the deterministic compiler version.
+
 ### Addressed automated review reliability findings
 
 Summary: Cancelled wholly unfilled orders on reversal, created custom SQLite parent directories, switched Compose to an initialized managed volume, capped quote backoff, and made symbol duplicate detection linear.
@@ -169,6 +223,60 @@ Why: The zero cash regression was not covered by the existing open position valu
 Summary: Refreshed the assessment, completed work history, and future portfolio scoping backlog for the corrected valuation behavior.
 
 Why: The living project files must describe the repository and remaining work after every implementation change.
+
+### Hardened the market data endpoint boundary
+
+Summary: Restricted the configurable Alpaca data URL to HTTPS hosts without embedded credentials and added regression tests for unsafe schemes and malformed URLs.
+
+Why: An operator-controlled URL must not allow `urlopen` to read local files or send provider headers through an unexpected URL scheme.
+
+### Added automated dependency maintenance
+
+Summary: Added grouped weekly Dependabot updates for Python, npm documentation tooling, GitHub Actions, and Docker dependencies.
+
+Why: Dependency and action updates must arrive automatically instead of relying on the maintainer to check four ecosystems manually.
+
+### Pinned workflow actions and documentation tooling
+
+Summary: Replaced mutable action tags with full commit SHAs and added a locked npm manifest for Markdownlint.
+
+Why: Immutable workflow references and integrity-checked tooling reduce supply-chain drift while remaining updateable through Dependabot.
+
+### Added pull request security gates
+
+Summary: Added dependency review for pull requests plus a scheduled and manually dispatchable Python vulnerability audit.
+
+Why: New vulnerable dependencies must fail visibly before merge and the installed dependency set needs recurring checks between code changes.
+
+### Added tag-driven release automation
+
+Summary: Added a workflow that validates semantic version tags against `pyproject.toml`, reruns release checks, builds artifacts, and creates a GitHub release.
+
+Why: Releases should be reproducible and gated instead of assembled manually from an unverified working tree.
+
+### Added repository security and community files
+
+Summary: Added the security policy, support guide, code of conduct, code ownership, issue forms, and pull request template.
+
+Why: Contributors need explicit reporting channels, review ownership, sanitized issue intake, and a consistent pull request contract.
+
+### Expanded project and package metadata
+
+Summary: Added Python package licensing, authorship, classifiers, keywords, project URLs, security audit tooling, and broader local ignore rules.
+
+Why: Built artifacts and local workflows must describe the project accurately and exclude generated or sensitive files consistently.
+
+### Replaced security and installation placeholders
+
+Summary: Rewrote the installation, configuration, security, automation, contribution, and README guidance around real commands and current trust boundaries.
+
+Why: Canonical documentation must describe the system operators actually run rather than future documentation placeholders.
+
+### Added deterministic format enforcement
+
+Summary: Added `ruff format --check` to CI and release validation and normalized the existing Python formatting drift.
+
+Why: Formatting must fail automatically and produce the same result locally and in GitHub Actions.
 
 ### Included staged files in local governance checks
 

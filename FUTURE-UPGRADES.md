@@ -7,12 +7,19 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 ### Automation And Reliability
 
 * Add automatic GitHub issue creation for repeated governance or CI failures without creating duplicates.
+* Automate living document synchronization for trusted Dependabot updates before governance validation.
+* Add automatic compatibility canaries before merging new major Actions and container runtime versions.
+* Add one cross-platform bootstrap command for Python and Node validation dependencies.
+* Add signed lock metadata and automated verification of dependency source provenance.
+* Promote unexpected test warnings to CI failures with an explicit allowlist.
 * Add a maintenance concurrency lock so overlapping scheduled runs fail safely.
 * Add automatic restore drills from the newest backup with recovery time reporting.
 * Add import quarantine and acknowledgement so successful files are not reprocessed indefinitely.
 * Add Teams and email escalation adapters with retry and duplicate suppression.
 * Add maintenance report retention and a local health summary command.
 * Add randomized retry jitter and a provider circuit breaker for extended quote outages.
+* Verify Dependabot alerts and security updates, secret scanning and push protection, default read-only Actions permissions, and the Actions allowlist in GitHub settings.
+* Publish an SBOM plus build provenance for release and GHCR artifacts.
 
 ### Trading Safety And Data Quality
 
@@ -45,6 +52,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add a second live quote provider with automatic failover.
 * Add Interactive Brokers, Alpaca, and OANDA paper adapters behind the canonical interface.
 * Add structured notification adapters for failed scheduled jobs.
+* Add authentication and transport guidance before supporting API access outside a trusted local network.
+* Add protected deployment environments if the project gains hosted deployment targets or production secrets.
 
 ### Market Coverage
 

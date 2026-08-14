@@ -4,6 +4,12 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-14
 
+* Removed an undeclared Pytest plugin setting so clean test runs are warning free.
+* Locked Pip Audit and its transitive dependencies for reproducible local and scheduled security checks.
+* Added one path safe PowerShell Markdown validation command shared by Windows operators and CI.
+* Reconciled the open security audit and dependency branches without regressing the newer trading correctness fixes.
+* Upgraded the digest pinned container runtime to Python 3.14 slim.
+* Upgraded checkout, Python setup, Node setup, and uv setup workflows to their current commit pinned major versions.
 * Closed automated review findings for no-fill reversals, first run database paths, Linux container storage, bounded retries, and linear quote validation.
 * Made dependency lock generation deterministic across operating systems by targeting the minimum supported Python version.
 * Protected `main` with strict required checks, linear history, resolved conversations, squash only merges, and branch cleanup.
@@ -21,6 +27,13 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Corrected Alpaca multi-symbol snapshot parsing and added provider response contract coverage.
 * Made strategy signals quantity aware and capped moving average exits to available inventory.
 * Preserved the latest cash snapshot for fully closed strategy runs in portfolio valuation.
+* Completed a repository and GitHub configuration audit with verified settings, access limitations, and manual follow-up actions.
+* Added security, support, conduct, ownership, issue, pull request, and dependency maintenance files.
+* Added dependency review, scheduled Python audits, deterministic Markdown tooling, and tag-driven GitHub release automation.
+* Pinned every committed GitHub Action to a full commit SHA and added Dependabot maintenance for those pins.
+* Hardened the Alpaca data URL boundary to HTTPS hosts without embedded credentials and added regression coverage.
+* Added deterministic Ruff format enforcement and normalized the existing formatting baseline.
+* Expanded Python package metadata, local ignore rules, and operator-facing installation, configuration, security, and automation documentation.
 * Added a PowerShell governance validator for the four required living files and their change set synchronization.
 * Added push, pull request, manual, and weekly governance validation in GitHub Actions.
 * Normalized the required root filenames and made the future upgrade backlog tracked project state.

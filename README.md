@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/ci.yml)
 [![Docs](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/docs.yml/badge.svg)](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/docs.yml)
+[![Security](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/security.yml/badge.svg)](https://github.com/mickpletcher/paper-trade-local-lab/actions/workflows/security.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](./pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
@@ -147,6 +148,8 @@ Core entry points:
 * [FUTURE-UPGRADES.md](./FUTURE-UPGRADES.md)
 * [COMPLETED-UPGRADES.md](./COMPLETED-UPGRADES.md)
 * [specs/README.md](./specs/README.md)
+* [SECURITY.md](./SECURITY.md)
+* [SUPPORT.md](./SUPPORT.md)
 
 Repository governance is checked automatically on pushes, pull requests, and a weekly schedule. Run `./scripts/Test-ProjectGovernance.ps1 -CheckWorkingTree` before handing off local changes.
 
@@ -192,6 +195,14 @@ Contribution guidance starts here:
 * [CONTRIBUTING.md](./CONTRIBUTING.md)
 * [docs/contributing/README.md](./docs/contributing/README.md)
 * [docs/contributing/documentation-governance.md](./docs/contributing/documentation-governance.md)
+
+## Security And Support
+
+The local API has no authentication. Keep its default loopback binding, or place it behind an authenticated reverse proxy before exposing it to another network. Docker publishes port `8000`, so review host firewall rules before using the container beyond a development machine.
+
+* Report vulnerabilities privately through [SECURITY.md](./SECURITY.md).
+* Use [SUPPORT.md](./SUPPORT.md) for setup help and issue-reporting guidance.
+* Never commit `.env`, Alpaca credentials, local databases, generated reports, or private market data.
 
 ## Disclaimer
 

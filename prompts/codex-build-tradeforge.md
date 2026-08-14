@@ -69,6 +69,7 @@ Functional requirements:
 
 1. SQLite persistence
 Create SQLAlchemy models for:
+
 - Symbol
 - PriceBar
 - Order
@@ -83,7 +84,7 @@ Use UUID primary keys where appropriate.
 Use timestamps.
 Use indexes for symbol, timestamp, strategy run, and order status.
 
-2. CLI
+1. CLI
 Use Typer to create commands:
 
 tradeforge init-db
@@ -93,7 +94,7 @@ tradeforge show-positions
 tradeforge show-orders
 tradeforge show-pnl
 
-3. CSV import
+1. CSV import
 Support OHLCV CSV files with columns:
 date, open, high, low, close, volume
 
@@ -101,8 +102,9 @@ Normalize dates.
 Validate missing data.
 Upsert price bars into SQLite.
 
-4. Paper broker simulation
+1. Paper broker simulation
 Implement:
+
 - Market orders
 - Limit orders
 - Buy and sell sides
@@ -115,24 +117,27 @@ Implement:
 
 The simulated broker should not connect to a real brokerage.
 
-5. Matching/execution engine
+1. Matching/execution engine
 For backtesting:
+
 - Market orders fill at the next candle open.
 - Limit buy fills if candle low is less than or equal to limit price.
 - Limit sell fills if candle high is greater than or equal to limit price.
 - Track fills, orders, positions, and cash.
 
-6. Strategy system
+1. Strategy system
 Create a base Strategy class.
 Create a sample MovingAverageCrossStrategy:
+
 - short window default: 20
 - long window default: 50
 - buys when short MA crosses above long MA
 - sells when short MA crosses below long MA
 - supports configurable order size
 
-7. Backtesting engine
+1. Backtesting engine
 The engine should:
+
 - Load price bars from SQLite
 - Run strategy sequentially across candles
 - Submit simulated orders
@@ -142,8 +147,9 @@ The engine should:
 - Generate account snapshots
 - Return summary metrics
 
-8. Metrics
+1. Metrics
 Calculate:
+
 - Starting cash
 - Ending equity
 - Total return
@@ -153,11 +159,12 @@ Calculate:
 - Realized P/L
 - Unrealized P/L
 
-9. Reports
+1. Reports
 Generate a Markdown report after each backtest:
 data/reports/<strategy-run-id>.md
 
 Include:
+
 - Strategy name
 - Symbol
 - Date range
@@ -166,7 +173,7 @@ Include:
 - Trades table
 - Final positions
 
-10. FastAPI scaffold
+ 1. FastAPI scaffold
 Create a minimal FastAPI app with endpoints:
 GET /health
 GET /symbols
@@ -176,8 +183,9 @@ GET /strategy-runs
 
 Do not overbuild the UI yet.
 
-11. Tests
+ 1. Tests
 Create pytest tests for:
+
 - Database initialization
 - CSV import
 - Market order execution
@@ -186,8 +194,9 @@ Create pytest tests for:
 - Moving average strategy signal generation
 - Backtest run completion
 
-12. README
+ 1. README
 Generate a professional README.md with:
+
 - Project name
 - Description
 - Features
@@ -199,7 +208,7 @@ Generate a professional README.md with:
 - Roadmap
 - Disclaimer that this is for research and education only and not financial advice
 
-13. Code quality
+ 1. Code quality
 Use type hints.
 Use dataclasses or Pydantic where helpful.
 Keep modules clean and separated.
@@ -208,7 +217,7 @@ Use pathlib.
 Use logging instead of print except CLI output.
 Make the app runnable immediately after install.
 
-14. Security and safety
+ 2. Security and safety
 Do not include real brokerage credentials.
 Do not create live trading functionality.
 Do not make financial recommendations.
@@ -216,6 +225,7 @@ Do not send data externally by default.
 Keep the project local first and offline capable.
 
 Deliverables:
+
 - Full project scaffold
 - Working CLI MVP
 - SQLite schema

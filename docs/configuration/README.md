@@ -1,16 +1,14 @@
 # Configuration
 
-## Purpose
+Copy `.env.example` to `.env` for local development. The populated `.env` file is ignored by Git and Docker build context rules.
 
-This section defines runtime settings, profiles, defaults, and configuration guardrails.
+## Core Settings
 
-## Intended Contents
-
-* environment variables
-* profile design
-* secret boundaries
-* config validation
-* sample `.env` patterns
+* `TRADEFORGE_DATABASE_URL` defaults to `sqlite:///data/tradeforge.db`.
+* `TRADEFORGE_STARTING_CASH` sets the simulated opening balance and must be greater than zero.
+* `TRADEFORGE_LOG_LEVEL` controls application log verbosity.
+* `TRADEFORGE_LOG_FORMAT` accepts the supported text or JSON logging mode.
+* `TRADEFORGE_ENABLE_METRICS` enables the unauthenticated `/metrics` endpoint and defaults to `false`.
 
 ## Current Execution Settings
 
@@ -24,7 +22,13 @@ This section defines runtime settings, profiles, defaults, and configuration gua
 
 Invalid, negative, nonfinite, or unsupported execution settings fail before a backtest starts.
 
-## Current Quote And Automation Settings
+## Live Quote And Automation Settings
+
+* `TRADEFORGE_QUOTE_PROVIDER` currently supports `alpaca`.
+* `TRADEFORGE_QUOTE_STALE_AFTER_SECONDS` controls quote staleness reporting.
+* `TRADEFORGE_ALPACA_DATA_URL` must be an HTTPS URL with a hostname and no embedded credentials.
+* `TRADEFORGE_ALPACA_FEED` selects the Alpaca market-data feed.
+* `TRADEFORGE_ALPACA_API_KEY_ID` and `TRADEFORGE_ALPACA_API_SECRET_KEY` hold local provider credentials.
 
 * `TRADEFORGE_QUOTE_RETRY_ATTEMPTS` controls transient provider attempts from 1 through 10.
 * `TRADEFORGE_QUOTE_RETRY_BASE_SECONDS` controls exponential backoff from zero through 60 seconds.
@@ -37,25 +41,9 @@ Invalid, negative, nonfinite, or unsupported execution settings fail before a ba
 
 Use `.env.example` as the inventory. Never commit `.env` or generated data.
 
-## Suggested Future Topics
+## Secret And Network Boundaries
 
-* environment-variables.md
-* profile-model.md
-* startup-validation.md
-* secrets-handling.md
-* sample-configurations.md
-
-## Naming Conventions
-
-* settings inventories use plural nouns
-* secret docs use the `secrets` term explicitly
-* examples live in a dedicated examples block inside each file
-
-## File Examples
-
-* `environment-variables.md`
-* `startup-validation.md`
-* `sample-configurations.md`
+Do not commit `.env`, place credentials in URLs, or paste secrets into logs and issues. The API and optional metrics endpoint have no authentication, so keep them on loopback or behind an authenticated reverse proxy.
 
 ## Cross Links
 

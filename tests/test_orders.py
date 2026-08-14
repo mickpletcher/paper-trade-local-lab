@@ -13,7 +13,9 @@ def test_market_order_execution_updates_cash_and_position(session, symbol) -> No
     bar = add_bar(session, symbol, 1, 100, 105, 95, 101)
     account = SimAccount.with_starting_cash(10_000)
     broker = SimBroker(session, account, fee_per_order=1, slippage_bps=0)
-    order = broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp)
+    order = broker.submit_order(
+        OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp
+    )
 
     fills = broker.process_bar(bar)
 
@@ -63,7 +65,9 @@ def test_sell_order_larger_than_position_is_rejected(session, symbol) -> None:
     broker = SimBroker(session, account, fee_per_order=0, slippage_bps=0)
     broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 3), submitted_at=entry_bar.timestamp)
     broker.process_bar(entry_bar)
-    sell = broker.submit_order(OrderRequest(symbol.id, OrderSide.SELL, OrderType.MARKET, 5), submitted_at=exit_bar.timestamp)
+    sell = broker.submit_order(
+        OrderRequest(symbol.id, OrderSide.SELL, OrderType.MARKET, 5), submitted_at=exit_bar.timestamp
+    )
 
     fills = broker.process_bar(exit_bar)
 
@@ -142,7 +146,9 @@ def test_symbol_specific_slippage_and_per_share_commission_are_applied(session, 
         default_slippage_bps=1,
         symbol_slippage_rules={"AAPL": 25},
     )
-    order = broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp)
+    order = broker.submit_order(
+        OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp
+    )
 
     fills = broker.process_bar(bar)
 
@@ -325,9 +331,7 @@ def test_broker_only_processes_its_strategy_run_scope(session, symbol) -> None:
     bar = add_bar(session, symbol, 1, 100, 101, 99, 100)
     account = SimAccount.with_starting_cash(10_000)
     manual_broker = SimBroker(session, account, fee_per_order=0, slippage_bps=0, max_bar_fill_ratio=1)
-    manual_broker.submit_order(
-        OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 1), submitted_at=bar.timestamp
-    )
+    manual_broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 1), submitted_at=bar.timestamp)
     other_broker = SimBroker(
         session,
         SimAccount.with_starting_cash(10_000),

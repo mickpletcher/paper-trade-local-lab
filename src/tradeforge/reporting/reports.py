@@ -28,13 +28,23 @@ def write_markdown_report(
     lines.extend(f"- {key}: {value}" for key, value in parameters.items())
     lines.extend(["", "## Metrics", ""])
     lines.extend(f"- {key}: {value}" for key, value in metrics.items())
-    lines.extend(["", "## Trades", "", "| Opened | Closed | Qty | Entry | Exit | Realized P/L |", "|---|---:|---:|---:|---:|---:|"])
+    lines.extend(
+        [
+            "",
+            "## Trades",
+            "",
+            "| Opened | Closed | Qty | Entry | Exit | Realized P/L |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
     for trade in trades:
         lines.append(
             f"| {trade.opened_at} | {trade.closed_at or ''} | {trade.quantity:g} | "
             f"{trade.entry_price:.2f} | {trade.exit_price or 0:.2f} | {trade.realized_pnl:.2f} |"
         )
-    lines.extend(["", "## Final Positions", "", "| Symbol | Quantity | Average Cost | Realized P/L |", "|---|---:|---:|---:|"])
+    lines.extend(
+        ["", "## Final Positions", "", "| Symbol | Quantity | Average Cost | Realized P/L |", "|---|---:|---:|---:|"]
+    )
     for position in positions:
         lines.append(
             f"| {position.symbol.ticker} | {position.quantity:g} | {position.average_cost:.2f} | {position.realized_pnl:.2f} |"

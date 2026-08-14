@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import sleep
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from sqlalchemy import select
@@ -49,7 +49,18 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
     name = "alpaca"
 
     def __init__(self, settings: Settings):
-        self.base_url = settings.alpaca_data_url.rstrip("/")
+        configured_url = settings.alpaca_data_url.rstrip("/")
+        parsed_url = urlsplit(configured_url)
+        if (
+            parsed_url.scheme.lower() != "https"
+            or not parsed_url.hostname
+            or parsed_url.username is not None
+            or parsed_url.password is not None
+        ):
+            raise QuoteProviderError(
+                "TRADEFORGE_ALPACA_DATA_URL must be an HTTPS URL with a hostname and no embedded credentials."
+            )
+        self.base_url = configured_url
         self.feed = settings.alpaca_feed
         self.api_key_id = settings.alpaca_api_key_id
         self.api_secret_key = settings.alpaca_api_secret_key
@@ -165,7 +176,9 @@ def refresh_live_quotes(session: Session, symbols: list[str], provider: QuotePro
             select(LiveQuote).where(LiveQuote.symbol_id == symbol_model.id, LiveQuote.provider == quote.provider)
         )
         if existing is None:
-            existing = LiveQuote(symbol_id=symbol_model.id, provider=quote.provider, quote_timestamp=quote.quote_timestamp)
+            existing = LiveQuote(
+                symbol_id=symbol_model.id, provider=quote.provider, quote_timestamp=quote.quote_timestamp
+            )
             session.add(existing)
         existing.quote_timestamp = quote.quote_timestamp
         existing.fetched_at = quote.fetched_at

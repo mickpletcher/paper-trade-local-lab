@@ -14,7 +14,12 @@ import uvicorn
 from tradeforge.automation import MaintenanceError, run_maintenance
 from tradeforge.backtesting.engine import BacktestEngine
 from tradeforge.config import get_settings
-from tradeforge.database.migrations import create_revision, get_current_version, get_head_version, init_db as create_schema
+from tradeforge.database.migrations import (
+    create_revision,
+    get_current_version,
+    get_head_version,
+    init_db as create_schema,
+)
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
@@ -38,7 +43,13 @@ AVAILABLE_STRATEGIES = {"moving-average-cross"}
 def init_db() -> None:
     """Create the local SQLite schema."""
     create_schema()
-    log_event(logger, logging.INFO, "database_upgraded", current_version=get_current_version(), head_version=get_head_version())
+    log_event(
+        logger,
+        logging.INFO,
+        "database_upgraded",
+        current_version=get_current_version(),
+        head_version=get_head_version(),
+    )
     typer.echo("Initialized TradeForge database.")
 
 
@@ -64,7 +75,9 @@ def db_revision(
     path = create_revision(message=message, autogenerate=autogenerate)
     if path is None:
         raise typer.Exit(code=1)
-    log_event(logger, logging.INFO, "database_revision_created", message_text=message, path=path, autogenerate=autogenerate)
+    log_event(
+        logger, logging.INFO, "database_revision_created", message_text=message, path=path, autogenerate=autogenerate
+    )
     typer.echo(path)
 
 
@@ -112,7 +125,9 @@ def run_backtest(
         raise typer.BadParameter("The start date must be earlier than the end date.")
     normalized_symbol = symbol.strip().upper()
     try:
-        strategy_obj = MovingAverageCrossStrategy(short_window=short_window, long_window=long_window, order_size=order_size)
+        strategy_obj = MovingAverageCrossStrategy(
+            short_window=short_window, long_window=long_window, order_size=order_size
+        )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     log_event(
@@ -127,7 +142,9 @@ def run_backtest(
     with session_scope() as session:
         _ensure_symbol_exists(session, normalized_symbol)
         result = BacktestEngine(session, strategy_obj, normalized_symbol, start_at, end_at).run()
-    log_event(logger, logging.INFO, "backtest_completed", strategy_run_id=result["strategy_run_id"], metrics=result["metrics"])
+    log_event(
+        logger, logging.INFO, "backtest_completed", strategy_run_id=result["strategy_run_id"], metrics=result["metrics"]
+    )
     typer.echo(json.dumps(result, indent=2))
 
 

@@ -36,9 +36,7 @@ def test_sqlite_foreign_keys_are_enabled(engine) -> None:
 def test_csv_import_upserts_bars(session, tmp_path) -> None:
     csv_path = tmp_path / "aapl.csv"
     csv_path.write_text(
-        "date,open,high,low,close,volume\n"
-        "2023-01-01,100,110,99,105,1000\n"
-        "2023-01-02,106,112,101,108,1200\n",
+        "date,open,high,low,close,volume\n2023-01-01,100,110,99,105,1000\n2023-01-02,106,112,101,108,1200\n",
         encoding="utf-8",
     )
     assert import_ohlcv_csv(session, "AAPL", csv_path) == 2

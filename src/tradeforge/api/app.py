@@ -86,7 +86,9 @@ def metrics() -> PlainTextResponse:
     settings = get_settings()
     if not settings.enable_metrics:
         raise HTTPException(status_code=404, detail="Metrics are disabled.")
-    return PlainTextResponse(metrics_registry.render_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8")
+    return PlainTextResponse(
+        metrics_registry.render_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8"
+    )
 
 
 @app.get(
@@ -105,7 +107,9 @@ def metrics() -> PlainTextResponse:
 )
 def symbols() -> list[dict[str, str]]:
     with session_scope() as session:
-        return [{"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))]
+        return [
+            {"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))
+        ]
 
 
 @app.get(
@@ -140,7 +144,9 @@ def symbols() -> list[dict[str, str]]:
 def quotes() -> list[dict[str, object]]:
     settings = get_settings()
     with session_scope() as session:
-        items = session.scalars(select(LiveQuote).options(selectinload(LiveQuote.symbol)).order_by(LiveQuote.fetched_at.desc())).all()
+        items = session.scalars(
+            select(LiveQuote).options(selectinload(LiveQuote.symbol)).order_by(LiveQuote.fetched_at.desc())
+        ).all()
         return [serialize_quote(item, settings.quote_stale_after_seconds) for item in items]
 
 
