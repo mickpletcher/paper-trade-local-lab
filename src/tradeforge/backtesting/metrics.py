@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from itertools import pairwise
 from math import isfinite, sqrt
 from statistics import fmean, pstdev
 
@@ -76,7 +77,7 @@ def calculate_metrics(
 
 def _periodic_returns(snapshots: list[AccountSnapshot]) -> list[float]:
     returns: list[float] = []
-    for previous, current in zip(snapshots, snapshots[1:], strict=False):
+    for previous, current in pairwise(snapshots):
         if previous.equity:
             returns.append((current.equity - previous.equity) / previous.equity)
     return returns

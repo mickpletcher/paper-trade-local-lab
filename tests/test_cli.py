@@ -165,7 +165,7 @@ def test_run_backtest_rejects_invalid_date_format(monkeypatch, tmp_path) -> None
     monkeypatch.chdir(tmp_path)
     env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
 
-    with pytest.raises(typer.BadParameter, match="--start must be a valid ISO date or datetime string."):
+    with pytest.raises(typer.BadParameter, match=r"--start must be a valid ISO date or datetime string\."):
         _parse_date_option("--start", "not-a-date")
 
     result = runner.invoke(

@@ -12,6 +12,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add a scheduled Python prerelease canary that does not block supported runtime builds.
 * Add one cross-platform bootstrap command for Python and Node validation dependencies.
 * Add signed lock metadata and automated verification of dependency source provenance.
+* Add mutation testing for broker execution, metrics, and valuation correctness paths.
 * Add a developer environment verifier that reports undeclared and version drifted packages against `requirements.lock`.
 * Add explicit allowed license and denied package policies to dependency review.
 * Add a maintenance concurrency lock so overlapping scheduled runs fail safely.

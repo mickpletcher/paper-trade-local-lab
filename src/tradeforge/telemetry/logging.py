@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 
 from tradeforge.config import get_settings
 
+_logging_configured = False
+
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -25,8 +27,9 @@ class JsonFormatter(logging.Formatter):
 
 
 def setup_logging(force: bool = False) -> None:
+    global _logging_configured
     root_logger = logging.getLogger()
-    if getattr(root_logger, "_tradeforge_logging_configured", False) and not force:
+    if _logging_configured and not force:
         return
     settings = get_settings()
     handler = logging.StreamHandler(sys.stderr)
@@ -37,7 +40,7 @@ def setup_logging(force: bool = False) -> None:
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
     root_logger.setLevel(settings.log_level.upper())
-    root_logger._tradeforge_logging_configured = True
+    _logging_configured = True
 
 
 def get_logger(name: str) -> logging.Logger:

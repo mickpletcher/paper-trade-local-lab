@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from threading import Lock
 from time import time
@@ -17,7 +17,7 @@ class MetricsRegistry:
     def __init__(self) -> None:
         self._started_at = time()
         self._counts: Counter[HttpMetric] = Counter()
-        self._duration_seconds: Counter[HttpMetric] = Counter()
+        self._duration_seconds: defaultdict[HttpMetric, float] = defaultdict(float)
         self._lock = Lock()
 
     def record_http_request(self, method: str, path: str, status_code: int, duration_seconds: float) -> None:
@@ -34,11 +34,11 @@ class MetricsRegistry:
             "# HELP tradeforge_http_requests_total Total HTTP requests processed.",
             "# TYPE tradeforge_http_requests_total counter",
         ]
-        for metric, value in sorted(
+        for metric, count in sorted(
             counts.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)
         ):
             lines.append(
-                f'tradeforge_http_requests_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {value}'
+                f'tradeforge_http_requests_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {count}'
             )
         lines.extend(
             [
@@ -46,11 +46,11 @@ class MetricsRegistry:
                 "# TYPE tradeforge_http_request_duration_seconds_total counter",
             ]
         )
-        for metric, value in sorted(
+        for metric, duration in sorted(
             durations.items(), key=lambda item: (item[0].path, item[0].method, item[0].status_code)
         ):
             lines.append(
-                f'tradeforge_http_request_duration_seconds_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {value:.6f}'
+                f'tradeforge_http_request_duration_seconds_total{{method="{metric.method}",path="{metric.path}",status="{metric.status_code}"}} {duration:.6f}'
             )
         lines.extend(
             [

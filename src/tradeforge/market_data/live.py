@@ -243,12 +243,16 @@ def _ensure_utc(value: datetime) -> datetime:
 def _to_float(value: object) -> float | None:
     if value is None:
         return None
+    if not isinstance(value, (str, int, float)):
+        raise ValueError("Quote values must be numeric")
     return float(value)
 
 
 def _to_int(value: object) -> int | None:
     if value is None:
         return None
+    if not isinstance(value, (str, int, float)):
+        raise ValueError("Quote sizes must be numeric")
     return int(value)
 
 

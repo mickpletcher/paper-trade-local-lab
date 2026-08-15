@@ -4,9 +4,10 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from alembic.script import ScriptDirectory
 from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import Engine, inspect
+from sqlalchemy.engine import Connection
 
 from tradeforge.config import get_settings
 from tradeforge.database.session import get_engine
@@ -34,13 +35,23 @@ def get_current_version(engine: Engine | None = None) -> str | None:
 def get_head_version(database_url: str | None = None) -> str:
     config = _build_alembic_config(database_url or get_settings().database_url)
     script = ScriptDirectory.from_config(config)
-    return script.get_current_head()
+    head = script.get_current_head()
+    if head is None:
+        raise RuntimeError("Alembic migration history has no head revision")
+    return head
 
 
 def create_revision(message: str, autogenerate: bool = True, database_url: str | None = None) -> str | None:
     config = _build_alembic_config(database_url or get_settings().database_url)
     script = command.revision(config, message=message, autogenerate=autogenerate)
-    return None if script is None else script.path
+    if script is None:
+        return None
+    if isinstance(script, list):
+        revisions = [item for item in script if item is not None]
+        if len(revisions) != 1:
+            raise RuntimeError("Alembic generated an unexpected number of revisions")
+        script = revisions[0]
+    return script.path
 
 
 def _build_alembic_config(database_url: str) -> Config:
@@ -50,7 +61,7 @@ def _build_alembic_config(database_url: str) -> Config:
     return config
 
 
-def _bootstrap_legacy_revision(connection, config: Config) -> None:
+def _bootstrap_legacy_revision(connection: Connection, config: Config) -> None:
     tables = set(inspect(connection).get_table_names())
     if "symbols" not in tables:
         return

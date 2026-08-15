@@ -2,6 +2,24 @@
 
 ## 2026-08-15
 
+### Enforced test coverage
+
+Summary: Added a declarative 88 percent coverage floor and made every CI runtime execute the coverage measured suite.
+
+Why: Installing Pytest Cov without a failing threshold allowed coverage loss to pass silently.
+
+### Added static type validation
+
+Summary: Added strict Mypy validation for the application package, Pandas stubs, and the same command to CI and contributor instructions.
+
+Why: Existing annotations did not protect builds because no type checker validated them.
+
+### Expanded Ruff validation
+
+Summary: Enabled Bugbear, import ordering, simplify, and Ruff specific rule families and corrected the findings they exposed.
+
+Why: The previous selection covered syntax and undefined names but missed common bug patterns and maintainability defects.
+
 ### Tested the container Python runtime
 
 Summary: Added Python 3.14 to the full GitHub Actions test matrix and synchronized operator and current state documentation.

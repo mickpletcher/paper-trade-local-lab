@@ -12,7 +12,7 @@ from tradeforge.broker_sim.account import SimAccount
 from tradeforge.broker_sim.execution import FixedCommissionModel, PerShareCommissionModel, SimBroker
 from tradeforge.broker_sim.orders import OrderRequest
 from tradeforge.broker_sim.portfolio import get_or_create_position
-from tradeforge.config import get_settings
+from tradeforge.config import Settings, get_settings
 from tradeforge.database.models import (
     AccountSnapshot,
     Fill,
@@ -68,7 +68,7 @@ class BacktestEngine:
             raise ValueError("Backtest requires at least two price bars")
 
         strategy_model = self._get_or_create_strategy()
-        parameters = {
+        parameters: dict[str, object] = {
             key: value
             for key, value in vars(self.strategy).items()
             if isinstance(value, (str, int, float, bool)) and key != "name"
@@ -189,7 +189,7 @@ def _ensure_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def _build_commission_model(settings) -> FixedCommissionModel | PerShareCommissionModel:
+def _build_commission_model(settings: Settings) -> FixedCommissionModel | PerShareCommissionModel:
     model_name = settings.commission_model.strip().lower()
     if model_name == "per_share":
         return PerShareCommissionModel(

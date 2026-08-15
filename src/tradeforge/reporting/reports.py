@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 from tradeforge.database.models import Position, StrategyRun, Trade
@@ -7,8 +8,8 @@ from tradeforge.database.models import Position, StrategyRun, Trade
 
 def write_markdown_report(
     run: StrategyRun,
-    parameters: dict[str, object],
-    metrics: dict[str, object],
+    parameters: Mapping[str, object],
+    metrics: Mapping[str, object],
     trades: list[Trade],
     positions: list[Position],
     reports_dir: Path = Path("data/reports"),

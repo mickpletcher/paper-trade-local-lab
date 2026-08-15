@@ -4,6 +4,9 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Enforced an 88 percent test coverage floor in every supported Python CI job.
+* Added strict Mypy validation with Pandas typing support.
+* Expanded Ruff to Bugbear, import ordering, simplify, and Ruff specific rules.
 * Added the container's Python 3.14 runtime to the full CI test matrix.
 * Expanded backtest reports with risk adjusted, trade distribution, exposure, and passive benchmark metrics.
 * Added single statement relationship loading for API symbols and strategies with query count regression coverage.

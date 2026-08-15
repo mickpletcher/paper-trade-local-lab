@@ -12,6 +12,8 @@ anyio==4.14.2
     # via
     #   httpx2
     #   starlette
+ast-serialize==0.8.0
+    # via mypy
 boolean-py==5.0
     # via license-expression
 build==1.5.0
@@ -59,6 +61,8 @@ idna==3.18
     #   requests
 iniconfig==2.3.0
     # via pytest
+librt==0.15.0 ; platform_python_implementation != 'PyPy'
+    # via mypy
 license-expression==30.4.4
     # via cyclonedx-python-lib
 mako==1.4.1
@@ -71,10 +75,18 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.2.1
     # via cachecontrol
+mypy==2.3.1
+    # via tradeforge (pyproject.toml)
+mypy-extensions==1.1.0
+    # via mypy
 numpy==2.4.6 ; python_full_version < '3.12'
-    # via pandas
+    # via
+    #   pandas
+    #   pandas-stubs
 numpy==2.5.2 ; python_full_version >= '3.12'
-    # via pandas
+    # via
+    #   pandas
+    #   pandas-stubs
 packageurl-python==0.17.6
     # via cyclonedx-python-lib
 packaging==26.3
@@ -85,6 +97,10 @@ packaging==26.3
     #   pytest
 pandas==3.0.5
     # via tradeforge (pyproject.toml)
+pandas-stubs==3.0.5.260730
+    # via tradeforge (pyproject.toml)
+pathspec==1.1.1
+    # via mypy
 pip==26.2.1
     # via pip-api
 pip-api==0.0.34
@@ -169,6 +185,7 @@ typing-extensions==4.16.0
     #   cyclonedx-python-lib
     #   fastapi
     #   httpx2
+    #   mypy
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
