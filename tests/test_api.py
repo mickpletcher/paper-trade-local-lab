@@ -88,11 +88,10 @@ def test_quotes_and_portfolio_endpoints(monkeypatch, tmp_path) -> None:
             )
         )
 
-    client = TestClient(app)
-
-    quotes_response = client.get("/quotes")
-    portfolio_response = client.get("/portfolio", params={"strategy_run_id": run.id})
-    unknown_portfolio_response = client.get("/portfolio", params={"strategy_run_id": "missing"})
+    with TestClient(app) as client:
+        quotes_response = client.get("/quotes")
+        portfolio_response = client.get("/portfolio", params={"strategy_run_id": run.id})
+        unknown_portfolio_response = client.get("/portfolio", params={"strategy_run_id": "missing"})
 
     assert quotes_response.status_code == 200
     assert portfolio_response.status_code == 200
@@ -108,14 +107,14 @@ def test_metrics_endpoint_is_opt_in(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
     init_db()
 
-    client = TestClient(app)
-    disabled_response = client.get("/metrics")
+    with TestClient(app) as client:
+        disabled_response = client.get("/metrics")
 
-    assert disabled_response.status_code == 404
+        assert disabled_response.status_code == 404
 
-    monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
-    client.get("/health")
-    enabled_response = client.get("/metrics")
+        monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
+        client.get("/health")
+        enabled_response = client.get("/metrics")
 
     assert enabled_response.status_code == 200
     assert "tradeforge_http_requests_total" in enabled_response.text

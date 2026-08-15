@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     slippage_bps: float = Field(default=1.0, ge=0, lt=10_000, alias="TRADEFORGE_SLIPPAGE_BPS")
     symbol_slippage_rules_json: str = Field(default="{}", alias="TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON")
     max_bar_fill_ratio: float = Field(default=0.25, ge=0, le=1, alias="TRADEFORGE_MAX_BAR_FILL_RATIO")
+    quantity_increment: float = Field(default=1.0, gt=0, alias="TRADEFORGE_QUANTITY_INCREMENT")
     quote_provider: str = Field(default="alpaca", alias="TRADEFORGE_QUOTE_PROVIDER")
     quote_stale_after_seconds: int = Field(default=30, ge=0, alias="TRADEFORGE_QUOTE_STALE_AFTER_SECONDS")
     quote_retry_attempts: int = Field(default=3, ge=1, le=10, alias="TRADEFORGE_QUOTE_RETRY_ATTEMPTS")

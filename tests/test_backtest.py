@@ -85,6 +85,7 @@ def test_backtest_run_completion(session, symbol, monkeypatch, tmp_path) -> None
     execution_parameters = json.loads(run.parameters_json)["execution"]
     assert execution_parameters["commission"] == {"model": "fixed", "fee_per_order": 1.0}
     assert execution_parameters["max_bar_fill_ratio"] == 0.25
+    assert execution_parameters["quantity_increment"] == 1.0
     assert len(session.scalars(select(AccountSnapshot)).all()) == len(closes)
     assert (tmp_path / result["report_path"]).exists()
 

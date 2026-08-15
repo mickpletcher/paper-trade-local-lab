@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](./pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-TradeForge is a local first paper trading laboratory for strategy experimentation, backtesting, market replay, and AI assisted research.
+TradeForge is a local first paper trading laboratory for strategy experimentation, historical backtesting, local valuation, and AI assisted research.
 
 It is designed to grow into a professional research platform with strong privacy boundaries, pluggable components, and durable engineering workflows.
 
@@ -16,7 +16,7 @@ TradeForge is built for teams and solo builders who want:
 
 * local and offline friendly execution
 * strategy research without live order routing
-* replay and backtest workflows that stay inspectable
+* historical backtest workflows that stay inspectable
 * AI assisted development without hiding system behavior
 * a path toward extensibility, multi provider data, and hardened local infrastructure
 
@@ -24,7 +24,7 @@ TradeForge is built for teams and solo builders who want:
 
 * make local strategy research fast to start and easy to inspect
 * keep execution simulated unless a future design explicitly says otherwise
-* support backtesting, replay, valuation, and AI assisted analysis from one codebase
+* support backtesting, valuation, and AI assisted analysis from one codebase
 * establish a platform shape that can support open source growth and commercial hardening later
 
 ## Current Feature Set
@@ -37,6 +37,8 @@ TradeForge is built for teams and solo builders who want:
 * stop, stop limit, and cancel capable order simulation with aggregate volume aware partial fills
 * limit price protection, marketable price improvement, and persistent stop triggers
 * per order commission reconciliation and symbol specific slippage rules
+* gross trade prices with separately recorded entry and exit fees
+* whole share execution by default with a configurable quantity increment
 * historical backtesting and markdown report output
 * live quote refresh for local valuation
 * unattended CSV import, quote refresh, verified backup, and failure reporting
@@ -198,7 +200,7 @@ Contribution guidance starts here:
 
 ## Security And Support
 
-The local API has no authentication. Keep its default loopback binding, or place it behind an authenticated reverse proxy before exposing it to another network. Docker publishes port `8000`, so review host firewall rules before using the container beyond a development machine.
+The local API has no authentication. Compose binds it to loopback by default. Place it behind an authenticated reverse proxy before exposing it to another network.
 
 * Report vulnerabilities privately through [SECURITY.md](./SECURITY.md).
 * Use [SUPPORT.md](./SUPPORT.md) for setup help and issue-reporting guidance.

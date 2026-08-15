@@ -33,14 +33,15 @@ def write_markdown_report(
             "",
             "## Trades",
             "",
-            "| Opened | Closed | Qty | Entry | Exit | Realized P/L |",
-            "|---|---:|---:|---:|---:|---:|",
+            "| Opened | Closed | Qty | Entry | Entry Fee | Exit | Exit Fee | Realized P/L |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for trade in trades:
         lines.append(
             f"| {trade.opened_at} | {trade.closed_at or ''} | {trade.quantity:g} | "
-            f"{trade.entry_price:.2f} | {trade.exit_price or 0:.2f} | {trade.realized_pnl:.2f} |"
+            f"{trade.entry_price:.2f} | {trade.entry_fee:.2f} | {trade.exit_price or 0:.2f} | "
+            f"{trade.exit_fee:.2f} | {trade.realized_pnl:.2f} |"
         )
     lines.extend(
         ["", "## Final Positions", "", "| Symbol | Quantity | Average Cost | Realized P/L |", "|---|---:|---:|---:|"]

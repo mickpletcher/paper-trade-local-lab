@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_FLOOR
 from math import floor, isfinite
 
 from sqlalchemy.orm import Session
@@ -59,12 +60,15 @@ class SimBroker:
         default_slippage_bps: float | None = None,
         symbol_slippage_rules: dict[str, float] | None = None,
         max_bar_fill_ratio: float = 0.25,
+        quantity_increment: float = 1.0,
         strategy_run_id: str | None = None,
     ):
         resolved_slippage = slippage_bps if default_slippage_bps is None else default_slippage_bps
         _validate_slippage_bps("default_slippage_bps", resolved_slippage)
         if not isfinite(max_bar_fill_ratio) or not 0 <= max_bar_fill_ratio <= 1:
             raise ValueError("max_bar_fill_ratio must be between 0 and 1")
+        if not isfinite(quantity_increment) or quantity_increment <= 0:
+            raise ValueError("quantity_increment must be a positive finite number")
 
         self.session = session
         self.account = account
@@ -76,10 +80,13 @@ class SimBroker:
                 raise ValueError("Symbol slippage rule tickers cannot be empty")
             _validate_slippage_bps(f"symbol_slippage_rules[{ticker}]", bps)
         self.max_bar_fill_ratio = max_bar_fill_ratio
+        self.quantity_increment = quantity_increment
         self.strategy_run_id = strategy_run_id
 
     def submit_order(self, request: OrderRequest, submitted_at: datetime | None = None) -> Order:
         request.validate()
+        if abs(self._quantize_quantity(request.quantity) - request.quantity) > 1e-9:
+            raise ValueError(f"Order quantity must be a multiple of {self.quantity_increment:g}")
         if request.strategy_run_id != self.strategy_run_id:
             raise ValueError("Order strategy run does not match the broker execution scope")
         order = Order(
@@ -215,7 +222,7 @@ class SimBroker:
     ) -> float:
         if available_volume <= 0:
             return 0.0
-        fillable_quantity = min(remaining_quantity, available_volume)
+        fillable_quantity = self._quantize_quantity(min(remaining_quantity, available_volume))
         if OrderSide(order.side) is OrderSide.BUY:
             fillable_quantity = self._cap_buy_quantity_to_cash(order, fillable_quantity, execution_price)
         return fillable_quantity
@@ -234,7 +241,18 @@ class SimBroker:
                 low = midpoint
             else:
                 high = midpoint
-        return 0.0 if low < 1e-9 else low
+        capped_quantity = self._quantize_quantity(low)
+        if capped_quantity <= 0:
+            return 0.0
+        if self._buy_cost(order, capped_quantity, execution_price) > self.account.cash + 1e-9:
+            capped_quantity = self._quantize_quantity(capped_quantity - self.quantity_increment)
+        return max(capped_quantity, 0.0)
+
+    def _quantize_quantity(self, quantity: float) -> float:
+        decimal_quantity = Decimal(str(max(quantity, 0.0)))
+        decimal_increment = Decimal(str(self.quantity_increment))
+        steps = (decimal_quantity / decimal_increment).to_integral_value(rounding=ROUND_FLOOR)
+        return float(steps * decimal_increment)
 
     def _buy_cost(self, order: Order, quantity: float, execution_price: float) -> float:
         return quantity * execution_price + self._commission_for_fill(order, quantity, execution_price)
@@ -355,7 +373,6 @@ class SimBroker:
         )
 
         if side is OrderSide.BUY:
-            fill_cost = price * quantity + fee
             if trade is None:
                 self.session.add(
                     Trade(
@@ -363,12 +380,14 @@ class SimBroker:
                         symbol_id=order.symbol_id,
                         opened_at=bar.timestamp,
                         quantity=quantity,
-                        entry_price=fill_cost / quantity,
+                        entry_price=price,
+                        entry_fee=fee,
                     )
                 )
                 return
             total_quantity = trade.quantity + quantity
-            trade.entry_price = (trade.entry_price * trade.quantity + fill_cost) / total_quantity
+            trade.entry_price = (trade.entry_price * trade.quantity + price * quantity) / total_quantity
+            trade.entry_fee += fee
             trade.quantity = total_quantity
             return
 
@@ -380,6 +399,7 @@ class SimBroker:
             trade.exit_price = (trade.exit_price * previous_closed_quantity + price * quantity) / total_closed_quantity
         else:
             trade.exit_price = price
+        trade.exit_fee += fee
         trade.realized_pnl += update.realized_pnl_delta
         if remaining_position <= 1e-9:
             trade.closed_at = bar.timestamp

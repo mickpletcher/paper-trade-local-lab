@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import pytest
+from alembic import command
 from sqlalchemy import inspect, select, text
 
-from tradeforge.database.migrations import get_current_version, get_head_version
+from tradeforge.database.migrations import _build_alembic_config, get_current_version, get_head_version
 from tradeforge.database.models import Symbol
+from tradeforge.database.session import dispose_application_engine, get_application_engine, get_engine
 from tradeforge.market_data.importer import import_ohlcv_csv
 
 
@@ -23,14 +25,91 @@ def test_database_initialization_creates_tables(engine) -> None:
         "live_quotes",
     }.issubset(tables)
     order_columns = {column["name"] for column in inspector.get_columns("orders")}
+    trade_columns = {column["name"] for column in inspector.get_columns("trades")}
     assert {"stop_price", "filled_quantity", "commission_paid", "triggered_at"}.issubset(order_columns)
-    assert get_current_version(engine) == "003_execution_realism"
-    assert get_head_version() == "003_execution_realism"
+    assert {"entry_fee", "exit_fee"}.issubset(trade_columns)
+    assert get_current_version(engine) == "004_trade_fee_basis"
+    assert get_head_version() == "004_trade_fee_basis"
 
 
 def test_sqlite_foreign_keys_are_enabled(engine) -> None:
     with engine.connect() as connection:
         assert connection.scalar(text("PRAGMA foreign_keys")) == 1
+
+
+def test_application_engine_is_cached_and_explicit_engines_are_isolated(monkeypatch, tmp_path) -> None:
+    dispose_application_engine()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+    first_explicit = get_engine("sqlite:///:memory:")
+    second_explicit = get_engine("sqlite:///:memory:")
+    try:
+        first_application = get_application_engine()
+        assert get_application_engine() is first_application
+        assert first_explicit is not second_explicit
+
+        dispose_application_engine()
+
+        assert get_application_engine() is not first_application
+    finally:
+        first_explicit.dispose()
+        second_explicit.dispose()
+        dispose_application_engine()
+
+
+def test_trade_fee_migration_separates_legacy_entry_basis(tmp_path) -> None:
+    database_url = f"sqlite:///{(tmp_path / 'legacy.db').as_posix()}"
+    legacy_engine = get_engine(database_url)
+    config = _build_alembic_config(database_url)
+    command.upgrade(config, "003_execution_realism")
+    with legacy_engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO symbols (id, ticker, created_at) VALUES ('symbol', 'AAPL', '2026-08-14 09:00:00')")
+        )
+        for order_id, side, timestamp in (
+            ("buy-order", "buy", "2026-08-14 10:00:00"),
+            ("sell-order", "sell", "2026-08-14 11:00:00"),
+        ):
+            connection.execute(
+                text(
+                    "INSERT INTO orders "
+                    "(id, symbol_id, side, order_type, quantity, status, submitted_at, created_at) "
+                    "VALUES (:id, 'symbol', :side, 'market', 4, 'filled', :timestamp, :timestamp)"
+                ),
+                {"id": order_id, "side": side, "timestamp": timestamp},
+            )
+        connection.execute(
+            text(
+                "INSERT INTO fills "
+                "(id, order_id, symbol_id, timestamp, side, quantity, price, fee, slippage) VALUES "
+                "('buy-fill', 'buy-order', 'symbol', '2026-08-14 10:00:00', 'buy', 4, 100, 1, 0), "
+                "('sell-fill', 'sell-order', 'symbol', '2026-08-14 11:00:00', 'sell', 4, 110, 1, 0)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO trades "
+                "(id, symbol_id, opened_at, closed_at, quantity, entry_price, exit_price, realized_pnl) "
+                "VALUES ('trade', 'symbol', '2026-08-14 10:00:00', '2026-08-14 11:00:00', 4, 100.25, 110, 38)"
+            )
+        )
+
+    command.upgrade(config, "head")
+
+    with legacy_engine.connect() as connection:
+        migrated = (
+            connection.execute(text("SELECT entry_price, entry_fee, exit_price, exit_fee, realized_pnl FROM trades"))
+            .mappings()
+            .one()
+        )
+    legacy_engine.dispose()
+    assert migrated == {
+        "entry_price": 100,
+        "entry_fee": 1,
+        "exit_price": 110,
+        "exit_fee": 1,
+        "realized_pnl": 38,
+    }
 
 
 def test_csv_import_upserts_bars(session, tmp_path) -> None:
