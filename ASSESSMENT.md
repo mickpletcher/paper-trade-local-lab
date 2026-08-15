@@ -12,7 +12,7 @@ Strategy context includes positions and pending quantities. Reversals cancel sta
 
 Backtest reports include returns, CAGR, volatility, zero risk free Sharpe and Sortino ratios, drawdown, trade statistics, time exposure, and buy and hold comparison. Undefined ratios are explicit. Results use bar close snapshots and omit taxes and configurable risk free rates.
 
-SQLite is versioned through Alembic revision `004_trade_fee_basis`. The API reuses one engine and session factory, joins endpoint relationships in one statement, and disposes the engine at shutdown. `compose.yaml` is the only Compose definition and uses loopback binding plus hardened controls.
+SQLite is versioned through Alembic revision `004_trade_fee_basis`; its legacy conversion reconstructs fee totals by ordered fill quantities, including shared close and reopen timestamps. The API reuses one engine and session factory, joins endpoint relationships in one statement, and disposes the engine at shutdown. `compose.yaml` is the only Compose definition and uses loopback binding plus hardened controls.
 
 ## Build And Dependencies
 
@@ -38,4 +38,4 @@ GitHub Actions runs Ruff, formatting, strict Mypy, lock drift, and tests with an
 
 ## Health
 
-Overall health is good for a local research MVP. The lock faithful suite has 91 tests, warning failures, and at least 90 percent statement coverage against an 88 percent floor. Ruff, strict Mypy, lock, build, audit, Markdown, and governance checks pass. GitHub validates containers because Docker is unavailable locally.
+Overall health is good for a local research MVP. The lock faithful suite has 92 tests, warning failures, and at least 90 percent statement coverage against an 88 percent floor. Ruff, strict Mypy, lock, build, audit, Markdown, and governance checks pass. GitHub validates containers because Docker is unavailable locally.
