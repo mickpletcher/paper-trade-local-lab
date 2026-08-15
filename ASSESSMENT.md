@@ -10,6 +10,8 @@ The simulator supports market, limit, stop, and stop limit orders, partial fills
 
 Strategy context includes actual positions and pending quantities. Reversals cancel stale opposite orders, and exits cannot exceed inventory. Portfolio valuation preserves cash for flat runs and uses deterministic current quotes. Alpaca refresh validates the provider response, retries transient failures, and rejects incomplete symbol sets. The moving average crossover remains the only built in strategy. Backtests query stored historical bars directly and remain single symbol.
 
+Backtest reports include returns, CAGR, annualized volatility, zero risk free Sharpe and Sortino ratios, drawdown, profit factor, win and loss averages, time exposure, and a same period buy and hold benchmark. Undefined ratios are explicit instead of becoming misleading zeros. Results still use bar close equity snapshots and do not model taxes or a configurable risk free rate.
+
 SQLite is versioned through Alembic revision `004_trade_fee_basis`. The API reuses one application engine and session factory, joins scalar endpoint relationships in one statement, then disposes the engine at shutdown. Explicit database engines remain uncached. `compose.yaml` is the only Compose definition and applies loopback binding plus hardened container controls.
 
 ## Build And Dependencies
@@ -36,4 +38,4 @@ GitHub Actions runs Ruff, lock drift checks, warning free tests on Python 3.11 a
 
 ## Health
 
-Overall health is good for a local research MVP. The lock faithful suite has 80 tests with warnings treated as errors. Ruff, reproducible lock, package build, dependency audit, Markdown, and governance checks pass. GitHub remains responsible for container build and runtime validation because Docker is unavailable locally.
+Overall health is good for a local research MVP. The lock faithful suite has 83 tests with warnings treated as errors. Ruff, reproducible lock, package build, dependency audit, Markdown, and governance checks pass. GitHub remains responsible for container build and runtime validation because Docker is unavailable locally.

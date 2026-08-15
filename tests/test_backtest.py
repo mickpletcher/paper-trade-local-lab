@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import select
 
 from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
+from tradeforge.backtesting.metrics import calculate_metrics
 from tradeforge.database.models import (
     AccountSnapshot,
     Fill,
@@ -17,6 +18,7 @@ from tradeforge.database.models import (
     OrderType,
     Position,
     StrategyRun,
+    Trade,
 )
 from tradeforge.strategies.base import BaseStrategy, StrategyContext, StrategySignal
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
@@ -88,6 +90,87 @@ def test_backtest_run_completion(session, symbol, monkeypatch, tmp_path) -> None
     assert execution_parameters["quantity_increment"] == 1.0
     assert len(session.scalars(select(AccountSnapshot)).all()) == len(closes)
     assert (tmp_path / result["report_path"]).exists()
+
+
+def test_calculate_metrics_reports_risk_trade_and_benchmark_statistics() -> None:
+    timestamps = [datetime(year, 1, 1, tzinfo=timezone.utc) for year in range(2021, 2025)]
+    snapshots = [
+        AccountSnapshot(timestamp=timestamp, cash=cash, equity=equity)
+        for timestamp, cash, equity in zip(
+            timestamps,
+            (100.0, 90.0, 99.0, 80.0),
+            (100.0, 110.0, 99.0, 120.0),
+            strict=True,
+        )
+    ]
+    trades = [
+        Trade(
+            symbol_id="symbol-1",
+            opened_at=timestamps[0],
+            closed_at=timestamps[1],
+            quantity=1,
+            entry_price=100,
+            realized_pnl=20,
+        ),
+        Trade(
+            symbol_id="symbol-1",
+            opened_at=timestamps[1],
+            closed_at=timestamps[2],
+            quantity=1,
+            entry_price=100,
+            realized_pnl=-5,
+        ),
+        Trade(
+            symbol_id="symbol-1",
+            opened_at=timestamps[2],
+            closed_at=timestamps[3],
+            quantity=1,
+            entry_price=100,
+            realized_pnl=10,
+        ),
+    ]
+    position = Position(quantity=0, average_cost=0, realized_pnl=25)
+
+    metrics = calculate_metrics(100, 120, [], trades, position, snapshots, 100, 115)
+
+    assert metrics["total_return"] == 0.2
+    assert metrics["cagr"] == pytest.approx(0.0627, abs=0.0001)
+    assert metrics["volatility"] == pytest.approx(0.12914)
+    assert metrics["sharpe_ratio"] == pytest.approx(0.547899)
+    assert metrics["sortino_ratio"] == pytest.approx(1.225102)
+    assert metrics["profit_factor"] == 6.0
+    assert metrics["average_win"] == 15.0
+    assert metrics["average_loss"] == -5.0
+    assert metrics["exposure"] == 0.5
+    assert metrics["buy_and_hold_return"] == 0.15
+    assert metrics["max_drawdown"] == -0.1
+
+
+def test_calculate_metrics_handles_empty_histories() -> None:
+    metrics = calculate_metrics(100, 100, [], [], None, [], 0, 0)
+
+    assert metrics["cagr"] is None
+    assert metrics["volatility"] == 0
+    assert metrics["sharpe_ratio"] == 0
+    assert metrics["sortino_ratio"] == 0
+    assert metrics["profit_factor"] is None
+    assert metrics["exposure"] == 0
+    assert metrics["buy_and_hold_return"] == 0
+
+
+def test_calculate_metrics_marks_unbounded_ratios_and_cagr_undefined() -> None:
+    started_at = datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
+    snapshots = [
+        AccountSnapshot(timestamp=started_at, cash=100, equity=100),
+        AccountSnapshot(timestamp=started_at.replace(minute=1), cash=101, equity=101),
+    ]
+
+    metrics = calculate_metrics(100, 101, [], [], None, snapshots, 100, 101)
+
+    assert metrics["cagr"] is None
+    assert metrics["volatility"] == 0
+    assert metrics["sharpe_ratio"] is None
+    assert metrics["sortino_ratio"] is None
 
 
 class LastBarSignalStrategy(BaseStrategy):

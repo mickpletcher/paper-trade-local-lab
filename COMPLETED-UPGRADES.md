@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Expanded backtest reports with risk adjusted, trade distribution, exposure, and passive benchmark metrics.
 * Added single statement relationship loading for API symbols and strategies with query count regression coverage.
 * Cached validated process settings and documented restart behavior for configuration changes.
 
