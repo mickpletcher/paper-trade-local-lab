@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -61,12 +63,12 @@ def build_portfolio_valuation(
     stale_count = 0
 
     for position in positions:
-        quote = quote_map.get(position.symbol_id)
-        serialized_quote = serialize_quote(quote, stale_after_seconds) if quote is not None else None
-        mark_price = serialized_quote["mark_price"] if serialized_quote is not None else None
-        market_value = None if mark_price is None else round(position.quantity * float(mark_price), 2)
+        position_quote = quote_map.get(position.symbol_id)
+        serialized_quote = serialize_quote(position_quote, stale_after_seconds) if position_quote is not None else None
+        mark_price = cast(float | None, serialized_quote["mark_price"]) if serialized_quote is not None else None
+        market_value = None if mark_price is None else round(position.quantity * mark_price, 2)
         unrealized_pnl = (
-            None if mark_price is None else round((float(mark_price) - position.average_cost) * position.quantity, 2)
+            None if mark_price is None else round((mark_price - position.average_cost) * position.quantity, 2)
         )
         if market_value is not None:
             total_market_value += market_value

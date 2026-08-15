@@ -26,6 +26,7 @@ Run the checks that apply before opening a pull request:
 ```powershell
 ruff check .
 ruff format --check .
+mypy
 python -m pytest --cov=tradeforge --cov-report=term-missing -q
 python -m build
 pip-audit --local --skip-editable

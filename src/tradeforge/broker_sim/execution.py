@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_FLOOR
+from decimal import ROUND_FLOOR, Decimal
 from math import floor, isfinite
 
 from sqlalchemy.orm import Session
@@ -105,7 +105,7 @@ class SimBroker:
 
     def process_bar(self, bar: PriceBar) -> list[Fill]:
         fills: list[Fill] = []
-        available_volume = floor(max(float(bar.volume), 0.0) * self.max_bar_fill_ratio)
+        available_volume = float(floor(max(float(bar.volume), 0.0) * self.max_bar_fill_ratio))
         open_orders = (
             self.session.query(Order)
             .filter(
@@ -181,23 +181,26 @@ class SimBroker:
         reference_price: float | None
 
         if order_type is OrderType.STOP:
+            stop_price = _required_order_price(order.stop_price, "stop")
             if order.triggered_at is None:
-                if not self._stop_triggered(side, float(order.stop_price), bar):
+                if not self._stop_triggered(side, stop_price, bar):
                     return None
                 order.triggered_at = bar.timestamp
-                reference_price = self._stop_reference_price(side, float(order.stop_price), bar)
+                reference_price = self._stop_reference_price(side, stop_price, bar)
             else:
                 reference_price = bar.open
         elif order_type is OrderType.STOP_LIMIT:
+            stop_price = _required_order_price(order.stop_price, "stop")
+            limit_price = _required_order_price(order.limit_price, "limit")
             if order.triggered_at is None:
-                if not self._stop_triggered(side, float(order.stop_price), bar):
+                if not self._stop_triggered(side, stop_price, bar):
                     return None
                 order.triggered_at = bar.timestamp
-            reference_price = self._limit_reference_price(side, float(order.limit_price), bar)
+            reference_price = self._limit_reference_price(side, limit_price, bar)
         elif order_type is OrderType.MARKET:
             reference_price = bar.open
         else:
-            reference_price = self._limit_reference_price(side, float(order.limit_price), bar)
+            reference_price = self._limit_reference_price(side, _required_order_price(order.limit_price, "limit"), bar)
 
         if reference_price is None:
             return None
@@ -284,7 +287,7 @@ class SimBroker:
     def _execution_price(self, order: Order, side: OrderSide, reference_price: float) -> float:
         slipped_price = self._with_slippage(reference_price, side, order.symbol.ticker)
         if OrderType(order.order_type) in {OrderType.LIMIT, OrderType.STOP_LIMIT}:
-            limit_price = float(order.limit_price)
+            limit_price = _required_order_price(order.limit_price, "limit")
             return min(slipped_price, limit_price) if side is OrderSide.BUY else max(slipped_price, limit_price)
         return slipped_price
 
@@ -408,6 +411,12 @@ class SimBroker:
 def _validate_nonnegative_finite(name: str, value: float) -> None:
     if not isfinite(value) or value < 0:
         raise ValueError(f"{name} must be a nonnegative finite number")
+
+
+def _required_order_price(value: float | None, price_type: str) -> float:
+    if value is None:
+        raise ValueError(f"{price_type} price is required for this order type")
+    return value
 
 
 def _validate_slippage_bps(name: str, value: float) -> None:

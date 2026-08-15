@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from sqlalchemy import select
 import uvicorn
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from tradeforge.automation import MaintenanceError, run_maintenance
 from tradeforge.backtesting.engine import BacktestEngine
@@ -18,6 +19,8 @@ from tradeforge.database.migrations import (
     create_revision,
     get_current_version,
     get_head_version,
+)
+from tradeforge.database.migrations import (
     init_db as create_schema,
 )
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
@@ -97,9 +100,8 @@ def import_csv(
 def seed_sample_data(symbol: str = typer.Option("AAPL", "--symbol", "-s")) -> None:
     create_schema()
     dataset = files("tradeforge.sample_data").joinpath("aapl_sample.csv")
-    with as_file(dataset) as file_path:
-        with session_scope() as session:
-            count = import_ohlcv_csv(session, symbol, file_path)
+    with as_file(dataset) as file_path, session_scope() as session:
+        count = import_ohlcv_csv(session, symbol, file_path)
     typer.echo(f"Seeded {count} sample bars for {symbol.upper()}.")
 
 
@@ -295,7 +297,7 @@ def _parse_date_option(option_name: str, value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _ensure_symbol_exists(session, symbol: str) -> None:
+def _ensure_symbol_exists(session: Session, symbol: str) -> None:
     if session.scalar(select(Symbol.id).where(Symbol.ticker == symbol)) is None:
         raise typer.BadParameter(f"Unknown symbol '{symbol}'. Import or seed market data before running a backtest.")
 

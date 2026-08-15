@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 from math import isfinite
+from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 from sqlalchemy import select
@@ -31,7 +32,8 @@ def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> in
     if frame.isna().any().any():
         raise ValueError("CSV contains missing or invalid OHLCV data")
 
-    for row_number, row in enumerate(frame.itertuples(index=False), start=2):
+    for row_number, raw_row in enumerate(frame.itertuples(index=False), start=2):
+        row = cast(Any, raw_row)
         prices = [float(row.open), float(row.high), float(row.low), float(row.close)]
         volume = float(row.volume)
         if not all(isfinite(price) and price > 0 for price in prices):
@@ -45,7 +47,8 @@ def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> in
     db_symbol = get_or_create_symbol(session, symbol)
     imported = 0
 
-    for row in frame.itertuples(index=False):
+    for raw_row in frame.itertuples(index=False):
+        row = cast(Any, raw_row)
         timestamp = row.date.to_pydatetime()
         bar = session.scalar(
             select(PriceBar).where(PriceBar.symbol_id == db_symbol.id, PriceBar.timestamp == timestamp)

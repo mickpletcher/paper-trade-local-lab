@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from urllib.error import URLError
 from unittest.mock import MagicMock
+from urllib.error import URLError
 
 import pytest
 

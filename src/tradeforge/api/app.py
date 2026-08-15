@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from time import perf_counter
 
@@ -9,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload, selectinload
+from starlette.responses import Response
 
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
@@ -20,7 +22,7 @@ from tradeforge.valuation.service import build_portfolio_valuation
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db(get_application_engine())
     try:
         yield
@@ -34,7 +36,7 @@ logger = get_logger(__name__)
 
 
 @app.middleware("http")
-async def telemetry_middleware(request: Request, call_next):
+async def telemetry_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     started_at = perf_counter()
     try:
         response = await call_next(request)

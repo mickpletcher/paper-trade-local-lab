@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 from sqlalchemy import select
 
+from tests.conftest import add_bar
 from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
 from tradeforge.backtesting.metrics import calculate_metrics
 from tradeforge.database.models import (
@@ -22,8 +23,6 @@ from tradeforge.database.models import (
 )
 from tradeforge.strategies.base import BaseStrategy, StrategyContext, StrategySignal
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
-
-from tests.conftest import add_bar
 
 
 def test_moving_average_strategy_signal_generation(session, symbol) -> None:
