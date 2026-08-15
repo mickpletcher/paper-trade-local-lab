@@ -2,6 +2,48 @@
 
 ## 2026-08-14
 
+### Reconciled trade prices and commissions
+
+Summary: Added Alembic revision `004_trade_fee_basis`, stored gross weighted entry and exit prices with separate fee totals, migrated legacy entry basis values, and added profit and loss reconciliation coverage.
+
+Why: Trade price columns must reproduce stored realized profit and loss instead of silently omitting exit commissions.
+
+### Enforced explicit quantity increments
+
+Summary: Added a configurable execution quantity increment that defaults to one share, rejects misaligned orders, and rounds cash limited fills down without floating point quantity dust.
+
+Why: Fill quantities need a declared lot policy so the simulator does not invent arbitrary fractional shares.
+
+### Reused the API database engine
+
+Summary: Added a cached application engine and session factory, reused them for API requests, disposed them during lifespan shutdown, and kept explicit engine factories uncached for isolated callers.
+
+Why: Request handling should not construct a new SQLAlchemy engine while tests and explicit database workflows still require isolation.
+
+### Consolidated the Compose definition
+
+Summary: Removed the divergent `docker-compose.yml` and retained `compose.yaml` as the only Compose configuration.
+
+Why: One hardened definition prevents operators and older commands from selecting a broader port binding and weaker container controls.
+
+### Enforced warning free locked tests
+
+Summary: Declared Pytest warnings as errors, replaced the deprecated HTTPX test dependency with HTTPX2, and regenerated the universal Python dependency lock.
+
+Why: Local and CI tests must expose dependency deprecations under the same lock faithful environment.
+
+### Removed the unused replay surface
+
+Summary: Deleted the unreferenced market data replay module and revised backtesting documentation to describe the actual direct historical bar execution path.
+
+Why: Dead modules and promised but nonexistent replay documents create an unnecessary maintenance and governance surface.
+
+### Corrected current operator documentation
+
+Summary: Updated execution, database, automation, configuration, security, and project overview documentation for fee fields, quantity increments, engine lifecycle, warning policy, and the canonical Compose launch path.
+
+Why: Operator guidance must describe the current implementation and defaults after every behavioral change.
+
 ### Upgraded dependency review automation
 
 Summary: Updated `actions/dependency-review-action` from v4.9.0 to v5.0.0 at its full commit SHA.

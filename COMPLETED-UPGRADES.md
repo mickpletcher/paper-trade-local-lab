@@ -4,6 +4,12 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-14
 
+* Promoted unexpected test warnings to failures and migrated Starlette tests from the deprecated HTTPX path to HTTPX2.
+* Separated gross trade entry and exit prices from commission totals with migration and reconciliation coverage.
+* Added configurable quantity increments with whole share defaults and cash cap quantization.
+* Reused one application database engine and session factory across API requests with lifespan disposal.
+* Consolidated local container startup on the hardened `compose.yaml` definition.
+* Removed the unused replay module and documented the direct historical bar backtest path.
 * Upgraded the commit pinned dependency review gate to v5.0.0.
 * Removed an undeclared Pytest plugin setting so clean test runs are warning free.
 * Locked Pip Audit and its transitive dependencies for reproducible local and scheduled security checks.

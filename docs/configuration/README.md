@@ -19,6 +19,7 @@ Copy `.env.example` to `.env` for local development. The populated `.env` file i
 * `TRADEFORGE_SLIPPAGE_BPS` applies the default adverse fill adjustment.
 * `TRADEFORGE_SYMBOL_SLIPPAGE_RULES_JSON` maps uppercase tickers to nonnegative basis point overrides.
 * `TRADEFORGE_MAX_BAR_FILL_RATIO` must be between zero and one and limits aggregate fills against each bar.
+* `TRADEFORGE_QUANTITY_INCREMENT` defaults to `1` for whole share execution. Set a smaller positive increment only when deliberately testing fractional shares.
 
 Invalid, negative, nonfinite, or unsupported execution settings fail before a backtest starts.
 

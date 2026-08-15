@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 
+import pytest
+
 from tests.conftest import add_bar
 from tradeforge.broker_sim.account import SimAccount
 from tradeforge.broker_sim.execution import FixedCommissionModel, PerShareCommissionModel, SimBroker
@@ -25,6 +27,47 @@ def test_market_order_execution_updates_cash_and_position(session, symbol) -> No
     assert account.cash == 8999
     assert position.quantity == 10
     assert position.average_cost == 100.1
+
+
+def test_cash_cap_rounds_down_to_whole_share_increment(session, symbol) -> None:
+    bar = add_bar(session, symbol, 1, 100, 105, 95, 101)
+    account = SimAccount.with_starting_cash(999)
+    broker = SimBroker(session, account, fee_per_order=1, slippage_bps=0, max_bar_fill_ratio=1)
+    order = broker.submit_order(
+        OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp
+    )
+
+    fills = broker.process_bar(bar)
+
+    assert [fill.quantity for fill in fills] == [9]
+    assert order.status == OrderStatus.PARTIALLY_FILLED.value
+    assert account.cash == 98
+
+
+def test_cash_cap_honors_configured_fractional_increment(session, symbol) -> None:
+    bar = add_bar(session, symbol, 1, 100, 105, 95, 101)
+    account = SimAccount.with_starting_cash(995)
+    broker = SimBroker(
+        session,
+        account,
+        fee_per_order=0,
+        slippage_bps=0,
+        max_bar_fill_ratio=1,
+        quantity_increment=0.1,
+    )
+    broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 10), submitted_at=bar.timestamp)
+
+    fills = broker.process_bar(bar)
+
+    assert [fill.quantity for fill in fills] == [9.9]
+    assert account.cash == 5
+
+
+def test_order_quantity_must_match_configured_increment(session, symbol) -> None:
+    broker = SimBroker(session, SimAccount.with_starting_cash(10_000), fee_per_order=0, slippage_bps=0)
+
+    with pytest.raises(ValueError, match="multiple of 1"):
+        broker.submit_order(OrderRequest(symbol.id, OrderSide.BUY, OrderType.MARKET, 1.5))
 
 
 def test_limit_order_execution_respects_candle_range(session, symbol) -> None:
@@ -309,7 +352,14 @@ def test_round_trip_pnl_and_trade_history_reconcile(session, symbol) -> None:
     assert math.isclose(position.realized_pnl, account.cash - account.starting_cash)
     assert len(trades) == 1
     assert trades[0].closed_at == final_bar.timestamp.replace(tzinfo=None)
+    assert trades[0].entry_price == 100
+    assert trades[0].entry_fee == 1
     assert trades[0].exit_price == 111
+    assert trades[0].exit_fee == 1
+    derived_pnl = (
+        (trades[0].exit_price - trades[0].entry_price) * trades[0].quantity - trades[0].entry_fee - trades[0].exit_fee
+    )
+    assert math.isclose(derived_pnl, trades[0].realized_pnl)
     assert math.isclose(trades[0].realized_pnl, position.realized_pnl)
 
 

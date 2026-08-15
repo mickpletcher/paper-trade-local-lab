@@ -2,12 +2,11 @@
 
 ## Purpose
 
-This section documents replay logic, simulation assumptions, reports, and result analysis.
+This section documents historical bar backtesting, simulation assumptions, reports, and result analysis.
 
 ## Intended Contents
 
 * backtest engine behavior
-* replay workflow
 * result metrics
 * report artifacts
 * realism limitations
@@ -23,28 +22,10 @@ This section documents replay logic, simulation assumptions, reports, and result
 7. One trade row represents one position lifecycle from the first entry until the position returns to zero.
 8. Strategy context includes actual position quantity and remaining open buy and sell quantities.
 9. A reversal cancels open opposite side orders even when current inventory does not permit a replacement order.
+10. Quantities use a configurable increment that defaults to one whole share. Cash limited fills round down to that increment.
+11. Trade entry and exit prices are gross weighted execution prices. Entry and exit fees are stored separately, and realized profit and loss subtracts both.
 
-Backtest metrics report fills, completed trades, and open trades separately.
-
-## Suggested Future Topics
-
-* engine-overview.md
-* market-replay-workflow.md
-* metrics-reference.md
-* report-format.md
-* simulation-limitations.md
-
-## Naming Conventions
-
-* references use `reference`
-* workflows use `workflow`
-* limitations use `limitations`
-
-## File Examples
-
-* `engine-overview.md`
-* `metrics-reference.md`
-* `market-replay-workflow.md`
+`BacktestEngine` queries stored `price_bars` in timestamp order and processes them directly. There is no separate replay module or public replay API. Backtest metrics report fills, completed trades, and open trades separately.
 
 ## Cross Links
 

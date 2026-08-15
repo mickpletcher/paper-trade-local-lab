@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
-from tradeforge.database.session import session_scope
+from tradeforge.database.session import application_session_scope, dispose_application_engine, get_application_engine
 from tradeforge.market_data.live import serialize_quote
 from tradeforge.telemetry import get_logger, log_event, metrics_registry, setup_logging
 from tradeforge.valuation.service import build_portfolio_valuation
@@ -21,8 +21,11 @@ from tradeforge.valuation.service import build_portfolio_valuation
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    yield
+    init_db(get_application_engine())
+    try:
+        yield
+    finally:
+        dispose_application_engine()
 
 
 app = FastAPI(title="TradeForge API", version="0.1.0", lifespan=lifespan)
@@ -74,7 +77,7 @@ async def telemetry_middleware(request: Request, call_next):
 )
 def health() -> dict[str, str]:
     try:
-        with session_scope() as session:
+        with application_session_scope() as session:
             session.execute(text("SELECT 1"))
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Database health check failed.") from exc
@@ -106,7 +109,7 @@ def metrics() -> PlainTextResponse:
     },
 )
 def symbols() -> list[dict[str, str]]:
-    with session_scope() as session:
+    with application_session_scope() as session:
         return [
             {"id": item.id, "ticker": item.ticker, "name": item.name or ""} for item in session.scalars(select(Symbol))
         ]
@@ -143,7 +146,7 @@ def symbols() -> list[dict[str, str]]:
 )
 def quotes() -> list[dict[str, object]]:
     settings = get_settings()
-    with session_scope() as session:
+    with application_session_scope() as session:
         items = session.scalars(
             select(LiveQuote).options(selectinload(LiveQuote.symbol)).order_by(LiveQuote.fetched_at.desc())
         ).all()
@@ -191,7 +194,7 @@ def quotes() -> list[dict[str, object]]:
 )
 def portfolio(strategy_run_id: str | None = None) -> dict[str, object]:
     settings = get_settings()
-    with session_scope() as session:
+    with application_session_scope() as session:
         try:
             return build_portfolio_valuation(session, settings.quote_stale_after_seconds, strategy_run_id)
         except ValueError as exc:
@@ -221,7 +224,7 @@ def portfolio(strategy_run_id: str | None = None) -> dict[str, object]:
     },
 )
 def positions() -> list[dict[str, object]]:
-    with session_scope() as session:
+    with application_session_scope() as session:
         return [
             {
                 "id": item.id,
@@ -258,7 +261,7 @@ def positions() -> list[dict[str, object]]:
     },
 )
 def orders() -> list[dict[str, object]]:
-    with session_scope() as session:
+    with application_session_scope() as session:
         return [
             {
                 "id": item.id,
@@ -300,7 +303,7 @@ def orders() -> list[dict[str, object]]:
     },
 )
 def strategy_runs() -> list[dict[str, object]]:
-    with session_scope() as session:
+    with application_session_scope() as session:
         return [
             {
                 "id": item.id,

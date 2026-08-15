@@ -49,6 +49,7 @@ class BacktestEngine:
         self.default_slippage_bps = settings.slippage_bps
         self.symbol_slippage_rules = _parse_symbol_slippage_rules(settings.symbol_slippage_rules_json)
         self.max_bar_fill_ratio = settings.max_bar_fill_ratio
+        self.quantity_increment = settings.quantity_increment
 
     def run(self) -> dict[str, object]:
         symbol = self.session.scalar(select(Symbol).where(Symbol.ticker == self.symbol_ticker))
@@ -77,6 +78,7 @@ class BacktestEngine:
             "default_slippage_bps": self.default_slippage_bps,
             "symbol_slippage_rules": self.symbol_slippage_rules,
             "max_bar_fill_ratio": self.max_bar_fill_ratio,
+            "quantity_increment": self.quantity_increment,
         }
         run = StrategyRun(
             strategy_id=strategy_model.id,
@@ -96,6 +98,7 @@ class BacktestEngine:
             default_slippage_bps=self.default_slippage_bps,
             symbol_slippage_rules=self.symbol_slippage_rules,
             max_bar_fill_ratio=self.max_bar_fill_ratio,
+            quantity_increment=self.quantity_increment,
             strategy_run_id=run.id,
         )
         history: list[PriceBar] = []

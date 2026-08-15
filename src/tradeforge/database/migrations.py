@@ -15,10 +15,9 @@ ALEMBIC_ROOT = Path(__file__).resolve().parents[1] / "alembic"
 
 
 def init_db(engine: Engine | None = None) -> None:
-    settings = get_settings()
     target_engine = engine or get_engine()
-    if engine is None and settings.database_path is not None:
-        settings.database_path.parent.mkdir(parents=True, exist_ok=True)
+    if target_engine.url.get_backend_name() == "sqlite" and target_engine.url.database not in {None, "", ":memory:"}:
+        Path(target_engine.url.database).parent.mkdir(parents=True, exist_ok=True)
     config = _build_alembic_config(target_engine.url.render_as_string(hide_password=False))
     with target_engine.begin() as connection:
         _bootstrap_legacy_revision(connection, config)

@@ -170,7 +170,9 @@ class Trade(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     quantity: Mapped[float] = mapped_column(Float)
     entry_price: Mapped[float] = mapped_column(Float)
+    entry_fee: Mapped[float] = mapped_column(Float, default=0.0)
     exit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exit_fee: Mapped[float] = mapped_column(Float, default=0.0)
     realized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
 
 
