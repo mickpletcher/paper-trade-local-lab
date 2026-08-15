@@ -2,6 +2,12 @@
 
 ## 2026-08-15
 
+### Bounded API relationship queries
+
+Summary: Joined symbols and strategies into the positions, orders, and strategy run queries and added fixed one statement query budget coverage with multiple records.
+
+Why: Lazy relationship access issued one additional query per related record and made endpoint latency grow with result size.
+
 ### Cached process settings
 
 Summary: Cached the validated Pydantic settings object and added deterministic cache reset coverage for environment-sensitive tests.

@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Added single statement relationship loading for API symbols and strategies with query count regression coverage.
 * Cached validated process settings and documented restart behavior for configuration changes.
 
 ## 2026-08-14

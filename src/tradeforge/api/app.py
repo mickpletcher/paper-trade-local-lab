@@ -8,7 +8,7 @@ from time import perf_counter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select, text
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
@@ -233,7 +233,7 @@ def positions() -> list[dict[str, object]]:
                 "average_cost": item.average_cost,
                 "realized_pnl": item.realized_pnl,
             }
-            for item in session.scalars(select(Position))
+            for item in session.scalars(select(Position).options(joinedload(Position.symbol)))
         ]
 
 
@@ -271,7 +271,7 @@ def orders() -> list[dict[str, object]]:
                 "quantity": item.quantity,
                 "status": item.status,
             }
-            for item in session.scalars(select(Order))
+            for item in session.scalars(select(Order).options(joinedload(Order.symbol)))
         ]
 
 
@@ -313,5 +313,10 @@ def strategy_runs() -> list[dict[str, object]]:
                 "completed_at": item.completed_at,
                 "metrics": json.loads(item.metrics_json or "{}"),
             }
-            for item in session.scalars(select(StrategyRun))
+            for item in session.scalars(
+                select(StrategyRun).options(
+                    joinedload(StrategyRun.strategy),
+                    joinedload(StrategyRun.symbol),
+                )
+            )
         ]
