@@ -43,7 +43,7 @@ TradeForge is built for teams and solo builders who want:
 * live quote refresh for local valuation
 * unattended CSV import, quote refresh, verified backup, and failure reporting
 * structured logging and optional metrics output
-* CI for linting, lock drift, Python 3.11 and 3.13 tests, builds, and container health
+* CI for linting, lock drift, Python 3.11, 3.13, and 3.14 tests, builds, and container health
 
 ## Architecture Summary
 

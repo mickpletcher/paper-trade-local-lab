@@ -2,6 +2,12 @@
 
 ## 2026-08-15
 
+### Tested the container Python runtime
+
+Summary: Added Python 3.14 to the full GitHub Actions test matrix and synchronized operator and current state documentation.
+
+Why: The container runs Python 3.14, so health checks alone could miss runtime specific failures that the 3.11 and 3.13 suites never exercised.
+
 ### Expanded backtest decision metrics
 
 Summary: Added CAGR, annualized volatility, Sharpe, Sortino, profit factor, average win and loss, time exposure, and buy and hold return to stored and Markdown backtest results.
