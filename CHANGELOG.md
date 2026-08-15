@@ -2,6 +2,30 @@
 
 ## 2026-08-15
 
+### Blocked failure webhook redirects
+
+Summary: Disabled automatic redirects for failure webhook delivery and added regression coverage for rejected redirect responses.
+
+Why: A validated HTTPS destination must not redirect the notification to an unvalidated plaintext or internal endpoint.
+
+### Clarified outbound URL validation failures
+
+Summary: Updated shared outbound URL validation errors to state that whitespace is forbidden.
+
+Why: Operators need the validation message to identify the exact configuration defect without trial and error.
+
+### Minimized failure webhook data
+
+Summary: Reduced maintenance failure webhook JSON to the event, status, start timestamp, and completion timestamp while retaining the full report locally.
+
+Why: Import names, symbols, local paths, backup locations, and exception details do not need to leave the workstation.
+
+### Validated failure webhook destinations
+
+Summary: Applied shared outbound URL validation to Alpaca and failure webhook endpoints and rejected non HTTPS, hostless, credential bearing, or whitespace polluted URLs before network access.
+
+Why: A webhook configured from environment input must not permit unsafe schemes or embedded credentials.
+
 ### Enforced test coverage
 
 Summary: Added a declarative 88 percent coverage floor and made every CI runtime execute the coverage measured suite.

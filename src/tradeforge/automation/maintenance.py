@@ -6,9 +6,10 @@ import sqlite3
 from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.request import Request, urlopen
+from typing import Any
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from tradeforge.config import Settings, get_settings
+from tradeforge.config import Settings, get_settings, validate_outbound_https_url
 from tradeforge.database.migrations import init_db
 from tradeforge.database.session import get_engine, session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
@@ -24,6 +25,19 @@ class MaintenanceError(RuntimeError):
     def __init__(self, message: str, report_path: Path | None = None):
         super().__init__(message)
         self.report_path = report_path
+
+
+class _RejectWebhookRedirects(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        raise RuntimeError("Failure webhook redirects are not allowed.")
 
 
 def run_maintenance(
@@ -159,9 +173,16 @@ def _atomic_write(path: Path, content: str) -> None:
 
 
 def _send_failure_notification(webhook_url: str, report: dict[str, object]) -> None:
-    payload = json.dumps({"event": "tradeforge_maintenance_failed", "report": report}).encode("utf-8")
-    request = Request(webhook_url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
-    with urlopen(request, timeout=10) as response:
+    validated_url = validate_outbound_https_url(webhook_url, "TRADEFORGE_FAILURE_WEBHOOK_URL")
+    notification = {
+        "event": "tradeforge_maintenance_failed",
+        "status": report.get("status"),
+        "started_at": report.get("started_at"),
+        "completed_at": report.get("completed_at"),
+    }
+    payload = json.dumps(notification).encode("utf-8")
+    request = Request(validated_url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    with build_opener(_RejectWebhookRedirects()).open(request, timeout=10) as response:
         if response.status >= 400:
             raise RuntimeError(f"Failure webhook returned HTTP {response.status}.")
 

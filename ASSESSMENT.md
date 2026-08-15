@@ -20,7 +20,7 @@ Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlche
 
 ## Automation
 
-`tradeforge run-maintenance` migrates SQLite, imports queued CSV files, refreshes quotes with bounded retry, verifies a backup, applies retention, and writes JSON reports. An optional webhook reports failures. A PowerShell installer registers daily execution with retry and catch up.
+`tradeforge run-maintenance` migrates SQLite, imports queued CSV files, refreshes quotes with bounded retry, verifies a backup, applies retention, and writes JSON reports. Its optional HTTPS webhook sends only failure status and timestamps and refuses redirects. A PowerShell installer registers daily execution with retry and catch up.
 
 GitHub Actions runs Ruff, formatting, strict Mypy, lock drift, and tests with an 88 percent coverage floor on Python 3.11, 3.13, and 3.14. It also validates packages, containers, governance, dependencies, releases, and GHCR publishing. Protected `main` requires strict checks and squash merges.
 
@@ -30,7 +30,7 @@ GitHub Actions runs Ruff, formatting, strict Mypy, lock drift, and tests with an
 * There is no risk engine, provider failover, account aggregation, or multi symbol backtest.
 * Money and quantities remain floating point values despite quantity increment enforcement.
 * Imports reprocess retained files and do not quarantine failures.
-* Failure delivery uses one webhook without deduplication or escalation.
+* Failure delivery uses one nonredirecting webhook without deduplication or escalation.
 * The API has no authentication, pagination, or versioning and must remain on loopback or behind an authenticated proxy.
 * Automated backup restore drills are not implemented.
 * Developer environments can contain undeclared packages without the current lock drift check reporting them.
@@ -38,4 +38,4 @@ GitHub Actions runs Ruff, formatting, strict Mypy, lock drift, and tests with an
 
 ## Health
 
-Overall health is good for a local research MVP. The lock faithful suite has 83 tests, warning failures, and 90 percent statement coverage against an 88 percent floor. Ruff, strict Mypy, lock, build, audit, Markdown, and governance checks pass. GitHub validates containers because Docker is unavailable locally.
+Overall health is good for a local research MVP. The lock faithful suite has 90 tests, warning failures, and at least 90 percent statement coverage against an 88 percent floor. Ruff, strict Mypy, lock, build, audit, Markdown, and governance checks pass. GitHub validates containers because Docker is unavailable locally.

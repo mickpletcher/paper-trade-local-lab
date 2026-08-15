@@ -58,6 +58,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add a second live quote provider with automatic failover.
 * Add Interactive Brokers, Alpaca, and OANDA paper adapters behind the canonical interface.
 * Add structured notification adapters for failed scheduled jobs.
+* Add HMAC signed webhook delivery with receiver replay protection and duplicate suppression.
+* Add an explicit webhook hostname allowlist for deployments with fixed notification receivers.
 * Add authentication and transport guidance before supporting API access outside a trusted local network.
 * Add protected deployment environments if the project gains hosted deployment targets or production secrets.
 

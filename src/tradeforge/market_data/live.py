@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import sleep
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tradeforge.config import Settings, get_settings
+from tradeforge.config import Settings, get_settings, validate_outbound_https_url
 from tradeforge.database.models import LiveQuote, Position, Symbol
 
 
@@ -49,18 +49,11 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
     name = "alpaca"
 
     def __init__(self, settings: Settings):
-        configured_url = settings.alpaca_data_url.rstrip("/")
-        parsed_url = urlsplit(configured_url)
-        if (
-            parsed_url.scheme.lower() != "https"
-            or not parsed_url.hostname
-            or parsed_url.username is not None
-            or parsed_url.password is not None
-        ):
-            raise QuoteProviderError(
-                "TRADEFORGE_ALPACA_DATA_URL must be an HTTPS URL with a hostname and no embedded credentials."
-            )
-        self.base_url = configured_url
+        try:
+            configured_url = validate_outbound_https_url(settings.alpaca_data_url, "TRADEFORGE_ALPACA_DATA_URL")
+        except ValueError as exc:
+            raise QuoteProviderError(str(exc)) from exc
+        self.base_url = configured_url.rstrip("/")
         self.feed = settings.alpaca_feed
         self.api_key_id = settings.alpaca_api_key_id
         self.api_secret_key = settings.alpaca_api_secret_key

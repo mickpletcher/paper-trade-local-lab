@@ -4,6 +4,10 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Blocked automatic failure webhook redirects so validated HTTPS destinations cannot forward requests to unvalidated endpoints.
+* Made outbound URL validation errors identify forbidden whitespace.
+* Minimized outbound failure webhook data while retaining detailed local reports.
+* Enforced shared HTTPS, hostname, and no credential validation for outbound URLs.
 * Enforced an 88 percent test coverage floor in every supported Python CI job.
 * Added strict Mypy validation with Pandas typing support.
 * Expanded Ruff to Bugbear, import ordering, simplify, and Ruff specific rules.
