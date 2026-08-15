@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 
 from tradeforge.api.app import app
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
-from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun, Symbol
-from tradeforge.database.session import session_scope
+from tradeforge.database.models import AccountSnapshot, LiveQuote, Order, Position, Strategy, StrategyRun, Symbol
+from tradeforge.database.session import get_application_engine, session_scope
 
 
 def test_openapi_contains_endpoint_examples() -> None:
@@ -147,3 +148,53 @@ def test_api_lifespan_initializes_database_and_health_checks_it(monkeypatch, tmp
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "ok"}
     assert (tmp_path / "data" / "tradeforge.db").exists()
+
+
+def test_relationship_endpoints_use_bounded_eager_load_queries(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+    init_db()
+    with session_scope() as session:
+        for index, ticker in enumerate(("AAPL", "MSFT"), start=1):
+            symbol = Symbol(ticker=ticker)
+            strategy = Strategy(name=f"strategy-{index}")
+            session.add_all([symbol, strategy])
+            session.flush()
+            run = StrategyRun(
+                strategy_id=strategy.id,
+                symbol_id=symbol.id,
+                start_date=datetime(2026, 8, 14, 9, 0, tzinfo=UTC),
+                end_date=datetime(2026, 8, 14, 16, 0, tzinfo=UTC),
+            )
+            session.add_all(
+                [
+                    run,
+                    Position(symbol_id=symbol.id, quantity=index, average_cost=100, realized_pnl=0),
+                    Order(
+                        symbol_id=symbol.id,
+                        side="buy",
+                        order_type="market",
+                        quantity=index,
+                        status="open",
+                    ),
+                ]
+            )
+
+    statements: list[str] = []
+
+    def count_statement(connection, cursor, statement, parameters, context, executemany) -> None:
+        if statement.lstrip().upper().startswith(("SELECT", "WITH")):
+            statements.append(statement)
+
+    with TestClient(app) as client:
+        engine = get_application_engine()
+        event.listen(engine, "before_cursor_execute", count_statement)
+        try:
+            for path, query_budget in (("/positions", 1), ("/orders", 1), ("/strategy-runs", 1)):
+                statements.clear()
+                response = client.get(path)
+                assert response.status_code == 200
+                assert len(response.json()) == 2
+                assert len(statements) == query_budget
+        finally:
+            event.remove(engine, "before_cursor_execute", count_statement)
