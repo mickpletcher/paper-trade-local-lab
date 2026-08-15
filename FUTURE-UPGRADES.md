@@ -88,7 +88,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add secrets rotation and least privilege service identities.
 * Add disaster recovery drills with measured recovery objectives.
 * Add signed release provenance and software bill of materials publication.
-* Add isolated locked environment smoke tests for every declared Python version before dependency update merges.
+* Add isolated locked environment full-suite tests for every declared Python version before dependency update merges.
 
 ### Extended Markets And Connectors
 

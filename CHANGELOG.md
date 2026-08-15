@@ -2,6 +2,24 @@
 
 ## 2026-08-15
 
+### Corrected the documented container sequence
+
+Summary: Stated that CI builds the container before starting and health checking it.
+
+Why: The workflow inventory must describe the actual artifact lifecycle without implying that CI receives a prebuilt image.
+
+### Corrected the runtime ledger grammar
+
+Summary: Completed the sentence describing separate runner and container validation.
+
+Why: Living project records must remain clear and professionally readable.
+
+### Clarified Python runtime validation
+
+Summary: Distinguished the Python 3.14 runner test job from the separate Python 3.14 container build and health check.
+
+Why: CI documentation must not imply that the unit suite executes inside the built container.
+
 ### Clarified configuration diagnostic scope
 
 Summary: Reworded the planned configuration diagnostic to describe its output as non-sensitive.
@@ -50,9 +68,9 @@ Summary: Enabled Bugbear, import ordering, simplify, and Ruff specific rule fami
 
 Why: The previous selection covered syntax and undefined names but missed common bug patterns and maintainability defects.
 
-### Tested the container Python runtime
+### Matched CI tests to the container Python version
 
-Summary: Added Python 3.14 to the full GitHub Actions test matrix and synchronized operator and current state documentation.
+Summary: Added Python 3.14 to the GitHub hosted runner test matrix, matching the separately validated container runtime.
 
 Why: The container runs Python 3.14, so health checks alone could miss runtime specific failures that the 3.11 and 3.13 suites never exercised.
 
