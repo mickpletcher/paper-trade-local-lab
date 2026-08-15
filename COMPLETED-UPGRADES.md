@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Distinguished runner unit tests from the separate container build and health validation in runtime documentation.
 * Clarified the non-sensitive output boundary for the planned configuration diagnostic.
 * Blocked automatic failure webhook redirects so validated HTTPS destinations cannot forward requests to unvalidated endpoints.
 * Made outbound URL validation errors identify forbidden whitespace.
@@ -12,7 +13,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Enforced an 88 percent test coverage floor in every supported Python CI job.
 * Added strict Mypy validation with Pandas typing support.
 * Expanded Ruff to Bugbear, import ordering, simplify, and Ruff specific rules.
-* Added the container's Python 3.14 runtime to the full CI test matrix.
+* Added Python 3.14 to the hosted runner test matrix so it matches the separately validated container runtime.
 * Expanded backtest reports with risk adjusted, trade distribution, exposure, and passive benchmark metrics.
 * Added single statement relationship loading for API symbols and strategies with query count regression coverage.
 * Cached validated process settings and documented restart behavior for configuration changes.

@@ -29,7 +29,7 @@ Task Scheduler starts missed runs when the host returns and retries failures thr
 
 | Workflow | Triggers | Result |
 | --- | --- | --- |
-| CI | Pull request and push to `main` | Checks expanded Ruff rules, formatting, strict Mypy, lock drift, warning free tests with an 88 percent coverage floor on Python 3.11, 3.13, and the container's Python 3.14 runtime, builds the package, starts and health checks the container, then publishes to GHCR after a successful `main` build. |
+| CI | Pull request and push to `main` | Checks expanded Ruff rules, formatting, strict Mypy, lock drift, warning free tests with an 88 percent coverage floor on runner Python 3.11, 3.13, and 3.14, builds the package and Python 3.14 container, starts and health checks that container, then publishes to GHCR after a successful `main` build. |
 | Docs | Pull request and push to `main` | Installs locked Markdown tooling, runs the path safe PowerShell lint wrapper, and verifies every documentation section entry point. |
 | Governance | Pull request, push to `main`, manual dispatch, and Monday schedule | Validates the four living root files and rejects change sets that omit one. |
 | Security | Pull request, manual dispatch, and Monday schedule | Reviews dependency changes and audits the installed Python dependency set for known vulnerabilities. |
