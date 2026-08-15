@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 
 from tradeforge.api.app import app
+from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
@@ -110,15 +111,30 @@ def test_metrics_endpoint_is_opt_in(monkeypatch, tmp_path) -> None:
     with TestClient(app) as client:
         disabled_response = client.get("/metrics")
 
-        assert disabled_response.status_code == 404
+    assert disabled_response.status_code == 404
 
-        monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
+    monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
+    get_settings.cache_clear()
+    with TestClient(app) as client:
         client.get("/health")
         enabled_response = client.get("/metrics")
 
     assert enabled_response.status_code == 200
     assert "tradeforge_http_requests_total" in enabled_response.text
     assert 'path="/health"' in enabled_response.text
+
+
+def test_settings_are_cached_until_explicitly_cleared(monkeypatch) -> None:
+    monkeypatch.setenv("TRADEFORGE_STARTING_CASH", "1000")
+    first = get_settings()
+    monkeypatch.setenv("TRADEFORGE_STARTING_CASH", "2000")
+
+    assert get_settings() is first
+    assert get_settings().starting_cash == 1000
+
+    get_settings.cache_clear()
+
+    assert get_settings().starting_cash == 2000
 
 
 def test_api_lifespan_initializes_database_and_health_checks_it(monkeypatch, tmp_path) -> None:

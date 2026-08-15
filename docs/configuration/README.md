@@ -2,6 +2,8 @@
 
 Copy `.env.example` to `.env` for local development. The populated `.env` file is ignored by Git and Docker build context rules.
 
+Effective settings are cached for the process lifetime. Restart the CLI or API process after changing environment variables or `.env`.
+
 ## Core Settings
 
 * `TRADEFORGE_DATABASE_URL` defaults to `sqlite:///data/tradeforge.db`.

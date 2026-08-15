@@ -7,9 +7,17 @@ import pytest
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import PriceBar, Symbol
 from tradeforge.database.session import get_engine
+
+
+@pytest.fixture(autouse=True)
+def reset_settings_cache() -> Iterator[None]:
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture()
