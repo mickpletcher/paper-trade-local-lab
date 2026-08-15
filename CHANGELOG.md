@@ -2,6 +2,18 @@
 
 ## 2026-08-15
 
+### Disambiguated same-timestamp trade migration fills
+
+Summary: Reconstructed legacy entry and exit fees by directional fill quantity sequence instead of inclusive trade timestamp windows.
+
+Why: A sell that closes one trade and a buy that reopens at the same timestamp must not be assigned to both trade lifecycles.
+
+### Indexed legacy fills during fee migration
+
+Summary: Grouped legacy fills once by strategy run and symbol before reconstructing each trade's fee totals.
+
+Why: The migration must not scan every fill for every trade as local history grows.
+
 ### Protected the `init-db` command contract
 
 Summary: Added CLI regression coverage proving the renamed implementation still exposes and executes `init-db`.

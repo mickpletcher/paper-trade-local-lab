@@ -4,6 +4,8 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Reconstructed migrated trade fees by directional fill quantity sequence across shared lifecycle timestamps.
+* Indexed legacy migration fills by strategy run and symbol instead of rescanning all fills per trade.
 * Added regression coverage for the public `init-db` automation command.
 * Ran CI lint and strict Mypy in a Python 3.11 environment aligned with the configured compatibility target.
 * Removed the CLI schema initializer alias while preserving the public `init-db` command.
