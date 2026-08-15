@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Clarified the non-sensitive output boundary for the planned configuration diagnostic.
 * Blocked automatic failure webhook redirects so validated HTTPS destinations cannot forward requests to unvalidated endpoints.
 * Made outbound URL validation errors identify forbidden whitespace.
 * Minimized outbound failure webhook data while retaining detailed local reports.

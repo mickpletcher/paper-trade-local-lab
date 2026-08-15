@@ -2,6 +2,12 @@
 
 ## 2026-08-15
 
+### Clarified configuration diagnostic scope
+
+Summary: Reworded the planned configuration diagnostic to describe its output as non-sensitive.
+
+Why: The security boundary should use clear, standard language before the diagnostic is implemented.
+
 ### Blocked failure webhook redirects
 
 Summary: Disabled automatic redirects for failure webhook delivery and added regression coverage for rejected redirect responses.

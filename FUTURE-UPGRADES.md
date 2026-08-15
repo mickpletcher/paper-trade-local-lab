@@ -50,7 +50,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Interfaces And Integrations
 
-* Add a configuration diagnostic command that reports nonsecret effective settings and their sources.
+* Add a configuration diagnostic command that reports non-sensitive effective settings and their sources.
 * Add pagination query budgets and maximum page sizes to every list endpoint.
 * Add API and schema versioning with compatibility tests.
 * Add authenticated TradingView webhook intake with replay protection and idempotency.
