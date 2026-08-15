@@ -47,6 +47,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Interfaces And Integrations
 
+* Add a configuration diagnostic command that reports nonsecret effective settings and their sources.
 * Add API and schema versioning with compatibility tests.
 * Add authenticated TradingView webhook intake with replay protection and idempotency.
 * Add a canonical adapter interface for paper brokers and external signals.

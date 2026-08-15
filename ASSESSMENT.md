@@ -14,7 +14,7 @@ SQLite is versioned through Alembic revision `004_trade_fee_basis`. The API reus
 
 ## Build And Dependencies
 
-Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Pydantic Settings, and Uvicorn. Development tests use HTTPX2. `requirements.lock` pins runtime, development, and audit dependencies from a universal Python 3.11 baseline. Pytest treats every warning as an error.
+Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Pydantic Settings, and Uvicorn. Validated settings are cached for each process. Development tests use HTTPX2. `requirements.lock` pins runtime, development, and audit dependencies from a universal Python 3.11 baseline. Pytest treats every warning as an error.
 
 ## Automation
 
@@ -36,4 +36,4 @@ GitHub Actions runs Ruff, lock drift checks, warning free tests on Python 3.11 a
 
 ## Health
 
-Overall health is good for a local research MVP. Lock faithful Python 3.11 and 3.13 runs each pass 78 tests with warnings treated as errors. Ruff, reproducible lock, package build, dependency audit, Markdown, and governance checks pass. GitHub remains responsible for container build and runtime validation because Docker is unavailable locally.
+Overall health is good for a local research MVP. The lock faithful suite has 79 tests with warnings treated as errors. Ruff, reproducible lock, package build, dependency audit, Markdown, and governance checks pass. GitHub remains responsible for container build and runtime validation because Docker is unavailable locally.

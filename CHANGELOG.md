@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-15
+
+### Cached process settings
+
+Summary: Cached the validated Pydantic settings object and added deterministic cache reset coverage for environment-sensitive tests.
+
+Why: Re-reading `.env` and rebuilding the complete settings model on every request added unnecessary disk and validation work.
+
 ## 2026-08-14
 
 ### Reconciled trade prices and commissions

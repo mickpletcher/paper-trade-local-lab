@@ -2,6 +2,10 @@
 
 This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGRADES.md`.
 
+## 2026-08-15
+
+* Cached validated process settings and documented restart behavior for configuration changes.
+
 ## 2026-08-14
 
 * Promoted unexpected test warnings to failures and migrated Starlette tests from the deprecated HTTPX path to HTTPX2.

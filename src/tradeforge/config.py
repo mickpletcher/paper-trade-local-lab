@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from pathlib import Path
 
 from pydantic import Field
@@ -45,6 +46,7 @@ class Settings(BaseSettings):
         return Path(self.database_url.removeprefix("sqlite:///"))
 
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     os.environ.setdefault("PYTHONUTF8", "1")
     return Settings()
