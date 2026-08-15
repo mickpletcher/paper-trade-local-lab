@@ -42,6 +42,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add portfolio sizing models including fixed fractional and volatility targeting.
 * Add account level aggregation and deliberate multi run portfolio reporting.
 * Add walk forward optimization, Monte Carlo reshuffling, and stress tests.
+* Add configurable risk free rates, benchmark symbols, and trading calendar annualization to backtest metrics.
 * Add deterministic replay seeds, immutable input snapshots, and artifact checksums.
 * Add idempotency keys for externally submitted order intents and maintenance runs.
 

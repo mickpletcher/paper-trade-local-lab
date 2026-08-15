@@ -156,7 +156,14 @@ class BacktestEngine:
         fills = list(self.session.scalars(select(Fill).where(Fill.strategy_run_id == run.id)))
         trades = list(self.session.scalars(select(Trade).where(Trade.strategy_run_id == run.id)))
         metrics = calculate_metrics(
-            self.starting_cash, ending_equity, fills, trades, position, snapshots, bars[-1].close
+            self.starting_cash,
+            ending_equity,
+            fills,
+            trades,
+            position,
+            snapshots,
+            bars[0].close,
+            bars[-1].close,
         )
         run.completed_at = datetime.now(timezone.utc)
         run.metrics_json = json.dumps(metrics)

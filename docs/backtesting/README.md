@@ -25,7 +25,7 @@ This section documents historical bar backtesting, simulation assumptions, repor
 10. Quantities use a configurable increment that defaults to one whole share. Cash limited fills round down to that increment.
 11. Trade entry and exit prices are gross weighted execution prices. Entry and exit fees are stored separately, and realized profit and loss subtracts both.
 
-`BacktestEngine` queries stored `price_bars` in timestamp order and processes them directly. There is no separate replay module or public replay API. Backtest metrics report fills, completed trades, and open trades separately.
+`BacktestEngine` queries stored `price_bars` in timestamp order and processes them directly. There is no separate replay module or public replay API. Reports include total return, CAGR, annualized volatility, zero risk free Sharpe and Sortino ratios, drawdown, trade counts, win rate, profit factor, average wins and losses, time exposure, and the same period buy and hold return. Profit factor without a losing trade, risk ratios with a nonzero return and zero denominator, and CAGR that cannot be represented are reported as `None` instead of a misleading zero.
 
 ## Cross Links
 

@@ -2,6 +2,12 @@
 
 ## 2026-08-15
 
+### Expanded backtest decision metrics
+
+Summary: Added CAGR, annualized volatility, Sharpe, Sortino, profit factor, average win and loss, time exposure, and buy and hold return to stored and Markdown backtest results.
+
+Why: Total return, win rate, and drawdown alone cannot compare strategy risk, trade quality, capital use, or performance against passive ownership.
+
 ### Bounded API relationship queries
 
 Summary: Joined symbols and strategies into the positions, orders, and strategy run queries and added fixed one statement query budget coverage with multiple records.
