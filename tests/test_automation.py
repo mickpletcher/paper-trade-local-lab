@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from urllib.request import Request
 
 import pytest
 from sqlalchemy import select
 
-from tradeforge.automation.maintenance import MaintenanceError, backup_sqlite_database, run_maintenance
+from tradeforge.automation.maintenance import (
+    MaintenanceError,
+    _RejectWebhookRedirects,
+    _send_failure_notification,
+    backup_sqlite_database,
+    run_maintenance,
+)
 from tradeforge.config import get_settings
 from tradeforge.database.models import PriceBar
 from tradeforge.database.session import session_scope
@@ -58,6 +65,87 @@ def test_maintenance_reports_failure_and_notifies(monkeypatch, tmp_path) -> None
     assert latest_report["status"] == "failed"
     assert "invalid OHLC relationships" in latest_report["error"]
     assert notifications == [{"url": "https://alerts.example.test/tradeforge", "status": "failed"}]
+
+
+def test_failure_notification_sends_only_minimal_status(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class Response:
+        status = 204
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback) -> None:
+            return None
+
+    class Opener:
+        def open(self, request, timeout):
+            captured["url"] = request.full_url
+            captured["timeout"] = timeout
+            captured["payload"] = json.loads(request.data.decode("utf-8"))
+            return Response()
+
+    def fake_build_opener(*handlers):
+        captured["redirect_handler"] = type(handlers[0]).__name__
+        return Opener()
+
+    monkeypatch.setattr("tradeforge.automation.maintenance.build_opener", fake_build_opener)
+    report = {
+        "status": "failed",
+        "started_at": "2026-08-15T12:00:00Z",
+        "completed_at": "2026-08-15T12:00:01Z",
+        "error": "secret local path",
+        "imports": [{"file": "private.csv", "symbol": "AAPL"}],
+    }
+
+    _send_failure_notification("https://alerts.example.test/tradeforge", report)
+
+    assert captured == {
+        "redirect_handler": "_RejectWebhookRedirects",
+        "url": "https://alerts.example.test/tradeforge",
+        "timeout": 10,
+        "payload": {
+            "event": "tradeforge_maintenance_failed",
+            "status": "failed",
+            "started_at": "2026-08-15T12:00:00Z",
+            "completed_at": "2026-08-15T12:00:01Z",
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "webhook_url",
+    [
+        "http://alerts.example.test/tradeforge",
+        "file:///tmp/alerts",
+        "https:///missing-host",
+        "https://user:password@alerts.example.test/tradeforge",  # pragma: allowlist secret
+        " https://alerts.example.test/tradeforge",
+    ],
+)
+def test_failure_notification_rejects_unsafe_urls(monkeypatch, webhook_url: str) -> None:
+    monkeypatch.setattr(
+        "tradeforge.automation.maintenance.build_opener",
+        lambda *handlers: pytest.fail("unsafe webhook reached the network opener"),
+    )
+
+    with pytest.raises(ValueError, match="no whitespace"):
+        _send_failure_notification(webhook_url, {"status": "failed"})
+
+
+def test_failure_notification_rejects_redirects() -> None:
+    handler = _RejectWebhookRedirects()
+
+    with pytest.raises(RuntimeError, match="redirects are not allowed"):
+        handler.redirect_request(
+            Request("https://alerts.example.test/tradeforge"),
+            None,
+            302,
+            "Found",
+            {"Location": "http://internal.example.test/"},
+            "http://internal.example.test/",
+        )
 
 
 def test_maintenance_creates_custom_sqlite_parent(monkeypatch, tmp_path) -> None:

@@ -15,7 +15,7 @@ TradeForge uses one local maintenance command and GitHub Actions for repeatable 
 5. remove backups beyond `TRADEFORGE_BACKUP_RETENTION_COUNT`
 6. write a timestamped report and `data/automation/latest.json`
 
-A failed step returns exit code 1, writes a failure report, and posts JSON to `TRADEFORGE_FAILURE_WEBHOOK_URL` when configured. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` so one delay cannot exceed the scheduled execution budget. Databases, backups, reports, imported files, and credentials remain untracked.
+A failed step returns exit code 1, writes the full failure report locally, and posts only event, status, start, and completion timestamps to `TRADEFORGE_FAILURE_WEBHOOK_URL` when configured. The webhook must be HTTPS with a hostname and no embedded credentials. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` so one delay cannot exceed the scheduled execution budget. Databases, backups, reports, imported files, and credentials remain untracked.
 
 Install the daily Windows task from an activated environment:
 

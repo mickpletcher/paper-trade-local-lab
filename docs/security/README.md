@@ -10,7 +10,7 @@ The default CLI API binding is loopback-only. The container binds to all interfa
 
 Copy `.env.example` to an ignored local `.env` file and store Alpaca credentials there only for development. Production-like deployments should inject secrets from the host or a secret manager. Never place credentials in Docker images, command output, issues, reports, or committed configuration.
 
-The Alpaca data endpoint is constrained to HTTPS and rejects embedded URL credentials. Provider errors do not include credential values.
+Alpaca and failure webhook endpoints are constrained to HTTPS with a hostname and reject embedded URL credentials. Webhook delivery contains only failure status and timestamps; detailed reports, paths, imports, symbols, and errors remain local. Provider errors do not include credential values.
 
 ## Current Controls
 

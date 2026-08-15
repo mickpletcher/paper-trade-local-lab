@@ -40,7 +40,7 @@ Invalid, negative, nonfinite, or unsupported execution settings fail before a ba
 * `TRADEFORGE_BACKUP_DIR` holds integrity checked SQLite backups.
 * `TRADEFORGE_AUTOMATION_REPORT_DIR` holds timestamped and latest JSON run reports.
 * `TRADEFORGE_BACKUP_RETENTION_COUNT` keeps the newest 1 through 365 backups.
-* `TRADEFORGE_FAILURE_WEBHOOK_URL` optionally receives failed maintenance reports.
+* `TRADEFORGE_FAILURE_WEBHOOK_URL` optionally receives minimal failure status. It must use HTTPS, include a hostname, and contain no embedded credentials.
 
 Use `.env.example` as the inventory. Never commit `.env` or generated data.
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,3 +51,20 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     os.environ.setdefault("PYTHONUTF8", "1")
     return Settings()
+
+
+def validate_outbound_https_url(value: str, setting_name: str) -> str:
+    validation_message = (
+        f"{setting_name} must be an HTTPS URL with a hostname, no whitespace, and no embedded credentials."
+    )
+    if not value or value != value.strip() or any(character.isspace() for character in value):
+        raise ValueError(validation_message)
+    parsed_url = urlsplit(value)
+    if (
+        parsed_url.scheme.lower() != "https"
+        or not parsed_url.hostname
+        or parsed_url.username is not None
+        or parsed_url.password is not None
+    ):
+        raise ValueError(validation_message)
+    return value
