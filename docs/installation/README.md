@@ -1,6 +1,6 @@
 # Installation
 
-TradeForge supports Python 3.11 or newer. Python 3.13 is the CI reference version.
+TradeForge supports Python 3.11 or newer. Python 3.11 is the lint, type compatibility, and dependency lock reference version; the test matrix also covers Python 3.13 and 3.14.
 
 ## Local Python
 
