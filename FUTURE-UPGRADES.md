@@ -14,6 +14,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add signed lock metadata and automated verification of dependency source provenance.
 * Add mutation testing for broker execution, metrics, and valuation correctness paths.
 * Add a developer environment verifier that reports undeclared and version drifted packages against `requirements.lock`.
+* Run strict Mypy under every supported interpreter when dependency stubs vary by Python version.
 * Add explicit allowed license and denied package policies to dependency review.
 * Add a maintenance concurrency lock so overlapping scheduled runs fail safely.
 * Add automatic restore drills from the newest backup with recovery time reporting.

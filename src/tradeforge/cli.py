@@ -19,9 +19,7 @@ from tradeforge.database.migrations import (
     create_revision,
     get_current_version,
     get_head_version,
-)
-from tradeforge.database.migrations import (
-    init_db as create_schema,
+    init_db,
 )
 from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import session_scope
@@ -43,9 +41,9 @@ AVAILABLE_STRATEGIES = {"moving-average-cross"}
 
 
 @app.command("init-db")
-def init_db() -> None:
+def initialize_database() -> None:
     """Create the local SQLite schema."""
-    create_schema()
+    init_db()
     log_event(
         logger,
         logging.INFO,
@@ -58,7 +56,7 @@ def init_db() -> None:
 
 @app.command("db-current")
 def db_current() -> None:
-    create_schema()
+    init_db()
     typer.echo(
         json.dumps(
             {
@@ -90,7 +88,7 @@ def import_csv(
     file: Path = typer.Option(..., "--file", "-f", exists=True, file_okay=True, dir_okay=False),
 ) -> None:
     """Import OHLCV CSV data."""
-    create_schema()
+    init_db()
     with session_scope() as session:
         count = import_ohlcv_csv(session, symbol, file)
     typer.echo(f"Imported {count} bars for {symbol.upper()}.")
@@ -98,7 +96,7 @@ def import_csv(
 
 @app.command("seed-sample-data")
 def seed_sample_data(symbol: str = typer.Option("AAPL", "--symbol", "-s")) -> None:
-    create_schema()
+    init_db()
     dataset = files("tradeforge.sample_data").joinpath("aapl_sample.csv")
     with as_file(dataset) as file_path, session_scope() as session:
         count = import_ohlcv_csv(session, symbol, file_path)
@@ -116,7 +114,7 @@ def run_backtest(
     order_size: float = typer.Option(10.0, "--order-size"),
 ) -> None:
     """Run a historical strategy backtest."""
-    create_schema()
+    init_db()
     strategy_name = strategy.strip().lower()
     if strategy_name not in AVAILABLE_STRATEGIES:
         available = ", ".join(sorted(AVAILABLE_STRATEGIES))
@@ -155,7 +153,7 @@ def refresh_quotes(
     symbol: list[str] = typer.Option(None, "--symbol", "-s", help="Repeat to refresh specific symbols."),
 ) -> None:
     """Refresh latest quotes for open positions or the requested symbols."""
-    create_schema()
+    init_db()
     settings = get_settings()
     with session_scope() as session:
         symbols = symbol or get_default_refresh_symbols(session)
@@ -214,7 +212,7 @@ def start_api(
 @app.command("show-quotes")
 def show_quotes() -> None:
     """Show the latest stored live quotes."""
-    create_schema()
+    init_db()
     settings = get_settings()
     with session_scope() as session:
         quotes = session.scalars(select(LiveQuote).order_by(LiveQuote.fetched_at.desc())).all()
@@ -228,7 +226,7 @@ def show_quotes() -> None:
 @app.command("show-valuation")
 def show_valuation(strategy_run_id: Optional[str] = typer.Option(None, "--strategy-run-id")) -> None:
     """Show current local portfolio valuation from the latest quotes."""
-    create_schema()
+    init_db()
     settings = get_settings()
     with session_scope() as session:
         try:
@@ -241,7 +239,7 @@ def show_valuation(strategy_run_id: Optional[str] = typer.Option(None, "--strate
 @app.command("show-positions")
 def show_positions() -> None:
     """Show current simulated positions."""
-    create_schema()
+    init_db()
     with session_scope() as session:
         positions = session.scalars(select(Position)).all()
         if not positions:
@@ -257,7 +255,7 @@ def show_positions() -> None:
 @app.command("show-orders")
 def show_orders() -> None:
     """Show simulated orders."""
-    create_schema()
+    init_db()
     with session_scope() as session:
         orders = session.scalars(select(Order).order_by(Order.submitted_at.desc())).all()
         if not orders:
@@ -273,7 +271,7 @@ def show_orders() -> None:
 @app.command("show-pnl")
 def show_pnl() -> None:
     """Show completed strategy run P/L summaries."""
-    create_schema()
+    init_db()
     with session_scope() as session:
         runs = session.scalars(select(StrategyRun).order_by(StrategyRun.started_at.desc())).all()
         if not runs:

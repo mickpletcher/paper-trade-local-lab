@@ -4,6 +4,11 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Added regression coverage for the public `init-db` automation command.
+* Ran CI lint and strict Mypy in a Python 3.11 environment aligned with the configured compatibility target.
+* Removed the CLI schema initializer alias while preserving the public `init-db` command.
+* Aligned strict Mypy analysis with the minimum supported Python 3.11 runtime.
+* Consolidated duplicate CLI migration imports.
 * Distinguished runner unit tests from the separate container build and health validation in runtime documentation.
 * Clarified the non-sensitive output boundary for the planned configuration diagnostic.
 * Blocked automatic failure webhook redirects so validated HTTPS destinations cannot forward requests to unvalidated endpoints.

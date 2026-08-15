@@ -10,6 +10,21 @@ from typer.testing import CliRunner
 from tradeforge.cli import _parse_date_option, app
 
 
+def test_init_db_command_name_is_preserved(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        app,
+        ["init-db"],
+        env={"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"},
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert (tmp_path / "data" / "tradeforge.db").is_file()
+
+
 def test_seed_and_backtest_cli_flow(monkeypatch, tmp_path) -> None:
     runner = CliRunner()
     monkeypatch.chdir(tmp_path)

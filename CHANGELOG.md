@@ -2,6 +2,36 @@
 
 ## 2026-08-15
 
+### Protected the `init-db` command contract
+
+Summary: Added CLI regression coverage proving the renamed implementation still exposes and executes `init-db`.
+
+Why: Internal cleanup must not silently rename an operator-facing automation command.
+
+### Ran compatibility linting on Python 3.11
+
+Summary: Moved the CI lint and strict Mypy environment from Python 3.13 to the minimum supported Python 3.11 runtime.
+
+Why: Mypy must load dependency stubs compatible with its configured Python 3.11 target instead of newer syntax from a Python 3.13 environment.
+
+### Removed the CLI schema alias
+
+Summary: Renamed the `init-db` command implementation and imported the migration initializer by its canonical name.
+
+Why: Removing the alias lets Ruff retain all migration imports in one block without changing the public command name.
+
+### Aligned Mypy with minimum Python support
+
+Summary: Changed strict Mypy analysis from Python 3.13 semantics to the minimum supported Python 3.11 semantics.
+
+Why: Type validation must reject standard library and typing features that would fail on a declared supported runtime.
+
+### Consolidated migration imports
+
+Summary: Combined duplicate migration imports in the CLI into one import block.
+
+Why: One canonical import block is easier for automated formatting and maintainers to keep consistent.
+
 ### Corrected the documented container sequence
 
 Summary: Stated that CI builds the container before starting and health checking it.
