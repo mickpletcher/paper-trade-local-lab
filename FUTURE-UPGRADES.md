@@ -9,6 +9,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add automatic GitHub issue creation for repeated governance or CI failures without creating duplicates.
 * Automate living document synchronization for trusted Dependabot updates before governance validation.
 * Add automatic compatibility canaries before merging new major Actions and container runtime versions.
+* Add a scheduled Python prerelease canary that does not block supported runtime builds.
 * Add one cross-platform bootstrap command for Python and Node validation dependencies.
 * Add signed lock metadata and automated verification of dependency source provenance.
 * Add a developer environment verifier that reports undeclared and version drifted packages against `requirements.lock`.

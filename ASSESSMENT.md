@@ -22,7 +22,7 @@ Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlche
 
 `tradeforge run-maintenance` initializes or upgrades SQLite, imports queued CSV files, refreshes quotes for open positions with bounded retry, creates and integrity checks a backup, applies retention, and writes success or failure JSON reports. An optional webhook reports failures. A PowerShell installer registers daily execution with retry and catch up behavior.
 
-GitHub Actions runs Ruff, lock drift checks, warning free tests on Python 3.11 and 3.13, package builds, container health validation, governance checks, dependency review, scheduled audits, releases, and GHCR publishing. Protected `main` requires strict checks and squash merges.
+GitHub Actions runs Ruff, lock drift checks, warning free tests on Python 3.11, 3.13, and the container's Python 3.14 runtime, package builds, container health validation, governance checks, dependency review, scheduled audits, releases, and GHCR publishing. Protected `main` requires strict checks and squash merges.
 
 ## Known Limitations
 
