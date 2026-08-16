@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from sqlalchemy import Engine
+
 from tradeforge.config import Settings, get_settings, validate_outbound_https_url
 from tradeforge.database.migrations import init_db
 from tradeforge.database.session import get_engine, session_scope
@@ -56,12 +58,14 @@ def run_maintenance(
     }
     report_path: Path | None = None
 
+    engine: Engine | None = None
     try:
+        engine = get_engine(current_settings.database_url, current_settings.sqlite_busy_timeout_ms)
         if current_settings.database_path is not None:
             current_settings.database_path.parent.mkdir(parents=True, exist_ok=True)
-        init_db(get_engine(current_settings.database_url))
-        report["imports"] = _import_pending_files(current_settings)
-        report["quotes"] = _refresh_open_position_quotes(current_settings, quote_provider)
+        init_db(engine)
+        report["imports"] = _import_pending_files(current_settings, engine)
+        report["quotes"] = _refresh_open_position_quotes(current_settings, quote_provider, engine)
         backup_path = backup_sqlite_database(
             current_settings.database_path,
             current_settings.backup_dir,
@@ -89,6 +93,9 @@ def run_maintenance(
         except Exception:
             report_path = None
         raise MaintenanceError(str(exc), report_path) from exc
+    finally:
+        if engine is not None:
+            engine.dispose()
 
 
 def backup_sqlite_database(
@@ -129,14 +136,14 @@ def backup_sqlite_database(
     return destination
 
 
-def _import_pending_files(settings: Settings) -> list[dict[str, object]]:
+def _import_pending_files(settings: Settings, engine: Engine) -> list[dict[str, object]]:
     settings.import_dir.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, object]] = []
     for csv_path in sorted(settings.import_dir.glob("*.csv"), key=lambda path: path.name.lower()):
         ticker = csv_path.stem.strip().upper()
         if not ticker:
             raise ValueError(f"Cannot derive a ticker from import filename: {csv_path.name}")
-        with session_scope(settings.database_url) as session:
+        with session_scope(engine=engine) as session:
             rows = import_ohlcv_csv(session, ticker, csv_path)
         results.append({"file": csv_path.name, "symbol": ticker, "rows_upserted": rows})
     return results
@@ -145,8 +152,9 @@ def _import_pending_files(settings: Settings) -> list[dict[str, object]]:
 def _refresh_open_position_quotes(
     settings: Settings,
     quote_provider: QuoteProvider | None,
+    engine: Engine,
 ) -> dict[str, object]:
-    with session_scope(settings.database_url) as session:
+    with session_scope(engine=engine) as session:
         symbols = get_default_refresh_symbols(session)
         if not symbols:
             return {"requested": [], "refreshed_count": 0}

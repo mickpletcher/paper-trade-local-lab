@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-08-16
+
+### Initialized SQLite WAL once per engine
+
+Summary: Moved file database WAL activation from the per-connection hook to SQLAlchemy's one-time first connection hook.
+
+Why: WAL is a persistent database setting, so repeating its locking operation on every `NullPool` connection adds overhead and avoidable contention.
+
+### Honored explicit maintenance lock settings
+
+Summary: Passed the selected settings object's SQLite busy timeout into the maintenance engine and added regression coverage for nondefault values.
+
+Why: Programmatic maintenance calls must not silently replace their explicit lock wait policy with process-global configuration.
+
+### Validated Windows scheduling in CI
+
+Summary: Added a Windows runner job and a PowerShell regression harness that parses the Task Scheduler installer, verifies its action, trigger, retry, catch up, immediate run, and `WhatIf` behavior, and blocks merges on failures.
+
+Why: A Windows only automation entry point must be exercised automatically instead of depending on an operator to discover scheduler drift.
+
+### Hardened SQLite concurrency
+
+Summary: Enabled WAL for file backed SQLite databases, applied a configurable bounded busy timeout to every connection, and covered short write contention and timeout configuration with tests.
+
+Why: Concurrent API and maintenance activity should wait briefly for ordinary locks instead of failing immediately or blocking without an explicit limit.
+
+### Reused the maintenance database engine
+
+Summary: Created one database engine per maintenance run, passed it through migrations, imports, and quote refresh sessions, and guaranteed disposal on success or failure.
+
+Why: Scheduled maintenance should not repeatedly construct database engines while processing one logical run.
+
+### Disposed session owned database engines
+
+Summary: Made transactional session scopes dispose engines they construct while leaving caller supplied engine lifecycles under caller control.
+
+Why: Short lived CLI and explicit database operations should release their engine resources without breaking shared maintenance or application engines.
+
+### Batched live quote persistence lookups
+
+Summary: Replaced one existing quote query per returned symbol with one set based lookup and added a fixed query budget regression test.
+
+Why: Quote refresh database reads should remain constant as the open position symbol count grows.
+
+### Refreshed medium priority reliability documentation
+
+Summary: Updated configuration, database, market data, automation, roadmap, completed work, and current assessment records for the new scheduler, SQLite, engine lifecycle, and quote batching behavior.
+
+Why: Living documentation must describe the repository that operators and contributors actually run.
+
 ## 2026-08-15
 
 ### Refreshed the deterministic dependency lock

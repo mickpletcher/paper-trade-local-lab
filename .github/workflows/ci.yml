@@ -10,6 +10,17 @@ permissions:
   contents: read
 
 jobs:
+  windows-automation:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Windows scheduled task installer
+        shell: pwsh
+        run: ./scripts/Test-ScheduledTaskInstaller.ps1
+
   lint:
     runs-on: ubuntu-latest
 

@@ -9,9 +9,10 @@ from urllib.error import URLError
 from urllib.request import Request
 
 import pytest
+from sqlalchemy import event
 
 from tradeforge.config import Settings
-from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun
+from tradeforge.database.models import AccountSnapshot, LiveQuote, Position, Strategy, StrategyRun, Symbol
 from tradeforge.market_data.live import (
     AlpacaSnapshotQuoteProvider,
     NormalizedQuote,
@@ -219,6 +220,44 @@ def test_refresh_live_quotes_upserts_existing_rows(session, symbol) -> None:
     assert quotes[0].last_price == 102.5
     assert quotes[0].bid_size == 15
     assert quotes[0].raw_payload_json == '{"second": true}'
+
+
+def test_refresh_live_quotes_batches_existing_quote_lookup(session, symbol) -> None:
+    second_symbol = Symbol(ticker="MSFT")
+    session.add(second_symbol)
+    session.flush()
+    timestamp = datetime(2026, 5, 12, 20, 0, tzinfo=UTC)
+    quotes = [
+        NormalizedQuote(
+            symbol=ticker,
+            provider="fake",
+            quote_timestamp=timestamp,
+            fetched_at=timestamp,
+            last_price=price,
+            bid_price=None,
+            ask_price=None,
+            bid_size=None,
+            ask_size=None,
+            previous_close=None,
+            currency="USD",
+            raw_payload_json="{}",
+        )
+        for ticker, price in (("AAPL", 101.5), ("MSFT", 402.25))
+    ]
+    statements: list[str] = []
+
+    def record_statement(connection, cursor, statement, parameters, context, executemany) -> None:
+        statements.append(statement)
+
+    event.listen(session.bind, "before_cursor_execute", record_statement)
+    try:
+        persisted = refresh_live_quotes(session, ["AAPL", "MSFT"], provider=FakeQuoteProvider(quotes))
+    finally:
+        event.remove(session.bind, "before_cursor_execute", record_statement)
+
+    select_statements = [statement for statement in statements if statement.lstrip().upper().startswith("SELECT")]
+    assert len(persisted) == 2
+    assert len(select_statements) == 2
 
 
 def test_refresh_live_quotes_rejects_incomplete_provider_response(session, symbol) -> None:

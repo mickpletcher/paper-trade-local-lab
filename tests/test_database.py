@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from threading import Event, Thread
+from time import sleep
+from unittest.mock import MagicMock
+
 import pytest
 from alembic import command
 from sqlalchemy import inspect, select, text
 
 from tradeforge.database.migrations import _build_alembic_config, get_current_version, get_head_version
 from tradeforge.database.models import Symbol
-from tradeforge.database.session import dispose_application_engine, get_application_engine, get_engine
+from tradeforge.database.session import dispose_application_engine, get_application_engine, get_engine, session_scope
 from tradeforge.market_data.importer import import_ohlcv_csv
 
 
@@ -35,6 +39,84 @@ def test_database_initialization_creates_tables(engine) -> None:
 def test_sqlite_foreign_keys_are_enabled(engine) -> None:
     with engine.connect() as connection:
         assert connection.scalar(text("PRAGMA foreign_keys")) == 1
+
+
+def test_file_sqlite_uses_wal_and_configured_busy_timeout(tmp_path) -> None:
+    database_url = f"sqlite:///{(tmp_path / 'concurrency.db').as_posix()}"
+    engine = get_engine(database_url, sqlite_busy_timeout_ms=1_250)
+    try:
+        with engine.connect() as connection:
+            assert connection.scalar(text("PRAGMA journal_mode")) == "wal"
+            assert connection.scalar(text("PRAGMA busy_timeout")) == 1_250
+    finally:
+        engine.dispose()
+
+
+def test_sqlite_busy_timeout_allows_short_write_contention(tmp_path) -> None:
+    database_url = f"sqlite:///{(tmp_path / 'contention.db').as_posix()}"
+    engine = get_engine(database_url, sqlite_busy_timeout_ms=1_000)
+    writer_started = Event()
+    writer_errors: list[Exception] = []
+
+    with engine.begin() as connection:
+        connection.execute(text("CREATE TABLE contention_test (id INTEGER PRIMARY KEY)"))
+
+    lock_connection = engine.connect()
+    lock_transaction = lock_connection.begin()
+    lock_connection.execute(text("INSERT INTO contention_test (id) VALUES (1)"))
+
+    def delayed_writer() -> None:
+        try:
+            with engine.begin() as connection:
+                writer_started.set()
+                connection.execute(text("INSERT INTO contention_test (id) VALUES (2)"))
+        except Exception as exc:
+            writer_errors.append(exc)
+
+    writer = Thread(target=delayed_writer, daemon=True)
+    writer.start()
+    assert writer_started.wait(timeout=1)
+    sleep(0.1)
+    lock_transaction.commit()
+    lock_connection.close()
+    writer.join(timeout=2)
+
+    try:
+        assert not writer.is_alive()
+        assert writer_errors == []
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT COUNT(*) FROM contention_test")) == 2
+    finally:
+        engine.dispose()
+
+
+def test_sqlite_busy_timeout_rejects_out_of_range_values() -> None:
+    with pytest.raises(ValueError, match="between 0 and 60000"):
+        get_engine("sqlite:///:memory:", sqlite_busy_timeout_ms=60_001)
+
+
+def test_session_scope_disposes_only_owned_engines(monkeypatch) -> None:
+    owned_engine = get_engine("sqlite:///:memory:")
+    shared_engine = get_engine("sqlite:///:memory:")
+    owned_dispose = MagicMock(wraps=owned_engine.dispose)
+    shared_dispose = MagicMock(wraps=shared_engine.dispose)
+    monkeypatch.setattr(owned_engine, "dispose", owned_dispose)
+    monkeypatch.setattr(shared_engine, "dispose", shared_dispose)
+    monkeypatch.setattr("tradeforge.database.session.get_engine", lambda database_url=None: owned_engine)
+
+    with session_scope("sqlite:///:memory:") as session:
+        assert session.scalar(select(1)) == 1
+    with session_scope(engine=shared_engine) as session:
+        assert session.scalar(select(1)) == 1
+
+    owned_dispose.assert_called_once_with()
+    shared_dispose.assert_not_called()
+    with (
+        pytest.raises(ValueError, match="either database_url or engine"),
+        session_scope("sqlite:///:memory:", engine=shared_engine),
+    ):
+        pass
+    shared_engine.dispose()
 
 
 def test_application_engine_is_cached_and_explicit_engines_are_isolated(monkeypatch, tmp_path) -> None:

@@ -11,6 +11,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = Field(default="sqlite:///data/tradeforge.db", alias="TRADEFORGE_DATABASE_URL")
+    sqlite_busy_timeout_ms: int = Field(
+        default=5_000,
+        ge=0,
+        le=60_000,
+        alias="TRADEFORGE_SQLITE_BUSY_TIMEOUT_MS",
+    )
     starting_cash: float = Field(default=100_000.0, gt=0, alias="TRADEFORGE_STARTING_CASH")
     fee_per_order: float = Field(default=1.0, ge=0, alias="TRADEFORGE_FEE_PER_ORDER")
     commission_model: str = Field(default="fixed", alias="TRADEFORGE_COMMISSION_MODEL")
