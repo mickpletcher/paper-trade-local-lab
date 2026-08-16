@@ -18,7 +18,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Run strict Mypy under every supported interpreter when dependency stubs vary by Python version.
 * Add explicit allowed license and denied package policies to dependency review.
 * Add a maintenance concurrency lock so overlapping scheduled runs fail safely.
-* Add SQLite lock wait and WAL checkpoint telemetry to maintenance health reports.
+* Add SQLite first connection, lock wait, and WAL checkpoint telemetry to maintenance health reports.
 * Add a disposable Windows canary that registers, starts, verifies, and removes a real scheduled task.
 * Add automatic restore drills from the newest backup with recovery time reporting.
 * Add import quarantine and acknowledgement so successful files are not reprocessed indefinitely.

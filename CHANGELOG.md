@@ -2,6 +2,12 @@
 
 ## 2026-08-16
 
+### Initialized SQLite WAL once per engine
+
+Summary: Moved file database WAL activation from the per-connection hook to SQLAlchemy's one-time first connection hook.
+
+Why: WAL is a persistent database setting, so repeating its locking operation on every `NullPool` connection adds overhead and avoidable contention.
+
 ### Honored explicit maintenance lock settings
 
 Summary: Passed the selected settings object's SQLite busy timeout into the maintenance engine and added regression coverage for nondefault values.

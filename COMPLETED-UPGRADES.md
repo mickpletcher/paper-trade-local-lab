@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
+* Initialized persistent SQLite WAL mode once per engine instead of on every connection.
 * Honored explicit SQLite busy timeout settings in programmatic maintenance runs.
 * Added Windows CI coverage for the daily Task Scheduler installer and its nonmutating `WhatIf` path.
 * Enabled SQLite WAL and configurable bounded lock waits with contention regression coverage.

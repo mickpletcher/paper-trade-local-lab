@@ -32,14 +32,19 @@ def get_engine(database_url: str | None = None, sqlite_busy_timeout_ms: int | No
         engine_options["poolclass"] = NullPool
     engine = create_engine(url, connect_args=connect_args, future=True, **engine_options)
     if is_sqlite:
+        if not sqlite_is_memory:
+
+            @event.listens_for(engine, "first_connect")
+            def enable_sqlite_wal(dbapi_connection: Any, connection_record: Any) -> None:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.close()
 
         @event.listens_for(engine, "connect")
         def configure_sqlite_connection(dbapi_connection: Any, connection_record: Any) -> None:
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.execute(f"PRAGMA busy_timeout={busy_timeout_ms}")
-            if not sqlite_is_memory:
-                cursor.execute("PRAGMA journal_mode=WAL")
             cursor.close()
 
     return engine
