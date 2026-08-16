@@ -54,13 +54,13 @@ Run the same check before handoff:
 
 ## Failure Behavior
 
-A failed check stops the workflow and reports the specific error in the job log. Protected `main` requires strict CI, Docs, and Governance results, resolved conversations, linear history, and a pull request. Only squash merging is enabled.
+A failed check stops the workflow and reports the specific error in the job log. Protected `main` requires strict CI, Docs, Governance, dependency review, dependency audit, and CodeQL results, resolved conversations, linear history, and a pull request. Only squash merging is enabled.
 
 Repeated CI issue creation and notification routing remain tracked in `FUTURE-UPGRADES.md`.
 
 ## Security Boundary
 
-Workflows use read only repository permissions unless publishing requires GHCR package or GitHub release write access. External actions are pinned to full commit SHAs and Dependabot keeps those references current. Local databases, reports, `.env`, and credentials remain excluded from Git.
+Workflows use read only repository permissions unless publishing requires GHCR package or GitHub release write access. Repository policy requires full commit SHA references and restricts Actions to GitHub owned actions plus the committed Astral and Docker action families. Dependabot keeps those references current. Local databases, reports, `.env`, and credentials remain excluded from Git.
 
 ## Release Tags
 

@@ -10,13 +10,13 @@ The default CLI API binding is loopback-only. The container binds to all interfa
 
 Copy `.env.example` to an ignored local `.env` file and store Alpaca credentials there only for development. Production-like deployments should inject secrets from the host or a secret manager. Never place credentials in Docker images, command output, issues, reports, or committed configuration.
 
-Alpaca and failure webhook endpoints are constrained to HTTPS with a hostname and reject embedded URL credentials. Webhook delivery contains only failure status and timestamps; detailed reports, paths, imports, symbols, and errors remain local. Provider errors do not include credential values.
+Alpaca and failure webhook endpoints are constrained to HTTPS with a hostname and reject embedded URL credentials. Both outbound paths refuse redirects so credentials or failure data cannot be forwarded to an unvalidated destination. Webhook delivery contains only failure status and timestamps; detailed reports, paths, imports, symbols, and errors remain local. Provider errors do not include credential values.
 
 ## Current Controls
 
 `.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. The image uses a digest pinned Python base, an unprivileged UID, and a database aware health check. Supported local launch paths must remain behind loopback or another trusted network boundary because authentication is not implemented.
 
-GitHub Actions are SHA pinned and default to read only repository permissions except workflows that publish GHCR images or GitHub releases.
+GitHub Actions default to read only repository permissions except workflows that publish GHCR images or GitHub releases. Repository policy requires full commit SHA references and allows only GitHub owned actions plus the committed Astral and Docker action families.
 
 ## Repository Controls
 
@@ -28,8 +28,9 @@ The repository uses:
 * Dependabot version updates for Python, npm, Actions, and Docker
 * least-privilege workflow permissions and commit-pinned actions
 * private vulnerability reporting
+* required dependency review, installed dependency audit, CodeQL, and supported runtime checks before merge
 
-Branch protection, secret-scanning status, push protection, and default Actions permissions must also be verified in GitHub settings because those controls are not stored in the repository.
+Protected `main` enforces strict required checks, resolved review conversations, linear history, squash merges, and administrator compliance. Dependabot security updates, secret scanning, push protection, default read only Actions permissions, the selected Actions allowlist, and SHA pinning enforcement are verified in GitHub settings.
 
 ## Data Protection
 

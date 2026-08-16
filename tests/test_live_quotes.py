@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 from urllib.error import URLError
+from urllib.request import Request
 
 import pytest
 
@@ -14,7 +16,9 @@ from tradeforge.market_data.live import (
     AlpacaSnapshotQuoteProvider,
     NormalizedQuote,
     QuoteProviderError,
+    _RejectQuoteRedirects,
     refresh_live_quotes,
+    serialize_quote,
 )
 from tradeforge.valuation.service import build_portfolio_valuation
 
@@ -39,7 +43,7 @@ def test_alpaca_provider_parses_root_symbol_map(monkeypatch) -> None:
     response = MagicMock()
     response.read.return_value = json.dumps(payload).encode("utf-8")
     response.__enter__.return_value = response
-    monkeypatch.setattr("tradeforge.market_data.live.urlopen", lambda request, timeout: response)
+    monkeypatch.setattr("tradeforge.market_data.live._open_quote_request", lambda request, timeout: response)
     settings = SimpleNamespace(
         alpaca_data_url="https://data.alpaca.markets",
         alpaca_feed="iex",
@@ -74,7 +78,7 @@ def test_alpaca_provider_retries_transient_failures(monkeypatch) -> None:
             raise result
         return result
 
-    monkeypatch.setattr("tradeforge.market_data.live.urlopen", fake_urlopen)
+    monkeypatch.setattr("tradeforge.market_data.live._open_quote_request", fake_urlopen)
     delays: list[float] = []
     monkeypatch.setattr("tradeforge.market_data.live.sleep", delays.append)
     settings = SimpleNamespace(
@@ -115,6 +119,66 @@ def test_alpaca_provider_accepts_https_base_url() -> None:
     provider = AlpacaSnapshotQuoteProvider(settings)
 
     assert provider.base_url == "https://data.alpaca.markets"
+
+
+def test_alpaca_provider_rejects_redirects() -> None:
+    handler = _RejectQuoteRedirects()
+    request = Request(
+        "https://data.alpaca.markets/v2/stocks/snapshots",
+        headers={"APCA-API-KEY-ID": "test-key", "APCA-API-SECRET-KEY": "test-secret"},
+    )
+
+    with pytest.raises(QuoteProviderError, match="redirects are not allowed"):
+        handler.redirect_request(
+            request,
+            None,
+            302,
+            "Found",
+            {},
+            "https://redirect.example/snapshots",
+        )
+
+
+@pytest.mark.parametrize(
+    ("snapshot", "message"),
+    [
+        ({"latestTrade": {"p": -1, "t": "2026-05-12T20:15:00Z"}}, "finite positive number"),
+        ({"latestTrade": {"p": "NaN", "t": "2026-05-12T20:15:00Z"}}, "finite positive number"),
+        ({"latestTrade": {"p": float("nan"), "t": "2026-05-12T20:15:00Z"}}, "invalid JSON constant"),
+        (
+            {
+                "latestTrade": {"p": 100, "t": "2026-05-12T20:15:00Z"},
+                "latestQuote": {"bs": 1.5},
+            },
+            "nonnegative integer",
+        ),
+        ({"latestTrade": {"t": "2026-05-12T20:15:00Z"}}, "no usable price"),
+        ({"latestTrade": {"p": 100, "t": "2026-05-12T20:15:00"}}, "timezone-aware"),
+        ({"latestTrade": {"p": 100, "t": "not-a-timestamp"}}, "timezone-aware"),
+        ({"latestTrade": []}, "must be an object"),
+        (
+            {"latestQuote": {"bp": 102, "ap": 101, "t": "2026-05-12T20:15:00Z"}},
+            "crossed market",
+        ),
+    ],
+)
+def test_alpaca_provider_rejects_invalid_quote_payloads(monkeypatch, snapshot, message) -> None:
+    response = MagicMock()
+    response.read.return_value = json.dumps({"AAPL": snapshot}).encode("utf-8")
+    response.__enter__.return_value = response
+    monkeypatch.setattr("tradeforge.market_data.live._open_quote_request", lambda request, timeout: response)
+    settings = SimpleNamespace(
+        alpaca_data_url="https://data.alpaca.markets",
+        alpaca_feed="iex",
+        alpaca_api_key_id="test-key",
+        alpaca_api_secret_key="test-secret",
+        quote_retry_attempts=1,
+        quote_retry_base_seconds=0,
+        quote_retry_max_seconds=30,
+    )
+
+    with pytest.raises(QuoteProviderError, match=message):
+        AlpacaSnapshotQuoteProvider(settings).get_latest_quotes(["AAPL"])
 
 
 def test_refresh_live_quotes_upserts_existing_rows(session, symbol) -> None:
@@ -162,6 +226,78 @@ def test_refresh_live_quotes_rejects_incomplete_provider_response(session, symbo
         refresh_live_quotes(session, ["AAPL"], provider=FakeQuoteProvider([]))
 
     assert session.query(LiveQuote).all() == []
+
+
+def test_refresh_live_quotes_rejects_invalid_normalized_quote(session, symbol) -> None:
+    invalid = NormalizedQuote(
+        symbol="AAPL",
+        provider="fake",
+        quote_timestamp=datetime.now(UTC),
+        fetched_at=datetime.now(UTC),
+        last_price=float("inf"),
+        bid_price=None,
+        ask_price=None,
+        bid_size=None,
+        ask_size=None,
+        previous_close=None,
+        currency="USD",
+        raw_payload_json="{}",
+    )
+
+    with pytest.raises(QuoteProviderError, match="invalid last price"):
+        refresh_live_quotes(session, ["AAPL"], provider=FakeQuoteProvider([invalid]))
+
+    assert session.query(LiveQuote).all() == []
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"bid_size": -1}, "invalid bid size"),
+        ({"fetched_at": datetime(2026, 5, 12, 20, 15)}, "invalid fetch timestamp"),
+        ({"raw_payload_json": "not-json"}, "invalid raw payload"),
+    ],
+)
+def test_refresh_live_quotes_validates_provider_contract(session, symbol, changes, message) -> None:
+    valid = NormalizedQuote(
+        symbol="AAPL",
+        provider="fake",
+        quote_timestamp=datetime(2026, 5, 12, 20, 15, tzinfo=UTC),
+        fetched_at=datetime(2026, 5, 12, 20, 15, 1, tzinfo=UTC),
+        last_price=100,
+        bid_price=99,
+        ask_price=101,
+        bid_size=1,
+        ask_size=1,
+        previous_close=98,
+        currency="USD",
+        raw_payload_json="{}",
+    )
+
+    with pytest.raises(QuoteProviderError, match=message):
+        refresh_live_quotes(session, ["AAPL"], provider=FakeQuoteProvider([replace(valid, **changes)]))
+
+    assert session.query(LiveQuote).all() == []
+
+
+def test_quote_staleness_uses_market_timestamp(session, symbol) -> None:
+    current_time = datetime.now(UTC)
+    quote = LiveQuote(
+        symbol_id=symbol.id,
+        provider="fake",
+        quote_timestamp=current_time - timedelta(minutes=5),
+        fetched_at=current_time,
+        last_price=100,
+        raw_payload_json="{}",
+    )
+    session.add(quote)
+    session.flush()
+
+    payload = serialize_quote(quote, stale_after_seconds=30)
+
+    assert payload["age_seconds"] >= 300
+    assert payload["fetch_age_seconds"] <= 1
+    assert payload["is_stale"] is True
 
 
 def test_build_portfolio_valuation_marks_positions_to_market(session, symbol) -> None:

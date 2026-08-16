@@ -4,6 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-15
 
+* Enforced the selected Actions allowlist and SHA pinning, verified repository security controls, and required dependency review, dependency audit, CodeQL, and Python 3.14 checks before merge.
 * Reconstructed migrated trade fees by directional fill quantity sequence across shared lifecycle timestamps.
 * Indexed legacy migration fills by strategy run and symbol instead of rescanning all fills per trade.
 * Added regression coverage for the public `init-db` automation command.
