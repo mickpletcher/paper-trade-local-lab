@@ -28,8 +28,8 @@ Invalid, negative, nonfinite, or unsupported execution settings fail before a ba
 ## Live Quote And Automation Settings
 
 * `TRADEFORGE_QUOTE_PROVIDER` currently supports `alpaca`.
-* `TRADEFORGE_QUOTE_STALE_AFTER_SECONDS` controls quote staleness reporting.
-* `TRADEFORGE_ALPACA_DATA_URL` must be an HTTPS URL with a hostname and no embedded credentials.
+* `TRADEFORGE_QUOTE_STALE_AFTER_SECONDS` controls staleness against the provider's market timestamp. Quote output separately reports retrieval age as `fetch_age_seconds`.
+* `TRADEFORGE_ALPACA_DATA_URL` must be an HTTPS URL with a hostname and no embedded credentials. Alpaca requests refuse redirects.
 * `TRADEFORGE_ALPACA_FEED` selects the Alpaca market-data feed.
 * `TRADEFORGE_ALPACA_API_KEY_ID` and `TRADEFORGE_ALPACA_API_SECRET_KEY` hold local provider credentials.
 

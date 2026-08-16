@@ -138,6 +138,7 @@ def symbols() -> list[dict[str, str]]:
                             "previous_close": 187.12,
                             "currency": "USD",
                             "age_seconds": 1,
+                            "fetch_age_seconds": 0,
                             "is_stale": False,
                         }
                     ]
@@ -182,6 +183,7 @@ def quotes() -> list[dict[str, object]]:
                                 "quote_timestamp": "2026-05-12T20:15:00Z",
                                 "fetched_at": "2026-05-12T20:15:01Z",
                                 "age_seconds": 1,
+                                "fetch_age_seconds": 0,
                                 "is_stale": False,
                                 "mark_price": 188.61,
                                 "market_value": 377.22,

@@ -23,7 +23,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add Teams and email escalation adapters with retry and duplicate suppression.
 * Add maintenance report retention and a local health summary command.
 * Add randomized retry jitter and a provider circuit breaker for extended quote outages.
-* Verify Dependabot alerts and security updates, secret scanning and push protection, default read-only Actions permissions, and the Actions allowlist in GitHub settings.
+* Add automated repository policy drift detection for required checks, SHA pinning, the Actions allowlist, and security feature status.
 * Publish an SBOM plus build provenance for release and GHCR artifacts.
 
 ### Trading Safety And Data Quality

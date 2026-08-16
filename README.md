@@ -205,6 +205,7 @@ The local API has no authentication. Compose binds it to loopback by default. Pl
 * Report vulnerabilities privately through [SECURITY.md](./SECURITY.md).
 * Use [SUPPORT.md](./SUPPORT.md) for setup help and issue-reporting guidance.
 * Never commit `.env`, Alpaca credentials, local databases, generated reports, or private market data.
+* Alpaca requests refuse redirects and reject malformed or unusable quote data before persistence.
 
 ## Disclaimer
 

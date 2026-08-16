@@ -2,6 +2,36 @@
 
 ## 2026-08-15
 
+### Refreshed the deterministic dependency lock
+
+Summary: Updated Charset Normalizer from 3.5.0 to 3.5.1 to match the current universal resolver output.
+
+Why: Lock verification must remain reproducible so unrelated security fixes are not blocked by dependency drift.
+
+### Enforced repository security gates
+
+Summary: Restricted Actions to GitHub owned plus explicitly allowed Astral and Docker actions, required full commit SHA references, and made dependency review, dependency audit, CodeQL, and Python 3.14 explicit merge checks.
+
+Why: Security workflows and source pinning must be enforced by repository policy instead of depending on reviewers to notice drift.
+
+### Corrected live quote staleness
+
+Summary: Calculated quote age from the provider's market timestamp and exposed retrieval age separately as `fetch_age_seconds`.
+
+Why: Fetching an old exchange snapshot now must not make stale market data appear fresh in portfolio valuation.
+
+### Enforced the normalized quote contract
+
+Summary: Rejected nonfinite or nonpositive prices, fractional or negative sizes, malformed timestamps and payloads, crossed markets, and quotes without a usable mark before persistence.
+
+Why: Invalid provider values can silently corrupt valuation or make API serialization fail unless the ingestion boundary rejects them atomically.
+
+### Blocked Alpaca quote redirects
+
+Summary: Replaced default redirect following with a rejecting redirect handler and added regression coverage for the credential-bearing request path.
+
+Why: Alpaca API key headers must never be forwarded from a validated URL to an unvalidated redirect destination.
+
 ### Disambiguated same-timestamp trade migration fills
 
 Summary: Reconstructed legacy entry and exit fees by directional fill quantity sequence instead of inclusive trade timestamp windows.
