@@ -6,20 +6,9 @@ This file documents the recommended automation layout for code, docs, and releas
 
 ## Current State
 
-The repo already has CI for linting, tests, builds, and container validation.
+CI owns linting, supported runtime tests and typing, correctness mutations, migration performance, Windows scheduling, builds, container validation, and gated image publication. Images publish only when build, container, strict typing, mutation, and migration jobs all pass. Separate workflows own documentation, governance, dependency security, compatibility, prerelease Python, repository policy drift, repeated failure issues, trusted Dependabot doc sync, and attested releases.
 
-## Recommended Future Workflow Set
-
-* `ci.yml`
-  * code quality and build validation
-* `docs.yml`
-  * markdown lint
-  * link validation
-  * docs navigation checks
-* `pages.yml`
-  * future docs site build and publish
-* `release-docs.yml`
-  * generate release notes and docs diffs
+Every external action reference is pinned to a full commit SHA. GitHub owned actions plus explicitly selected Astral and Docker families are allowed.
 
 ## Validation Ownership
 

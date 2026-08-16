@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -46,6 +46,7 @@ class Symbol(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
     ticker: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     price_bars: Mapped[list["PriceBar"]] = relationship(back_populates="symbol")
@@ -211,3 +212,54 @@ class LiveQuote(Base):
     raw_payload_json: Mapped[str] = mapped_column(Text, default="{}")
 
     symbol: Mapped[Symbol] = relationship(back_populates="live_quotes")
+
+
+class CorporateAction(Base):
+    __tablename__ = "corporate_actions"
+    __table_args__ = (Index("ix_corporate_actions_symbol_effective", "symbol_id", "effective_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    symbol_id: Mapped[str] = mapped_column(ForeignKey("symbols.id"), index=True)
+    action_type: Mapped[str] = mapped_column(String(24), index=True)
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cash_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    new_ticker: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    symbol: Mapped[Symbol] = relationship()
+
+
+class DataQualityEvent(Base):
+    __tablename__ = "data_quality_events"
+    __table_args__ = (Index("ix_data_quality_events_symbol_detected", "symbol_id", "detected_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    symbol_id: Mapped[str | None] = mapped_column(ForeignKey("symbols.id"), nullable=True, index=True)
+    source_file: Mapped[str] = mapped_column(Text)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    severity: Mapped[str] = mapped_column(String(16))
+    issue_type: Mapped[str] = mapped_column(String(32), index=True)
+    message: Mapped[str] = mapped_column(Text)
+    repair_action: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class ExecutionAuditEvent(Base):
+    __tablename__ = "execution_audit_events"
+    __table_args__ = (
+        Index("ix_execution_audit_events_order_timestamp", "order_id", "timestamp"),
+        Index("ix_execution_audit_events_run_timestamp", "strategy_run_id", "timestamp"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    order_id: Mapped[str | None] = mapped_column(ForeignKey("orders.id"), nullable=True, index=True)
+    strategy_run_id: Mapped[str | None] = mapped_column(ForeignKey("strategy_runs.id"), nullable=True, index=True)
+    symbol_id: Mapped[str | None] = mapped_column(ForeignKey("symbols.id"), nullable=True, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    event_type: Mapped[str] = mapped_column(String(32), index=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    remaining_quantity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")

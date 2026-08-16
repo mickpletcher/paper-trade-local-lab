@@ -12,9 +12,16 @@ import uvicorn
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tradeforge.automation import MaintenanceError, run_maintenance
+from tradeforge.automation import (
+    MaintenanceError,
+    acknowledge_quarantined_import,
+    build_local_health,
+    run_maintenance,
+)
+from tradeforge.automation.environment import inspect_environment, verify_lock_provenance
 from tradeforge.backtesting.engine import BacktestEngine
 from tradeforge.config import get_settings
+from tradeforge.corporate_actions import record_corporate_action
 from tradeforge.database.migrations import (
     create_revision,
     get_current_version,
@@ -186,6 +193,74 @@ def run_maintenance_command() -> None:
             typer.echo(f"Maintenance failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("record-corporate-action")
+def record_corporate_action_command(
+    symbol: str = typer.Option(..., "--symbol"),
+    action_type: str = typer.Option(..., "--type"),
+    effective_at: str = typer.Option(..., "--effective-at"),
+    ratio: float | None = typer.Option(None, "--ratio"),
+    cash_amount: float | None = typer.Option(None, "--cash-amount"),
+    new_ticker: str | None = typer.Option(None, "--new-ticker"),
+) -> None:
+    """Record a split, dividend, symbol change, or delisting."""
+    init_db()
+    try:
+        effective = _parse_date_option("--effective-at", effective_at)
+        with session_scope() as session:
+            action = record_corporate_action(
+                session,
+                symbol,
+                action_type,
+                effective,
+                ratio=ratio,
+                cash_amount=cash_amount,
+                new_ticker=new_ticker,
+            )
+            action_id = action.id
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(action_id)
+
+
+@app.command("acknowledge-import")
+def acknowledge_import(
+    filename: str = typer.Option(..., "--file"),
+    retry: bool = typer.Option(False, "--retry", help="Move the quarantined file back to the pending queue."),
+) -> None:
+    """Acknowledge a quarantined import and optionally retry it."""
+    try:
+        destination = acknowledge_quarantined_import(get_settings(), filename, retry)
+    except (FileNotFoundError, FileExistsError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(str(destination))
+
+
+@app.command("health")
+def health() -> None:
+    """Report local database, backup, import, and maintenance health."""
+    payload = build_local_health()
+    typer.echo(json.dumps(payload, indent=2))
+    if payload["status"] != "healthy":
+        raise typer.Exit(code=1)
+
+
+@app.command("doctor")
+def doctor(
+    lock_file: Path = typer.Option(Path("requirements.lock"), "--lock-file"),
+    provenance_file: Path = typer.Option(Path("requirements.lock.provenance.json"), "--provenance-file"),
+) -> None:
+    """Report undeclared or version drifted packages and verify lock provenance."""
+    environment = inspect_environment(lock_file)
+    try:
+        provenance = verify_lock_provenance(lock_file, provenance_file)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        provenance = {"status": "invalid", "error": str(exc)}
+    payload = {"environment": environment, "provenance": provenance}
+    typer.echo(json.dumps(payload, indent=2))
+    if environment["status"] != "healthy" or provenance["status"] != "verified":
+        raise typer.Exit(code=1)
 
 
 @app.command("start-api")

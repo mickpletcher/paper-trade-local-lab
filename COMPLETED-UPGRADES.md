@@ -4,6 +4,43 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
+* Made GHCR publication wait for the strict typing, mutation, and migration gates.
+* Replaced repeated corporate action scans with one ordered action cursor.
+* Made environment inspection tolerate installed distributions without a package name.
+* Made report retention failures nonfatal and visible in the maintenance report.
+* Restored original ticker filenames when retrying timestamped quarantined imports.
+* Initialized empty risk projection positions with explicit numeric zeros.
+* Enforced maximum order notional across cumulative partial fills.
+* Stopped pending and future execution after a backtest delisting.
+* Reconciled delisting liquidation with position and trade realized profit and loss.
+* Adjusted pending order quantities and prices when a split applies.
+* Rejected missing or nonpositive split ratios during corporate action application.
+* Added automatic deduplicated GitHub issue creation after two consecutive CI or governance failures.
+* Added trusted Dependabot living document synchronization before governance validation.
+* Added a compatibility canary for workflow, dependency, and container runtime changes.
+* Added a scheduled nonblocking Python prerelease test and strict type canary.
+* Added one cross-platform bootstrap command for locked Python and declared Node validation dependencies.
+* Added lock digest and source provenance metadata with GitHub OIDC Sigstore attestation on `main`.
+* Added targeted mutation tests for broker execution, backtest metrics, and portfolio valuation.
+* Added a 25,000 row synthetic migration performance gate.
+* Added `tradeforge doctor` environment and lock provenance verification.
+* Added strict Mypy jobs for Python 3.11, 3.12, 3.13, and 3.14.
+* Added explicit dependency license allow rules and denied package policies.
+* Added an atomic, stale aware maintenance concurrency lock.
+* Added SQLite connection, lock probe, busy timeout, journal, and WAL checkpoint telemetry.
+* Closed raw SQLite connections explicitly in local health and migration validation paths.
+* Added a disposable Windows Task Scheduler lifecycle canary.
+* Added automatic newest backup restore drills with recovery time and table count reporting.
+* Added processed import archiving, failure quarantine, and explicit acknowledge or retry handling.
+* Added Teams and SMTP escalation with bounded retry and duplicate suppression.
+* Added maintenance report retention and the exit coded `tradeforge health` summary.
+* Added randomized quote retry jitter and a persistent provider circuit breaker.
+* Added scheduled repository policy drift checks for required checks, action pins, allowlists, and security settings.
+* Added CycloneDX release SBOMs, release attestations, and GHCR provenance plus SBOM publication.
+* Added a risk engine with order notional, position, gross exposure, drawdown, and kill switch controls.
+* Added OHLCV gap, duplicate, outlier, timezone normalization, and durable repair findings.
+* Added split, dividend, symbol change, and delisting records and backtest application.
+* Added durable execution audit events for triggers, cancellations, rejections, remaining quantity, and corporate actions.
 * Initialized persistent SQLite WAL mode once per engine instead of on every connection.
 * Honored explicit SQLite busy timeout settings in programmatic maintenance runs.
 * Added Windows CI coverage for the daily Task Scheduler installer and its nonmutating `WhatIf` path.

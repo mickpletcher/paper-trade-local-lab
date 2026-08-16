@@ -26,6 +26,8 @@ Effective settings are cached for the process lifetime. Restart the CLI or API p
 
 Invalid, negative, nonfinite, or unsupported execution settings fail before a backtest starts.
 
+Risk policy uses `TRADEFORGE_RISK_MAX_ORDER_NOTIONAL`, `TRADEFORGE_RISK_MAX_POSITION_QUANTITY`, `TRADEFORGE_RISK_MAX_GROSS_EXPOSURE`, `TRADEFORGE_RISK_MAX_DRAWDOWN_RATIO`, and `TRADEFORGE_RISK_KILL_SWITCH`.
+
 ## Live Quote And Automation Settings
 
 * `TRADEFORGE_QUOTE_PROVIDER` currently supports `alpaca`.
@@ -37,11 +39,19 @@ Invalid, negative, nonfinite, or unsupported execution settings fail before a ba
 * `TRADEFORGE_QUOTE_RETRY_ATTEMPTS` controls transient provider attempts from 1 through 10.
 * `TRADEFORGE_QUOTE_RETRY_BASE_SECONDS` controls exponential backoff from zero through 60 seconds.
 * `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` caps each backoff delay from zero through 300 seconds.
+* `TRADEFORGE_QUOTE_RETRY_JITTER_SECONDS` randomizes retry delays.
+* `TRADEFORGE_QUOTE_CIRCUIT_FAILURE_THRESHOLD`, `TRADEFORGE_QUOTE_CIRCUIT_RESET_SECONDS`, and `TRADEFORGE_QUOTE_CIRCUIT_STATE_PATH` control persistent outage isolation.
+* `TRADEFORGE_DATA_QUALITY_MAX_GAP_DAYS` and `TRADEFORGE_DATA_QUALITY_MAX_RETURN_RATIO` control import findings and rejection.
 * `TRADEFORGE_IMPORT_DIR` holds scheduled `<TICKER>.csv` inputs.
+* `TRADEFORGE_PROCESSED_IMPORT_DIR` and `TRADEFORGE_QUARANTINE_IMPORT_DIR` separate completed and failed input lifecycles.
 * `TRADEFORGE_BACKUP_DIR` holds integrity checked SQLite backups.
 * `TRADEFORGE_AUTOMATION_REPORT_DIR` holds timestamped and latest JSON run reports.
 * `TRADEFORGE_BACKUP_RETENTION_COUNT` keeps the newest 1 through 365 backups.
+* `TRADEFORGE_AUTOMATION_REPORT_RETENTION_COUNT` bounds timestamped maintenance reports.
+* `TRADEFORGE_MAINTENANCE_LOCK_PATH` and `TRADEFORGE_MAINTENANCE_LOCK_STALE_SECONDS` control concurrency.
 * `TRADEFORGE_FAILURE_WEBHOOK_URL` optionally receives minimal failure status. It must use HTTPS, include a hostname, and contain no embedded credentials.
+* `TRADEFORGE_FAILURE_TEAMS_WEBHOOK_URL` and the `TRADEFORGE_SMTP_*` settings enable escalations.
+* `TRADEFORGE_NOTIFICATION_RETRY_ATTEMPTS`, `TRADEFORGE_NOTIFICATION_DEDUPE_SECONDS`, and `TRADEFORGE_NOTIFICATION_STATE_PATH` control delivery safety.
 
 Use `.env.example` as the inventory. Never commit `.env` or generated data.
 

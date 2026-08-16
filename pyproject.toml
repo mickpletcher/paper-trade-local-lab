@@ -28,6 +28,7 @@ dependencies = [
   "alembic>=1.14",
   "fastapi>=0.111",
   "pandas>=2.2",
+  "packaging>=24.2",
   "pydantic>=2.7",
   "pydantic-settings>=2.2",
   "sqlalchemy>=2.0",
@@ -38,6 +39,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "build>=1.2",
+  "cyclonedx-bom>=7.2",
   "httpx2>=2.0",
   "mypy>=1.15",
   "pandas-stubs>=2.2",
@@ -79,7 +81,6 @@ select = ["B", "E4", "E7", "E9", "F", "I", "RUF", "SIM"]
 
 [tool.mypy]
 files = ["src/tradeforge"]
-python_version = "3.11"
 strict = true
 warn_unreachable = true
 

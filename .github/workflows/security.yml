@@ -22,6 +22,11 @@ jobs:
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate
+          allow-licenses: >-
+            MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, PSF-2.0, MPL-2.0, LGPL-2.1-or-later
+          deny-packages: >-
+            pkg:pypi/pickle5,
+            pkg:pypi/pycrypto
 
   python-audit:
     runs-on: ubuntu-latest

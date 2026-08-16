@@ -6,34 +6,37 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Automation And Reliability
 
-* Add automatic GitHub issue creation for repeated governance or CI failures without creating duplicates.
-* Automate living document synchronization for trusted Dependabot updates before governance validation.
-* Add automatic compatibility canaries before merging new major Actions and container runtime versions.
-* Add a scheduled Python prerelease canary that does not block supported runtime builds.
-* Add one cross-platform bootstrap command for Python and Node validation dependencies.
-* Add signed lock metadata and automated verification of dependency source provenance.
-* Add mutation testing for broker execution, metrics, and valuation correctness paths.
-* Add synthetic migration performance gates for large trade and fill histories.
-* Add a developer environment verifier that reports undeclared and version drifted packages against `requirements.lock`.
-* Run strict Mypy under every supported interpreter when dependency stubs vary by Python version.
-* Add explicit allowed license and denied package policies to dependency review.
-* Add a maintenance concurrency lock so overlapping scheduled runs fail safely.
-* Add SQLite first connection, lock wait, and WAL checkpoint telemetry to maintenance health reports.
-* Add a disposable Windows canary that registers, starts, verifies, and removes a real scheduled task.
-* Add automatic restore drills from the newest backup with recovery time reporting.
-* Add import quarantine and acknowledgement so successful files are not reprocessed indefinitely.
-* Add Teams and email escalation adapters with retry and duplicate suppression.
-* Add maintenance report retention and a local health summary command.
-* Add randomized retry jitter and a provider circuit breaker for extended quote outages.
-* Add automated repository policy drift detection for required checks, SHA pinning, the Actions allowlist, and security feature status.
-* Publish an SBOM plus build provenance for release and GHCR artifacts.
+* Automatically close repeated failure issues after the affected workflow completes successfully twice.
+* Add signed audit comments that identify the exact Dependabot commit synchronized into living documents.
+* Publish compatibility canary results as a machine readable pull request artifact and summary.
+* Escalate persistent Python prerelease failures only after three scheduled runs fail on the same interpreter.
+* Add pinned Python, uv, Node, and npm toolchain installation to the cross-platform bootstrap command.
+* Verify downloaded wheel hashes and Trusted Publishing attestations before accepting a dependency lock update.
+* Expand mutation coverage to strategy signals, data repair, corporate actions, and notification deduplication.
+* Store migration benchmark history and reject statistically significant performance regressions.
+* Add a `doctor --repair` mode that creates a clean lock-faithful virtual environment without changing the active one.
+* Add static type contract tests that compare Mypy output across every supported interpreter.
+* Add expiring, owner assigned exceptions for dependency license and denied package policy violations.
+* Add a database backed lease for maintenance when the application moves beyond one workstation.
+* Persist SQLite health telemetry and alert on lock wait or WAL checkpoint threshold breaches.
+* Add a repeated connection lifecycle stress test that fails on delayed finalization or leaked handles.
+* Schedule a local Task Scheduler lifecycle canary and recreate the maintenance task when drift is detected.
+* Enforce backup recovery point and recovery time objectives with encrypted off-device copies.
+* Add rule based quarantine remediation for known safe CSV formatting defects.
+* Add a retention retry queue with bounded backoff for reports locked by scanners or backup tools.
+* Record Teams and email delivery receipts and surface exhausted escalation attempts in local health.
+* Add configurable staleness thresholds and reason codes to the local health command.
+* Add circuit breaker half-open probes and a bounded global quote retry budget.
+* Open a remediation pull request when repository policy drift can be corrected safely.
+* Verify release and GHCR attestations after publication and block promotion on verification failure.
 
 ### Trading Safety And Data Quality
 
-* Add a risk engine with per trade limits, exposure caps, maximum drawdown controls, and a kill switch.
-* Add data quality checks for gaps, duplicates, outliers, timezones, and repair actions.
-* Add corporate action handling for splits, dividends, symbol changes, and delistings.
-* Add execution audit events for triggers, cancellations, rejections, and remaining quantity changes.
+* Add per strategy and per symbol risk profiles with controlled runtime overrides.
+* Make gap detection exchange calendar aware and distinguish holidays from missing market sessions.
+* Reconcile corporate actions against two independent sources before applying them to research data.
+* Add property based corporate action invariants that reconcile cash, positions, trades, and pending orders.
+* Add hash chained execution audit records with verification and tamper detection commands.
 
 ## Tier 2 (Medium)
 

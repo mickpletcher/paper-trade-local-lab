@@ -1,6 +1,6 @@
 # Installation
 
-TradeForge supports Python 3.11 or newer. Python 3.11 is the lint, type compatibility, and dependency lock reference version; the test matrix also covers Python 3.13 and 3.14.
+TradeForge supports Python 3.11 or newer. Python 3.11 is the dependency lock reference version. Strict typing covers Python 3.11 through 3.14, and tests cover Python 3.11, 3.13, and 3.14.
 
 ## Local Python
 
@@ -11,7 +11,7 @@ git clone https://github.com/mickpletcher/paper-trade-local-lab.git
 Set-Location paper-trade-local-lab
 py -3.13 -m venv .venv
 . .\.venv\Scripts\Activate.ps1
-python -m pip install --constraint requirements.lock -e ".[dev]"
+python scripts/bootstrap.py
 Copy-Item .env.example .env
 tradeforge init-db
 tradeforge seed-sample-data
@@ -24,7 +24,7 @@ git clone https://github.com/mickpletcher/paper-trade-local-lab.git
 cd paper-trade-local-lab
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --constraint requirements.lock -e ".[dev]"
+python scripts/bootstrap.py
 cp .env.example .env
 tradeforge init-db
 tradeforge seed-sample-data
@@ -50,7 +50,7 @@ The API has no authentication. Do not publish port `8000` to an untrusted networ
 After pulling a newer commit:
 
 ```bash
-python -m pip install --constraint requirements.lock -e ".[dev]"
+python scripts/bootstrap.py
 tradeforge init-db
 ```
 
@@ -62,6 +62,8 @@ tradeforge init-db
 * Confirm `.env` exists when using Docker Compose.
 * Ensure the host user can write to `data/`.
 * Run `tradeforge db-current` and compare the current and head migration revisions.
+* Run `tradeforge doctor` for dependency drift and lock provenance.
+* Run `tradeforge health` for the latest maintenance, backup, import, quarantine, and database state.
 * Use [SUPPORT.md](../../SUPPORT.md) when opening a reproducible issue.
 
 ## Cross Links

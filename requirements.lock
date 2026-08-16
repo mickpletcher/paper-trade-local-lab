@@ -12,8 +12,14 @@ anyio==4.14.2
     # via
     #   httpx2
     #   starlette
+arrow==1.4.0
+    # via isoduration
 ast-serialize==0.8.0
     # via mypy
+attrs==26.1.0
+    # via
+    #   jsonschema
+    #   referencing
 boolean-py==5.0
     # via license-expression
 build==1.5.0
@@ -22,6 +28,8 @@ cachecontrol==0.14.4
     # via pip-audit
 certifi==2026.7.22
     # via requests
+chardet==5.2.0
+    # via cyclonedx-bom
 charset-normalizer==3.5.1
     # via requests
 click==8.4.2
@@ -34,14 +42,20 @@ colorama==0.4.6 ; os_name == 'nt' or sys_platform == 'win32'
     #   typer
 coverage==7.15.4
     # via pytest-cov
+cyclonedx-bom==7.3.1
+    # via tradeforge (pyproject.toml)
 cyclonedx-python-lib==11.12.0
-    # via pip-audit
+    # via
+    #   cyclonedx-bom
+    #   pip-audit
 defusedxml==0.7.1
     # via py-serializable
 fastapi==0.141.1
     # via tradeforge (pyproject.toml)
 filelock==3.32.3
     # via cachecontrol
+fqdn==1.5.1
+    # via jsonschema
 greenlet==3.5.5 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
     # via sqlalchemy
 h11==0.16.0
@@ -58,12 +72,25 @@ idna==3.18
     # via
     #   anyio
     #   httpx2
+    #   jsonschema
     #   requests
 iniconfig==2.3.0
     # via pytest
+isoduration==20.11.0
+    # via jsonschema
+jsonpointer==3.1.1
+    # via jsonschema
+jsonschema==4.26.0
+    # via cyclonedx-python-lib
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+lark==1.3.1
+    # via rfc3987-syntax
 librt==0.15.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 license-expression==30.4.4
+    # via cyclonedx-python-lib
+lxml==6.1.1
     # via cyclonedx-python-lib
 mako==1.4.1
     # via alembic
@@ -88,10 +115,14 @@ numpy==2.5.2 ; python_full_version >= '3.12'
     #   pandas
     #   pandas-stubs
 packageurl-python==0.17.6
-    # via cyclonedx-python-lib
+    # via
+    #   cyclonedx-bom
+    #   cyclonedx-python-lib
 packaging==26.3
     # via
+    #   tradeforge (pyproject.toml)
     #   build
+    #   cyclonedx-bom
     #   pip-audit
     #   pip-requirements-parser
     #   pytest
@@ -108,7 +139,9 @@ pip-api==0.0.34
 pip-audit==2.10.1
     # via tradeforge (pyproject.toml)
 pip-requirements-parser==32.0.1
-    # via pip-audit
+    # via
+    #   cyclonedx-bom
+    #   pip-audit
 platformdirs==4.11.3
     # via pip-audit
 pluggy==1.6.0
@@ -141,23 +174,42 @@ pytest==9.1.1
 pytest-cov==7.1.0
     # via tradeforge (pyproject.toml)
 python-dateutil==2.9.0.post0
-    # via pandas
-python-dotenv==1.2.2
+    # via
+    #   arrow
+    #   pandas
+python-dotenv==1.2.3
     # via pydantic-settings
+referencing==0.37.0
+    # via
+    #   cyclonedx-python-lib
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.34.2
     # via
     #   cachecontrol
     #   pip-audit
+rfc3339-validator==0.1.4
+    # via jsonschema
+rfc3986-validator==0.1.1
+    # via jsonschema
+rfc3987-syntax==1.1.0
+    # via jsonschema
 rich==15.0.0
     # via
     #   pip-audit
     #   typer
+rpds-py==2026.6.3
+    # via
+    #   jsonschema
+    #   referencing
 ruff==0.16.3
     # via tradeforge (pyproject.toml)
 shellingham==1.5.4
     # via typer
 six==1.17.0
-    # via python-dateutil
+    # via
+    #   python-dateutil
+    #   rfc3339-validator
 sortedcontainers==2.4.0
     # via cyclonedx-python-lib
 sqlalchemy==2.0.52
@@ -188,6 +240,7 @@ typing-extensions==4.16.0
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   sqlalchemy
     #   starlette
     #   typing-inspection
@@ -196,9 +249,15 @@ typing-inspection==0.4.4
     #   fastapi
     #   pydantic
     #   pydantic-settings
-tzdata==2026.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
-    # via pandas
+tzdata==2026.3
+    # via
+    #   arrow
+    #   pandas
+uri-template==1.3.0
+    # via jsonschema
 urllib3==2.7.0
     # via requests
 uvicorn==0.52.3
     # via tradeforge (pyproject.toml)
+webcolors==25.10.0
+    # via jsonschema

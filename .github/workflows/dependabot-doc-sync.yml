@@ -1,0 +1,50 @@
+name: Dependabot Living Doc Sync
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout trusted automation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+
+      - name: Checkout dependency update
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: change
+
+      - name: Synchronize living documents
+        env:
+          DEPENDENCY: ${{ github.event.pull_request.title }}
+        run: >-
+          python trusted/scripts/Sync-DependabotLivingDocs.py
+          --repo change
+          --dependency "$DEPENDENCY"
+
+      - name: Commit synchronization
+        working-directory: change
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if git diff --quiet -- CHANGELOG.md ASSESSMENT.md FUTURE-UPGRADES.md COMPLETED-UPGRADES.md; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md ASSESSMENT.md FUTURE-UPGRADES.md COMPLETED-UPGRADES.md
+          git commit -m "Synchronize living docs for dependency update"
+          git push origin "HEAD:$BRANCH"

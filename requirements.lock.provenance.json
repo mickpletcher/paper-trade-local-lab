@@ -1,0 +1,7 @@
+{
+  "attestation": "github-oidc-sigstore",
+  "attestation_workflow": ".github/workflows/ci.yml",
+  "generation_command": "uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --output-file requirements.lock",
+  "sha256": "8eebd3c41812598093c8624ed5318fb0a94b1b710736eb7902e6337a814c8fb5",
+  "source_index": "https://pypi.org/simple"
+}
