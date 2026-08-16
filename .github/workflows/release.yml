@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing validated tag to package and publish.
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -11,6 +17,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     permissions:
       attestations: write
       contents: write
@@ -21,6 +29,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -34,14 +43,17 @@ jobs:
         shell: bash
         run: |
           package_version="$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
-          test "$GITHUB_REF_NAME" = "v$package_version"
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          test "$RELEASE_TAG" = "v$package_version"
+          tag_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          git merge-base --is-ancestor "$tag_commit" origin/main
 
       - name: Validate release
         run: |
           ruff check .
           ruff format --check .
           python -m pytest -q
+          python scripts/Test-MigrationPerformance.py --rows 25000 --max-seconds 20
+          python scripts/Test-BacktestPerformance.py --rows 100000 --max-seconds 5
           python -m build
 
       - name: Generate CycloneDX SBOM
@@ -61,4 +73,4 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag --title "TradeForge $GITHUB_REF_NAME"
+        run: gh release create "$RELEASE_TAG" dist/* --generate-notes --verify-tag --title "TradeForge $RELEASE_TAG"

@@ -31,8 +31,9 @@ def build_portfolio_valuation(
     session: Session,
     stale_after_seconds: int,
     strategy_run_id: str | None = None,
+    tenant_id: str | None = None,
 ) -> dict[str, object]:
-    selected_run_id = _resolve_strategy_run_id(session, strategy_run_id)
+    selected_run_id = _resolve_strategy_run_id(session, strategy_run_id, tenant_id)
     positions = (
         list(
             session.scalars(
@@ -108,14 +109,22 @@ def build_portfolio_valuation(
     }
 
 
-def _resolve_strategy_run_id(session: Session, requested_run_id: str | None) -> str | None:
+def _resolve_strategy_run_id(
+    session: Session,
+    requested_run_id: str | None,
+    tenant_id: str | None,
+) -> str | None:
     if requested_run_id is not None:
-        if session.get(StrategyRun, requested_run_id) is None:
+        statement = select(StrategyRun.id).where(StrategyRun.id == requested_run_id)
+        if tenant_id is not None:
+            statement = statement.where(StrategyRun.tenant_id == tenant_id)
+        if session.scalar(statement) is None:
             raise ValueError(f"Unknown strategy run: {requested_run_id}")
         return requested_run_id
-    return session.scalar(
-        select(StrategyRun.id).order_by(StrategyRun.started_at.desc(), StrategyRun.id.desc()).limit(1)
-    )
+    statement = select(StrategyRun.id)
+    if tenant_id is not None:
+        statement = statement.where(StrategyRun.tenant_id == tenant_id)
+    return session.scalar(statement.order_by(StrategyRun.started_at.desc(), StrategyRun.id.desc()).limit(1))
 
 
 def _load_latest_cash(session: Session, strategy_run_id: str | None) -> float:

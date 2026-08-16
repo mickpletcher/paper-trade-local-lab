@@ -6,7 +6,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import event
 
 from tradeforge.api.app import app
-from tradeforge.config import get_settings
+from tradeforge.api.dashboard import render_dashboard
+from tradeforge.auth.service import create_api_key, create_tenant
+from tradeforge.config import Settings, get_settings
+from tradeforge.constants import DEFAULT_TENANT_ID
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import AccountSnapshot, LiveQuote, Order, Position, Strategy, StrategyRun, Symbol
 from tradeforge.database.session import get_application_engine, session_scope
@@ -138,6 +141,29 @@ def test_settings_are_cached_until_explicitly_cleared(monkeypatch) -> None:
     assert get_settings().starting_cash == 2000
 
 
+def test_default_tenant_constant_is_shared_by_settings_and_models() -> None:
+    assert Settings.model_fields["default_tenant_id"].default == DEFAULT_TENANT_ID
+    assert StrategyRun.__table__.c.tenant_id.default.arg == DEFAULT_TENANT_ID
+
+
+def test_dashboard_counts_symbols_in_the_database(session, symbol) -> None:
+    statements: list[str] = []
+
+    def capture_statement(connection, cursor, statement, parameters, context, executemany) -> None:
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    engine = session.get_bind()
+    event.listen(engine, "before_cursor_execute", capture_statement)
+    try:
+        document = render_dashboard(session, None)
+    finally:
+        event.remove(engine, "before_cursor_execute", capture_statement)
+
+    assert "<strong>Symbols</strong><div>1</div>" in document
+    assert any("count(" in statement.lower() and "symbols" in statement.lower() for statement in statements)
+
+
 def test_api_lifespan_initializes_database_and_health_checks_it(monkeypatch, tmp_path) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
@@ -198,3 +224,64 @@ def test_relationship_endpoints_use_bounded_eager_load_queries(monkeypatch, tmp_
                 assert len(statements) == query_budget
         finally:
             event.remove(engine, "before_cursor_execute", count_statement)
+
+
+def test_api_auth_roles_dashboard_and_tenant_isolation(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+    monkeypatch.setenv("TRADEFORGE_API_AUTH_ENABLED", "true")
+    monkeypatch.setenv("TRADEFORGE_ENABLE_METRICS", "true")
+    get_settings.cache_clear()
+    init_db()
+    with session_scope() as session:
+        first_tenant = create_tenant(session, "first")
+        second_tenant = create_tenant(session, "second")
+        _, first_secret = create_api_key(session, first_tenant.id, "dashboard", "viewer")
+        _, operator_secret = create_api_key(session, first_tenant.id, "metrics", "operator")
+        symbol = Symbol(ticker="AAPL")
+        first_strategy = Strategy(name="first-strategy")
+        second_strategy = Strategy(name="second-strategy")
+        session.add_all([symbol, first_strategy, second_strategy])
+        session.flush()
+        first_run = StrategyRun(
+            tenant_id=first_tenant.id,
+            strategy_id=first_strategy.id,
+            symbol_id=symbol.id,
+            start_date=datetime(2026, 8, 16, 9, tzinfo=UTC),
+            end_date=datetime(2026, 8, 16, 16, tzinfo=UTC),
+        )
+        second_run = StrategyRun(
+            tenant_id=second_tenant.id,
+            strategy_id=second_strategy.id,
+            symbol_id=symbol.id,
+            start_date=datetime(2026, 8, 16, 9, tzinfo=UTC),
+            end_date=datetime(2026, 8, 16, 16, tzinfo=UTC),
+        )
+        session.add_all([first_run, second_run])
+        session.flush()
+        session.add_all(
+            [
+                Position(strategy_run_id=first_run.id, symbol_id=symbol.id, quantity=1, average_cost=100),
+                Position(strategy_run_id=second_run.id, symbol_id=symbol.id, quantity=2, average_cost=100),
+            ]
+        )
+
+    with TestClient(app) as client:
+        missing = client.get("/positions")
+        health_response = client.get("/health")
+        positions_response = client.get("/positions", headers={"X-TradeForge-Key": first_secret})
+        runs_response = client.get("/strategy-runs", headers={"X-TradeForge-Key": first_secret})
+        dashboard_response = client.get("/dashboard", headers={"X-TradeForge-Key": first_secret})
+        viewer_metrics = client.get("/metrics", headers={"X-TradeForge-Key": first_secret})
+        operator_metrics = client.get("/metrics", headers={"X-TradeForge-Key": operator_secret})
+
+    assert missing.status_code == 401
+    assert health_response.status_code == 200
+    assert [item["quantity"] for item in positions_response.json()] == [1]
+    assert [item["strategy"] for item in runs_response.json()] == ["first-strategy"]
+    assert dashboard_response.status_code == 200
+    assert "first-strategy" in dashboard_response.text
+    assert "second-strategy" not in dashboard_response.text
+    assert "Content-Security-Policy" in dashboard_response.headers
+    assert viewer_metrics.status_code == 403
+    assert operator_metrics.status_code == 200

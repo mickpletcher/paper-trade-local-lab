@@ -1,0 +1,89 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: semantic-release
+  cancel-in-progress: false
+
+jobs:
+  plan-and-release:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.release.outputs.action }}
+      tag: ${{ steps.release.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.lock
+
+      - name: Bootstrap locked environment
+        run: python scripts/bootstrap.py
+
+      - name: Validate release gates
+        run: |
+          python -m pytest -q
+          python scripts/Test-MigrationPerformance.py --rows 25000 --max-seconds 20
+          python scripts/Test-BacktestPerformance.py --rows 100000 --max-seconds 5
+
+      - name: Plan semantic release
+        id: release
+        run: python scripts/Prepare-SemanticRelease.py --output "$GITHUB_OUTPUT"
+
+      - name: Tag validated version
+        if: steps.release.outputs.action == 'tag'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$TAG" --message "TradeForge $TAG"
+          git push origin "$TAG"
+
+      - name: Prepare release pull request
+        if: steps.release.outputs.action == 'bump'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.next_version }}
+        run: |
+          branch="automation/release-v$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            exit 0
+          fi
+          python scripts/Prepare-SemanticRelease.py --prepare
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$branch"
+          git add pyproject.toml CHANGELOG.md ASSESSMENT.md FUTURE-UPGRADES.md COMPLETED-UPGRADES.md
+          git commit --message "chore(release): v$VERSION"
+          git push --set-upstream origin "$branch"
+          gh pr create --base main --head "$branch" --title "chore(release): v$VERSION" --body "Automated semantic release preparation after migration, performance, and test gates passed."
+          gh pr merge "$branch" --auto --squash --delete-branch
+
+  publish-release:
+    needs: plan-and-release
+    if: needs.plan-and-release.outputs.action == 'tag'
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.plan-and-release.outputs.tag }}

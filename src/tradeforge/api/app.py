@@ -7,14 +7,16 @@ from contextlib import asynccontextmanager
 from time import perf_counter
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload, selectinload
 from starlette.responses import Response
 
+from tradeforge.api.dashboard import render_dashboard
+from tradeforge.auth.service import AuthenticationError, authenticate_api_key
 from tradeforge.config import get_settings
 from tradeforge.database.migrations import init_db
-from tradeforge.database.models import LiveQuote, Order, Position, StrategyRun, Symbol
+from tradeforge.database.models import Experiment, LiveQuote, Order, Position, StrategyRun, Symbol
 from tradeforge.database.session import application_session_scope, dispose_application_engine, get_application_engine
 from tradeforge.market_data.live import serialize_quote
 from tradeforge.telemetry import get_logger, log_event, metrics_registry, setup_logging
@@ -39,7 +41,8 @@ logger = get_logger(__name__)
 async def telemetry_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     started_at = perf_counter()
     try:
-        response = await call_next(request)
+        authentication_response = _authenticate_request(request)
+        response = authentication_response if authentication_response is not None else await call_next(request)
     except Exception:
         duration_seconds = perf_counter() - started_at
         metrics_registry.record_http_request(request.method, request.url.path, 500, duration_seconds)
@@ -93,6 +96,21 @@ def metrics() -> PlainTextResponse:
         raise HTTPException(status_code=404, detail="Metrics are disabled.")
     return PlainTextResponse(
         metrics_registry.render_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8"
+    )
+
+
+@app.get("/dashboard", summary="Show local research dashboard", response_class=HTMLResponse)
+def dashboard(request: Request) -> HTMLResponse:
+    if not get_settings().api_dashboard_enabled:
+        raise HTTPException(status_code=404, detail="Dashboard is disabled.")
+    with application_session_scope() as session:
+        content = render_dashboard(session, _tenant_id(request))
+    return HTMLResponse(
+        content,
+        headers={
+            "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 
@@ -196,11 +214,16 @@ def quotes() -> list[dict[str, object]]:
         }
     },
 )
-def portfolio(strategy_run_id: str | None = None) -> dict[str, object]:
+def portfolio(request: Request, strategy_run_id: str | None = None) -> dict[str, object]:
     settings = get_settings()
     with application_session_scope() as session:
         try:
-            return build_portfolio_valuation(session, settings.quote_stale_after_seconds, strategy_run_id)
+            return build_portfolio_valuation(
+                session,
+                settings.quote_stale_after_seconds,
+                strategy_run_id,
+                _tenant_id(request),
+            )
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -227,8 +250,14 @@ def portfolio(strategy_run_id: str | None = None) -> dict[str, object]:
         }
     },
 )
-def positions() -> list[dict[str, object]]:
+def positions(request: Request) -> list[dict[str, object]]:
     with application_session_scope() as session:
+        statement = select(Position).options(joinedload(Position.symbol))
+        tenant_id = _tenant_id(request)
+        if tenant_id is not None:
+            statement = statement.join(StrategyRun, Position.strategy_run_id == StrategyRun.id).where(
+                StrategyRun.tenant_id == tenant_id
+            )
         return [
             {
                 "id": item.id,
@@ -237,7 +266,7 @@ def positions() -> list[dict[str, object]]:
                 "average_cost": item.average_cost,
                 "realized_pnl": item.realized_pnl,
             }
-            for item in session.scalars(select(Position).options(joinedload(Position.symbol)))
+            for item in session.scalars(statement)
         ]
 
 
@@ -264,8 +293,14 @@ def positions() -> list[dict[str, object]]:
         }
     },
 )
-def orders() -> list[dict[str, object]]:
+def orders(request: Request) -> list[dict[str, object]]:
     with application_session_scope() as session:
+        statement = select(Order).options(joinedload(Order.symbol))
+        tenant_id = _tenant_id(request)
+        if tenant_id is not None:
+            statement = statement.join(StrategyRun, Order.strategy_run_id == StrategyRun.id).where(
+                StrategyRun.tenant_id == tenant_id
+            )
         return [
             {
                 "id": item.id,
@@ -275,7 +310,7 @@ def orders() -> list[dict[str, object]]:
                 "quantity": item.quantity,
                 "status": item.status,
             }
-            for item in session.scalars(select(Order).options(joinedload(Order.symbol)))
+            for item in session.scalars(statement)
         ]
 
 
@@ -306,8 +341,15 @@ def orders() -> list[dict[str, object]]:
         }
     },
 )
-def strategy_runs() -> list[dict[str, object]]:
+def strategy_runs(request: Request) -> list[dict[str, object]]:
     with application_session_scope() as session:
+        statement = select(StrategyRun).options(
+            joinedload(StrategyRun.strategy),
+            joinedload(StrategyRun.symbol),
+        )
+        tenant_id = _tenant_id(request)
+        if tenant_id is not None:
+            statement = statement.where(StrategyRun.tenant_id == tenant_id)
         return [
             {
                 "id": item.id,
@@ -317,10 +359,51 @@ def strategy_runs() -> list[dict[str, object]]:
                 "completed_at": item.completed_at,
                 "metrics": json.loads(item.metrics_json or "{}"),
             }
-            for item in session.scalars(
-                select(StrategyRun).options(
-                    joinedload(StrategyRun.strategy),
-                    joinedload(StrategyRun.symbol),
-                )
-            )
+            for item in session.scalars(statement)
         ]
+
+
+@app.get("/experiments", summary="List immutable strategy experiments")
+def experiments(request: Request) -> list[dict[str, object]]:
+    with application_session_scope() as session:
+        statement = select(Experiment).order_by(Experiment.created_at.desc())
+        tenant_id = _tenant_id(request)
+        if tenant_id is not None:
+            statement = statement.where(Experiment.tenant_id == tenant_id)
+        return [
+            {
+                "id": item.id,
+                "tenant_id": item.tenant_id,
+                "strategy_run_id": item.strategy_run_id,
+                "strategy_version": item.strategy_version,
+                "dataset_sha256": item.dataset_sha256,
+                "created_at": item.created_at,
+            }
+            for item in session.scalars(statement)
+        ]
+
+
+def _authenticate_request(request: Request) -> Response | None:
+    settings = get_settings()
+    request.state.tenant_id = None
+    request.state.role = None
+    if not settings.api_auth_enabled or request.url.path in {"/health", "/docs", "/openapi.json", "/redoc"}:
+        return None
+    raw_key = request.headers.get(settings.api_key_header)
+    if raw_key is None:
+        return JSONResponse({"detail": "API key required."}, status_code=401)
+    try:
+        with application_session_scope() as session:
+            context = authenticate_api_key(session, raw_key)
+    except AuthenticationError:
+        return JSONResponse({"detail": "Invalid or expired API key."}, status_code=401)
+    if request.url.path == "/metrics" and not context.allows("operator"):
+        return JSONResponse({"detail": "Operator role required."}, status_code=403)
+    request.state.tenant_id = context.tenant_id
+    request.state.role = context.role
+    return None
+
+
+def _tenant_id(request: Request) -> str | None:
+    value = getattr(request.state, "tenant_id", None)
+    return value if isinstance(value, str) else None

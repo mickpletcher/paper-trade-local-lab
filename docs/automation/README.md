@@ -45,7 +45,8 @@ The Windows CI job validates the installer contract with mocked cmdlets, then re
 | Repository Policy | Monday schedule or manual dispatch | Detects required check, SHA pin, Actions allowlist, and security feature drift. |
 | Repeated Failure Triage | Completed CI or Governance run | Opens or updates one issue after two consecutive failures. |
 | Dependabot Living Doc Sync | Trusted Dependabot pull request | Runs base branch automation and commits the four living files before governance validation. |
-| Release | Semantic version tag | Validates, tests, builds, generates a CycloneDX SBOM, attests artifacts, and creates a GitHub release. |
+| Release | Semantic version tag or reusable workflow call | Validates, tests, builds, generates a CycloneDX SBOM, attests artifacts, and creates a GitHub release. |
+| Semantic Release | Push to `main` or manual dispatch | Reads conventional commits, runs the full suite plus migration and backtest performance gates, tags an already prepared version and calls Release directly, or creates and automatically squash merges a release preparation pull request. |
 
 ## Governance Contract
 
@@ -76,7 +77,9 @@ Workflows use read only repository permissions unless publishing requires GHCR p
 
 ## Release Tags
 
-Push a `vMAJOR.MINOR.PATCH` tag only after the value matches `project.version` in `pyproject.toml`. The release workflow rejects mismatched tags and uploads the built wheel, source distribution, CycloneDX SBOM, and GitHub OIDC attestations.
+Semantic release automation prepares `feat` changes as minor versions, `fix` and `perf` changes as patch versions, and `!` or `BREAKING CHANGE:` changes as major versions. It updates the package version and all four living files in a reviewable pull request. After creating a validated tag, it directly calls the reusable Release workflow because workflow token tag pushes do not trigger another push workflow. Release rejects mismatched tags and uploads the built wheel, source distribution, CycloneDX SBOM, and GitHub OIDC attestations.
+
+`tradeforge run-dr-drill` measures the newest backup age and restore duration against configured RPO and RTO values. It atomically writes `data/automation/dr-latest.json` and exits nonzero when either objective is missed.
 
 ## Cross Links
 

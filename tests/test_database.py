@@ -30,13 +30,17 @@ def test_database_initialization_creates_tables(engine) -> None:
         "corporate_actions",
         "data_quality_events",
         "execution_audit_events",
+        "tenants",
+        "api_keys",
+        "experiments",
+        "experiment_artifacts",
     }.issubset(tables)
     order_columns = {column["name"] for column in inspector.get_columns("orders")}
     trade_columns = {column["name"] for column in inspector.get_columns("trades")}
     assert {"stop_price", "filled_quantity", "commission_paid", "triggered_at"}.issubset(order_columns)
     assert {"entry_fee", "exit_fee"}.issubset(trade_columns)
-    assert get_current_version(engine) == "005_tier_one_controls"
-    assert get_head_version() == "005_tier_one_controls"
+    assert get_current_version(engine) == "006_tier_three_platform"
+    assert get_head_version() == "006_tier_three_platform"
 
 
 def test_sqlite_foreign_keys_are_enabled(engine) -> None:

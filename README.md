@@ -11,7 +11,7 @@ TradeForge is a local paper trading and historical backtesting lab. It imports p
 TradeForge does not connect to a brokerage account and does not place live trades.
 
 > [!WARNING]
-> TradeForge is research software. It is not financial advice. Backtest results are not a promise of future performance. Keep the API on your own computer because it has no authentication.
+> TradeForge is research software. It is not financial advice. Backtest results are not a promise of future performance. API authentication is disabled by default, so keep the API on your own computer unless you deliberately enable API keys.
 
 ## Contents
 
@@ -19,6 +19,7 @@ TradeForge does not connect to a brokerage account and does not place live trade
 * [Before you start](#before-you-start)
 * [Windows installation](#windows-installation)
 * [First backtest](#first-backtest)
+* [Portfolio and research workflows](#portfolio-and-research-workflows)
 * [Understanding results](#understanding-results)
 * [Files and folders](#files-and-folders)
 * [Configuration](#configuration)
@@ -44,24 +45,29 @@ TradeForge currently provides:
 * historical OHLCV CSV import with data quality checks
 * bundled AAPL sample data for a no credential first run
 * a moving average crossover strategy
+* allocated multi symbol portfolio backtests
+* event ordered bars, ticks, news, and system messages
+* rolling risk, beta, factor, and market regime analytics
+* immutable experiment records with dataset and report hashes
+* allowlisted strategy, broker, indicator, and report plugins
 * market, limit, stop, and stop limit order simulation
 * configurable commissions, slippage, volume limits, and quantity increments
 * position, exposure, drawdown, order size, and kill switch risk controls
 * SQLite storage with Alembic schema migrations
 * Markdown backtest reports
 * optional Alpaca live quote retrieval for local valuation
-* a read only FastAPI inspection service
+* a read only FastAPI service and local dashboard with optional tenant API keys
 * unattended import processing, backups, restore drills, reports, retries, and alerts
 * a Windows Task Scheduler installer for daily maintenance
 
 The current limitations matter:
 
 * only one built in strategy is available
-* a backtest covers one symbol at a time
+* portfolio runs isolate capital into one single symbol engine per allocation
 * execution uses completed OHLCV bars, not an exchange order book
 * money is stored as floating point values
 * live quote retrieval supports Alpaca only
-* the API has no authentication, pagination, or versioning
+* API authentication is opt in and the API has no pagination or versioning
 
 See [ASSESSMENT.md](./ASSESSMENT.md) for the current one minute project status.
 
@@ -246,9 +252,10 @@ Run this exact sample from the project root:
 tradeforge run-backtest --strategy moving-average-cross --symbol AAPL --start 2023-01-01 --end 2023-01-08 --short-window 2 --long-window 3 --order-size 2
 ```
 
-The command prints a JSON object with three top level fields:
+The command prints a JSON object with four top level fields:
 
 * `strategy_run_id` is the unique ID for this backtest.
+* `experiment_id` is the immutable input and artifact provenance record.
 * `metrics` contains the calculated performance values.
 * `report_path` points to the generated Markdown report.
 
@@ -272,6 +279,57 @@ notepad $latestBacktestReport.FullName
 ```
 
 The sample is deliberately small. It proves that installation, migrations, data import, strategy execution, simulated orders, result persistence, and report generation work. It is not a meaningful strategy evaluation.
+
+## Portfolio and research workflows
+
+Load another sample symbol before trying the portfolio command:
+
+```powershell
+tradeforge seed-sample-data --symbol MSFT
+```
+
+Run the same strategy across two independently funded sleeves:
+
+```powershell
+tradeforge run-portfolio-backtest --symbol AAPL --symbol MSFT --start 2023-01-01 --end 2023-01-08 --total-cash 100000 --short-window 2 --long-window 3 --order-size 2
+```
+
+The default `equal` allocation gives each symbol half of the cash. Use fixed weights when you need an explicit allocation. The JSON must contain every requested symbol and the values must total exactly `1`:
+
+```powershell
+tradeforge run-portfolio-backtest --symbol AAPL --symbol MSFT --start 2023-01-01 --end 2023-01-08 --total-cash 100000 --allocation fixed --weights-json '{"AAPL":0.7,"MSFT":0.3}' --short-window 2 --long-window 3 --order-size 2
+```
+
+Portfolio output includes total starting cash, ending equity, return, per symbol allocations, one strategy run and report per symbol, and the number of processed lifecycle events. Each sleeve has isolated cash. All sleeves commit together. If one symbol fails, TradeForge rolls back every sleeve and removes reports created by the failed portfolio. This is not yet a shared account where one symbol can consume another symbol's unused capital.
+
+Every completed backtest automatically creates an immutable experiment record. It hashes the exact stored bars used by the run and the generated report. List the records without exposing report contents:
+
+```powershell
+tradeforge show-experiments
+```
+
+Calculate rolling risk, beta, and market regimes from stored bars:
+
+```powershell
+tradeforge analyze-symbol --symbol AAPL --benchmark-symbol MSFT --window 2
+```
+
+Use a larger window, such as `20`, with real daily history. TradeForge matches asset and benchmark bars by timestamp and ignores dates that are not present in both series. At least two matching timestamps are required. The result labels each price as `insufficient`, `bull`, `bear`, `sideways`, or `high_volatility` based on the configured rolling window.
+
+Confirm the vectorized moving average path stays inside its runtime budget:
+
+```powershell
+tradeforge benchmark-performance --rows 100000 --maximum-seconds 5
+```
+
+List built in plugins and available connector adapters:
+
+```powershell
+tradeforge list-plugins
+tradeforge list-connectors
+```
+
+Connector entries describe request and normalization adapters only. `live_order_routing` is `false` for every connector. TradeForge never transmits the paper signals they produce.
 
 ## Understanding results
 
@@ -474,6 +532,7 @@ Open these local pages in a browser:
 
 * API documentation: `http://127.0.0.1:8000/docs`
 * API health: `http://127.0.0.1:8000/health`
+* local dashboard: `http://127.0.0.1:8000/dashboard`
 
 You can also test health from another PowerShell window:
 
@@ -490,6 +549,8 @@ Current read only endpoints include:
 * `/positions`
 * `/orders`
 * `/strategy-runs`
+* `/experiments`
+* `/dashboard`
 * `/metrics` when metrics are enabled
 
 Use a different local port if 8000 is occupied:
@@ -498,7 +559,56 @@ Use a different local port if 8000 is occupied:
 tradeforge start-api --port 8001
 ```
 
-Do not use `--host 0.0.0.0` on a normal workstation. That exposes the unauthenticated service to other reachable devices. Compose uses `0.0.0.0` inside the container but binds the host side to loopback only.
+Authentication is disabled by default for the simplest loopback only first run. Enable it before allowing another device to reach the API.
+
+Create a tenant and a least privilege API identity:
+
+```powershell
+$tenant = tradeforge create-tenant --name personal | ConvertFrom-Json
+$identity = tradeforge create-api-key --tenant-id $tenant.id --name local-dashboard --role viewer | ConvertFrom-Json
+$identity.api_key
+```
+
+Copy the printed `tf_...` secret into a password manager. TradeForge stores only a per key salted PBKDF2-HMAC-SHA-256 verifier and cannot display the secret again. Do not place the secret in Git, screenshots, shell transcripts, URLs, or issue comments.
+
+Set this value in `.env`, then restart the API:
+
+```text
+TRADEFORGE_API_AUTH_ENABLED=true
+```
+
+The health and interactive documentation routes remain public. Other routes require the configured `X-TradeForge-Key` header. Test the new identity from PowerShell:
+
+```powershell
+$headers = @{ "X-TradeForge-Key" = $identity.api_key }
+Invoke-RestMethod http://127.0.0.1:8000/positions -Headers $headers
+```
+
+Roles are cumulative:
+
+* `viewer` reads tenant scoped research data and the dashboard.
+* `operator` also reads process metrics when metrics are enabled.
+* `admin` currently has the same read access and is reserved for future administrative endpoints.
+
+Each key can see only positions, orders, runs, experiments, and valuation for its tenant. Symbols and quotes are shared market data. Give each automated process its own key so you can revoke it without interrupting another process.
+
+Rotate a key before it expires:
+
+```powershell
+$replacement = tradeforge rotate-api-key --api-key-id $identity.id | ConvertFrom-Json
+$replacement.api_key
+```
+
+Rotation revokes the old key immediately. Update the caller with the replacement secret before its next request. Revoke a compromised or retired key:
+
+```powershell
+tradeforge revoke-api-key --api-key-id $replacement.id
+tradeforge show-api-keys --tenant-id $tenant.id
+```
+
+The metadata listing never returns stored secrets. Keys expire after 90 days by default. Change `TRADEFORGE_API_KEY_ROTATION_DAYS` before issuing a key or pass `--expires-in-days` to the creation or rotation command.
+
+Do not use `--host 0.0.0.0` on a normal workstation. API keys do not provide TLS. If the service must cross a network, put it behind an HTTPS reverse proxy and retain the API key requirement. Compose uses `0.0.0.0` inside the container but binds the host side to loopback only.
 
 ## Automated maintenance
 
@@ -664,6 +774,21 @@ List backups newest first:
 Get-ChildItem .\data\backups\tradeforge-*.db |
     Sort-Object LastWriteTime -Descending
 ```
+
+Run a separate recovery objective drill at any time:
+
+```powershell
+tradeforge run-dr-drill
+```
+
+The command selects the newest backup, restores it into memory, verifies integrity and application tables, measures the backup age as recovery point age, measures restore duration, and writes `data\automation\dr-latest.json`. It returns exit code 1 when either target is missed. Defaults are a 24 hour recovery point objective and a 60 second recovery time objective:
+
+```text
+TRADEFORGE_DR_RPO_TARGET_SECONDS=86400
+TRADEFORGE_DR_RTO_TARGET_SECONDS=60
+```
+
+This is a local recoverability drill. It does not protect against loss of the entire workstation. Copy verified backups to encrypted off device storage using a separate approved process.
 
 ### Manual restore procedure
 
@@ -984,8 +1109,20 @@ If the problem is not covered here, read [SUPPORT.md](./SUPPORT.md) before openi
 | `tradeforge import-csv` | Import one OHLCV CSV immediately. |
 | `tradeforge seed-sample-data` | Load the bundled eight row AAPL sample. |
 | `tradeforge run-backtest` | Run one historical strategy simulation. |
+| `tradeforge run-portfolio-backtest` | Run allocated backtests across repeated symbols. |
+| `tradeforge analyze-symbol` | Calculate rolling risk, beta, factor, and regime analytics. |
+| `tradeforge benchmark-performance` | Enforce the vectorized signal runtime budget. |
+| `tradeforge list-plugins` | List built in and explicitly allowlisted plugins. |
+| `tradeforge list-connectors` | List connector capabilities and routing safety state. |
 | `tradeforge refresh-quotes` | Retrieve and store Alpaca quotes. |
 | `tradeforge run-maintenance` | Run imports, quotes, health checks, backup, restore drill, and reporting. |
+| `tradeforge run-dr-drill` | Measure latest backup recovery point and recovery time objectives. |
+| `tradeforge create-tenant` | Create an isolated research and API tenant. |
+| `tradeforge create-api-key` | Issue a time limited least privilege API identity secret once. |
+| `tradeforge rotate-api-key` | Revoke one key and issue its replacement. |
+| `tradeforge revoke-api-key` | Revoke an API identity immediately. |
+| `tradeforge show-api-keys` | List identity metadata without secrets. |
+| `tradeforge show-experiments` | List immutable backtest provenance records. |
 | `tradeforge record-corporate-action` | Store a split, dividend, symbol change, or delisting. |
 | `tradeforge acknowledge-import` | Archive or retry one quarantined import. |
 | `tradeforge health` | Return exit coded database and automation health. |

@@ -5,9 +5,12 @@ from pathlib import Path
 
 import pytest
 import typer
+from sqlalchemy import select
 from typer.testing import CliRunner
 
 from tradeforge.cli import _parse_date_option, app
+from tradeforge.database.models import PriceBar, Symbol
+from tradeforge.database.session import session_scope
 
 
 def test_init_db_command_name_is_preserved(monkeypatch, tmp_path) -> None:
@@ -69,6 +72,117 @@ def test_seed_and_backtest_cli_flow(monkeypatch, tmp_path) -> None:
     assert "status=cancelled" in orders_result.stdout
 
     assert Path(tmp_path, "data", "tradeforge.db").exists()
+
+
+def test_tier_three_research_cli_flow(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+    for ticker in ("AAPL", "MSFT"):
+        result = runner.invoke(app, ["seed-sample-data", "--symbol", ticker], env=env, catch_exceptions=False)
+        assert result.exit_code == 0
+    with session_scope(env["TRADEFORGE_DATABASE_URL"]) as session:
+        first_msft_bar = session.scalar(
+            select(PriceBar)
+            .join(Symbol, PriceBar.symbol_id == Symbol.id)
+            .where(Symbol.ticker == "MSFT")
+            .order_by(PriceBar.timestamp.asc())
+            .limit(1)
+        )
+        assert first_msft_bar is not None
+        session.delete(first_msft_bar)
+
+    portfolio_result = runner.invoke(
+        app,
+        [
+            "run-portfolio-backtest",
+            "--symbol",
+            "AAPL",
+            "--symbol",
+            "MSFT",
+            "--start",
+            "2023-01-01",
+            "--end",
+            "2023-01-08",
+            "--total-cash",
+            "20000",
+            "--short-window",
+            "2",
+            "--long-window",
+            "3",
+            "--order-size",
+            "2",
+        ],
+        env=env,
+        catch_exceptions=False,
+    )
+    analytics_result = runner.invoke(
+        app,
+        ["analyze-symbol", "--symbol", "AAPL", "--benchmark-symbol", "MSFT", "--window", "2"],
+        env=env,
+        catch_exceptions=False,
+    )
+    experiments_result = runner.invoke(app, ["show-experiments"], env=env, catch_exceptions=False)
+    plugins_result = runner.invoke(app, ["list-plugins"], env=env, catch_exceptions=False)
+    connectors_result = runner.invoke(app, ["list-connectors"], env=env, catch_exceptions=False)
+    benchmark_result = runner.invoke(
+        app,
+        ["benchmark-performance", "--rows", "1000", "--maximum-seconds", "2"],
+        env=env,
+        catch_exceptions=False,
+    )
+
+    portfolio = json.loads(portfolio_result.stdout)
+    analytics = json.loads(analytics_result.stdout)
+    experiments = json.loads(experiments_result.stdout)
+    assert portfolio["allocations"] == {"AAPL": 10000.0, "MSFT": 10000.0}
+    assert len(portfolio["runs"]) == 2
+    assert analytics["beta"] == pytest.approx(1)
+    assert len(experiments) == 2
+    assert any(item["name"] == "moving-average-cross" for item in json.loads(plugins_result.stdout))
+    assert any(item["name"] == "tradier" for item in json.loads(connectors_result.stdout))
+    assert json.loads(benchmark_result.stdout)["rows"] == 1000
+
+
+def test_tier_three_identity_and_disaster_recovery_cli_flow(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    env = {"TRADEFORGE_DATABASE_URL": "sqlite:///data/tradeforge.db"}
+
+    tenant_result = runner.invoke(app, ["create-tenant", "--name", "automation"], env=env, catch_exceptions=False)
+    tenant_id = json.loads(tenant_result.stdout)["id"]
+    key_result = runner.invoke(
+        app,
+        ["create-api-key", "--tenant-id", tenant_id, "--name", "reader", "--role", "viewer"],
+        env=env,
+        catch_exceptions=False,
+    )
+    key_payload = json.loads(key_result.stdout)
+    list_result = runner.invoke(app, ["show-api-keys", "--tenant-id", tenant_id], env=env, catch_exceptions=False)
+    rotate_result = runner.invoke(
+        app,
+        ["rotate-api-key", "--api-key-id", key_payload["id"], "--expires-in-days", "30"],
+        env=env,
+        catch_exceptions=False,
+    )
+    replacement = json.loads(rotate_result.stdout)
+    revoke_result = runner.invoke(
+        app,
+        ["revoke-api-key", "--api-key-id", replacement["id"]],
+        env=env,
+        catch_exceptions=False,
+    )
+    maintenance_result = runner.invoke(app, ["run-maintenance"], env=env, catch_exceptions=False)
+    drill_result = runner.invoke(app, ["run-dr-drill"], env=env, catch_exceptions=False)
+
+    assert key_payload["api_key"].startswith("tf_")
+    assert "api_key" not in json.loads(list_result.stdout)[0]
+    assert replacement["id"] != key_payload["id"]
+    assert json.loads(revoke_result.stdout)["revoked_at"] is not None
+    assert json.loads(maintenance_result.stdout)["restore_drill"]["objectives_met"] is True
+    drill = json.loads(drill_result.stdout)
+    assert drill["objectives_met"] is True
+    assert (tmp_path / drill["report_path"]).is_file()
 
 
 def test_run_backtest_rejects_unknown_strategy(monkeypatch, tmp_path) -> None:

@@ -4,6 +4,31 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
+* Made portfolio strategy runs, experiments, artifacts, and reports persist atomically across every sleeve.
+* Aligned asset and benchmark close series by timestamp before beta calculation.
+* Made semantic release call the reusable packaging, SBOM, attestation, and GitHub release workflow directly after tagging.
+* Streamed dataset and artifact provenance hashing with bounded memory use.
+* Replaced dashboard symbol identifier materialization with a SQL count.
+* Centralized the runtime default tenant identifier across settings and database models.
+* Added regression coverage for every Tier 3 review fix.
+* Hardened API keys with per key salted PBKDF2 verification and constant time comparison.
+* Added allocated multi symbol portfolio backtesting with equal and fixed capital rules.
+* Added a deterministic event runtime for timezone aware bar, tick, news, and system events.
+* Added allowlisted strategy, broker, indicator, and report entry point plugins.
+* Added a tenant scoped server rendered dashboard for symbols, positions, orders, and strategy runs.
+* Added rolling risk, factor beta, benchmark beta, and market regime analytics.
+* Added immutable experiment tracking for strategy versions, parameters, dataset hashes, and report artifacts.
+* Added vectorized moving average signals, multiprocessing analytics, and a CI performance budget.
+* Added optional API authentication, expiring API keys, cumulative roles, and tenant isolation.
+* Added conventional commit semantic release automation with test, migration, and performance gates.
+* Added one time service identity secrets with default expiration, rotation, revocation, and least privilege roles.
+* Added local disaster recovery drills with measured recovery point and recovery time objectives.
+* Extended lock faithful full suite CI to every supported Python version before dependency changes merge.
+* Added fixed income, rates, credit, volatility, index derivative, and international equity value models.
+* Added CFD, calendar spread, OTC spot metal, and binary prediction market simulation models.
+* Added auction, halt, price limit, odd lot, latency, queue, and market impact scenario models.
+* Added safe quote and paper signal connector adapters for Tradier, TradeStation, MetaTrader, NinjaTrader, cTrader, and crypto exchanges.
+* Evaluated LEAN, backtesting.py, Zipline Reloaded, Freqtrade, Hummingbot, CCXT, TA-Lib, and pandas-ta before dependency adoption.
 * Made dependency lock provenance verification stable across LF and CRLF checkouts.
 * Replaced the root project overview with a complete Windows first novice operator manual.
 * Made GHCR publication wait for the strict typing, mutation, and migration gates.

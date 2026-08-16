@@ -8,9 +8,20 @@ from urllib.parse import urlsplit
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from tradeforge.constants import DEFAULT_TENANT_ID
+
 
 class Settings(BaseSettings):
     database_url: str = Field(default="sqlite:///data/tradeforge.db", alias="TRADEFORGE_DATABASE_URL")
+    default_tenant_id: str = Field(
+        default=DEFAULT_TENANT_ID,
+        alias="TRADEFORGE_DEFAULT_TENANT_ID",
+    )
+    api_auth_enabled: bool = Field(default=False, alias="TRADEFORGE_API_AUTH_ENABLED")
+    api_key_header: str = Field(default="X-TradeForge-Key", alias="TRADEFORGE_API_KEY_HEADER")
+    api_dashboard_enabled: bool = Field(default=True, alias="TRADEFORGE_API_DASHBOARD_ENABLED")
+    api_key_rotation_days: int = Field(default=90, ge=1, le=3_650, alias="TRADEFORGE_API_KEY_ROTATION_DAYS")
+    plugin_allowlist_json: str = Field(default="[]", alias="TRADEFORGE_PLUGIN_ALLOWLIST_JSON")
     sqlite_busy_timeout_ms: int = Field(
         default=5_000,
         ge=0,
@@ -100,6 +111,8 @@ class Settings(BaseSettings):
     backup_dir: Path = Field(default=Path("data/backups"), alias="TRADEFORGE_BACKUP_DIR")
     automation_report_dir: Path = Field(default=Path("data/automation"), alias="TRADEFORGE_AUTOMATION_REPORT_DIR")
     backup_retention_count: int = Field(default=7, ge=1, le=365, alias="TRADEFORGE_BACKUP_RETENTION_COUNT")
+    dr_rpo_target_seconds: int = Field(default=86_400, ge=1, le=31_536_000, alias="TRADEFORGE_DR_RPO_TARGET_SECONDS")
+    dr_rto_target_seconds: float = Field(default=60.0, gt=0, le=86_400, alias="TRADEFORGE_DR_RTO_TARGET_SECONDS")
     automation_report_retention_count: int = Field(
         default=30,
         ge=1,

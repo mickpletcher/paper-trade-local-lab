@@ -35,6 +35,8 @@ This section describes how TradeForge is assembled as a local first paper tradin
 
 ## Cross Links
 
+* [Tier Three platform](./tier-three-platform.md)
+* [trading dependency evaluation](./dependency-evaluation.md)
 * [database](../database/README.md)
 * [api](../api/README.md)
 * [plugins](../plugins/README.md)

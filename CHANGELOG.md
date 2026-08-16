@@ -2,6 +2,174 @@
 
 ## 2026-08-16
 
+### Made portfolio persistence atomic
+
+Summary: Deferred sleeve commits into one nested portfolio transaction and removed generated reports when any sleeve or final commit fails.
+
+Why: A failed multi symbol run must not leave earlier strategy runs, experiments, artifacts, or reports behind as a partial result.
+
+### Aligned benchmark analytics by timestamp
+
+Summary: Loaded timestamped close series and inner joined asset and benchmark bars before calculating returns and beta.
+
+Why: Different calendars or history ranges must not cause length errors or silently pair prices from different dates.
+
+### Invoked validated releases directly
+
+Summary: Converted the release workflow into a reusable workflow and called it after semantic release creates a validated tag while retaining independent tag push support.
+
+Why: Tags pushed with the workflow token do not trigger another push workflow, which could otherwise skip packages, attestations, SBOMs, and the GitHub release.
+
+### Streamed experiment provenance hashing
+
+Summary: Hashed ordered price bar JSON incrementally and hashed report artifacts in bounded chunks without materializing complete datasets or files.
+
+Why: Provenance generation should have bounded memory growth as backtest history and report artifacts increase.
+
+### Counted dashboard symbols in SQL
+
+Summary: Replaced dashboard symbol identifier materialization with a database `COUNT(*)` query.
+
+Why: Rendering one summary card should not allocate memory proportional to the complete symbol catalog.
+
+### Centralized the runtime default tenant identifier
+
+Summary: Moved the default tenant UUID into one dependency neutral runtime constant shared by settings and database models while leaving the historical migration self contained.
+
+Why: Runtime defaults must not drift apart, and applied Alembic revisions must remain immutable snapshots.
+
+### Added review fix regression coverage
+
+Summary: Added tests for atomic portfolio rollback and report cleanup, timestamp aligned beta, streaming digest compatibility, SQL dashboard counts, the shared tenant default, and direct reusable release invocation.
+
+Why: Each resolved review finding needs an executable guard against recurrence.
+
+### Hardened API key fingerprints
+
+Summary: Stored each API secret as a 600,000 iteration, per key salted PBKDF2-HMAC-SHA-256 verifier and selected identities by the public key ID before constant time verification.
+
+Why: API key storage should resist offline guessing, avoid direct secret fingerprints, and pass the repository's high severity CodeQL policy without persisting raw secrets.
+
+### Added allocated portfolio backtests
+
+Summary: Added equal and fixed capital allocation across multiple isolated symbol backtests with aggregate equity, return, reports, and lifecycle events.
+
+Why: Portfolio research needs repeatable multi symbol comparisons without weakening the existing single symbol execution accounting.
+
+### Added deterministic event processing
+
+Summary: Added a timestamp and publication ordered runtime for timezone aware bar, tick, news, and system events.
+
+Why: Future streaming and portfolio workflows need one predictable event ordering contract.
+
+### Added allowlisted plugins
+
+Summary: Added built in and entry point registries for strategies, brokers, indicators, and reports with normalized names, duplicate rejection, and explicit installed plugin allowlisting.
+
+Why: Extensions must be discoverable without automatically executing every installed package.
+
+### Added the local research dashboard
+
+Summary: Added a tenant scoped server rendered dashboard for symbols, positions, orders, and strategy runs with escaped values and restrictive browser headers.
+
+Why: Operators need an immediately usable inspection surface without a separate frontend build or manual database queries.
+
+### Added advanced research analytics
+
+Summary: Added rolling annualized volatility, benchmark and factor beta, and simple bull, bear, sideways, and high volatility regime classification.
+
+Why: Strategy review needs risk and market context beyond total return.
+
+### Added immutable experiment provenance
+
+Summary: Added strategy experiment and artifact records containing version, parameters, ordered dataset SHA-256, and generated report SHA-256 values.
+
+Why: A reported result must remain traceable to its exact inputs and output artifact.
+
+### Added vectorized and parallel research paths
+
+Summary: Added Pandas vectorized moving average signals, multiprocessing analytics tasks, a 100,000 row benchmark script, and a CI performance budget.
+
+Why: Independent research batches should scale without replacing the authoritative broker simulation path.
+
+### Added optional tenant API authentication
+
+Summary: Added opt in API key authentication, viewer, operator, and admin roles, tenant scoped research queries, and a public health and documentation boundary.
+
+Why: Read only API data needs isolation and caller identity before any approved network exposure.
+
+### Added semantic release automation
+
+Summary: Added conventional commit release planning that gates version preparation on tests, migration performance, and backtest performance before opening an automatically squash merged release pull request.
+
+Why: Release versions should advance from validated repository state without relying on a person to calculate, edit, tag, and publish them manually.
+
+### Added service identity secret rotation
+
+Summary: Added expiring one time API secrets with stored hashes, configurable default lifetimes, immediate revocation, metadata only listings, and replacement rotation.
+
+Why: Automated callers need separate least privilege identities that can be retired or replaced without exposing reusable stored secrets.
+
+### Added measured disaster recovery drills
+
+Summary: Added a command that restores the newest backup, measures backup age and restore duration against configured RPO and RTO targets, writes an atomic report, and exits nonzero on a miss.
+
+Why: Recoverability needs scheduled, machine readable evidence instead of assuming an existing backup is sufficient.
+
+### Reconciled signed provenance tracking
+
+Summary: Removed signed release provenance and SBOM publication from the open Tier 3 backlog after verifying the existing release and GHCR attestation workflows.
+
+Why: The living roadmap must not report an already shipped supply chain control as future work.
+
+### Isolated every supported Python test environment
+
+Summary: Added Python 3.12 to the full CI matrix and made each Python 3.11 through 3.14 job bootstrap the committed lock before running the complete suite.
+
+Why: Dependency updates must pass from lock faithful environments instead of inheriting undeclared runner packages.
+
+### Added extended instrument models
+
+Summary: Added validated value and profit and loss models for international equities, fixed income, rates, credit, volatility, and index derivatives.
+
+Why: Cross asset research needs explicit instrument economics before deeper execution and accounting integration.
+
+### Added extended derivative simulations
+
+Summary: Added validated CFD, two leg calendar spread, OTC spot metal, and binary prediction contract models.
+
+Why: Scenario research needs transparent payoff and carrying cost calculations without implying live venue support.
+
+### Added market microstructure scenarios
+
+Summary: Added auction phase, halt, price limit, odd lot, latency, queue ahead, available quantity, and square root market impact simulation.
+
+Why: Researchers need explicit scenario controls for execution effects that completed OHLCV bars cannot represent.
+
+### Added paper only connector adapters
+
+Summary: Added Tradier, TradeStation, MetaTrader, NinjaTrader, cTrader, and generic crypto descriptors with safe quote request construction, response normalization, and nontransmitting paper signals.
+
+Why: Connector contracts should be testable before credentials, network calls, or live order authority are introduced.
+
+### Evaluated external trading frameworks
+
+Summary: Documented dated adoption decisions for LEAN, backtesting.py, Zipline Reloaded, Freqtrade, Hummingbot, CCXT, TA-Lib, and pandas-ta using primary project sources.
+
+Why: Architecture patterns and dependencies must be assessed for overlap, licensing, runtime support, and operational weight before entering the lock.
+
+### Expanded the novice operator manual for Tier 3
+
+Summary: Added copy and paste portfolio, analytics, experiment, plugin, connector, dashboard, API identity, secret rotation, and recovery objective procedures plus the complete new command inventory.
+
+Why: New automation is incomplete when a first time Windows operator cannot configure, verify, rotate, recover, and troubleshoot it safely.
+
+### Added Tier 3 regression coverage
+
+Summary: Added end to end CLI and API tests plus unit coverage for event ordering, portfolio allocation, experiments, analytics, plugins, connectors, identities, market models, microstructure, and recovery drills.
+
+Why: The expanded platform must retain the repository's warning free 88 percent coverage gate and verify tenant and secret safety boundaries.
+
 ### Made lock provenance verification portable
 
 Summary: Canonicalized Windows CRLF line endings before verifying the signed dependency lock digest and added a regression test for a Windows checkout.
