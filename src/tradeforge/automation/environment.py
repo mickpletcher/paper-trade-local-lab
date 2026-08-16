@@ -40,7 +40,7 @@ def inspect_environment(lock_path: Path = Path("requirements.lock")) -> dict[str
 
 def verify_lock_provenance(lock_path: Path, metadata_path: Path) -> dict[str, object]:
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    digest = hashlib.sha256(lock_path.read_bytes()).hexdigest()
+    digest = hashlib.sha256(lock_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     if metadata.get("sha256") != digest:
         raise ValueError("Dependency lock digest does not match provenance metadata.")
     source = metadata.get("source_index")
