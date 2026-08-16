@@ -2,6 +2,240 @@
 
 ## 2026-08-16
 
+### Gated image publication on standalone validation
+
+Summary: Made GHCR publication depend on every strict Mypy matrix job and the correctness mutation and migration gates.
+
+Why: A buildable commit must not publish when an independent correctness gate has failed.
+
+### Made corporate action traversal linear
+
+Summary: Replaced the per bar full corporate action scan with one ordered cursor that advances each action once.
+
+Why: Backtest runtime should grow with bars plus actions instead of bars multiplied by actions.
+
+### Hardened environment metadata inspection
+
+Summary: Made `tradeforge doctor` skip installed distributions that do not expose a package name.
+
+Why: One malformed package metadata record must not prevent diagnosis of the rest of the environment.
+
+### Reported retention cleanup failures
+
+Summary: Made report retention record locked or undeletable files in the current report without failing maintenance.
+
+Why: Transient scanner or permission locks should remain visible without converting a successful maintenance run into a failure.
+
+### Restored original import names on retry
+
+Summary: Read the original CSV filename from the quarantine error sidecar before returning a failed import to the pending queue.
+
+Why: Timestamped quarantine archive names must not become incorrect ticker symbols during retry.
+
+### Initialized empty risk positions explicitly
+
+Summary: Gave transient no-position risk projections explicit zero quantity, cost, and realized profit and loss values.
+
+Why: SQLAlchemy column defaults are applied on insert and cannot be assumed on an unpersisted projection object.
+
+### Enforced cumulative partial fill notional
+
+Summary: Included all prior fill value for an order when checking its maximum execution notional.
+
+Why: Multiple individually valid partial fills must not combine into an order that exceeds the configured limit.
+
+### Stopped execution after delisting
+
+Summary: Cancelled pending orders and skipped broker and strategy processing after a symbol becomes inactive during a backtest.
+
+Why: A delisted security must not refill a liquidated position or accept later strategy orders.
+
+### Reconciled delisting trade profit and loss
+
+Summary: Made delisting liquidation update position realized profit and loss and close the active trade at the liquidation price.
+
+Why: Cash, position, trade history, and reported realized results must agree after forced liquidation.
+
+### Adjusted pending orders for splits
+
+Summary: Scaled open order quantities and filled quantities while inversely scaling limit and stop prices when a split applies.
+
+Why: Orders carried across a split must preserve their economic exposure.
+
+### Rejected malformed split application
+
+Summary: Made corporate action application fail fast when a stored split ratio is missing or nonpositive.
+
+Why: Invalid persisted action data must not zero positions or cause division by zero.
+
+### Closed synthetic SQLite connections
+
+Summary: Made the local health test and migration benchmark close raw SQLite connections explicitly.
+
+Why: Python 3.14 correctly surfaced delayed connection finalization as a warning in the compatibility canary.
+
+### Refreshed the dependency lock
+
+Summary: Updated Python Dotenv from 1.2.2 to 1.2.3 and regenerated its signed lock digest metadata.
+
+Why: The universal resolver advanced during final validation and the committed lock must match current deterministic output.
+
+### Added execution audit events
+
+Summary: Persisted order trigger, cancellation, rejection, remaining quantity, and corporate action audit events in Alembic revision `005_tier_one_controls`.
+
+Why: Execution decisions need a durable explanation trail instead of being inferred from final order state.
+
+### Added corporate action handling
+
+Summary: Added validated records and backtest processing for splits, dividends, symbol changes, and delistings.
+
+Why: Historical strategy results must account for material security lifecycle events.
+
+### Added market data quality controls
+
+Summary: Normalized timezone naive timestamps, removed duplicate timestamps, flagged gaps, rejected return outliers, and persisted repair findings.
+
+Why: Bad historical inputs otherwise become plausible but incorrect strategy results.
+
+### Added trading risk enforcement
+
+Summary: Enforced configurable order notional, position quantity, gross exposure, maximum drawdown, and kill switch limits in broker execution.
+
+Why: Paper execution should fail safely before accepting orders outside declared risk policy.
+
+### Published artifact SBOM and provenance
+
+Summary: Added CycloneDX release SBOMs, signed release attestations, and BuildKit SBOM plus provenance for GHCR images.
+
+Why: Published artifacts need verifiable dependency contents and build origin.
+
+### Added repository policy drift detection
+
+Summary: Added scheduled checks for required statuses, full SHA action pins, the Actions allowlist, vulnerability alerts, and security updates.
+
+Why: Repository protections can drift outside the code review path and must be checked automatically.
+
+### Added quote retry jitter and circuit breaking
+
+Summary: Randomized retry delays and persisted a failure threshold circuit with timed recovery for Alpaca outages.
+
+Why: Extended provider failures should not create synchronized retry storms or unbounded repeated calls.
+
+### Added local automation health reporting
+
+Summary: Retained a bounded set of maintenance reports and added the exit coded `tradeforge health` command.
+
+Why: Scheduled automation needs a local, scriptable status surface instead of silent failure.
+
+### Added escalated failure delivery
+
+Summary: Added Teams and SMTP adapters with bounded retry and per channel duplicate suppression.
+
+Why: Repeated failures need reliable escalation without flooding operators.
+
+### Added import quarantine lifecycle
+
+Summary: Archived successful imports, quarantined failures with error sidecars, and added acknowledge or retry handling.
+
+Why: Successful files must not run forever and failed files need an explicit recovery path.
+
+### Added automatic restore drills
+
+Summary: Restored the newest SQLite backup into memory, checked integrity and table presence, and reported recovery time.
+
+Why: A verified backup file is not sufficient evidence that recovery works.
+
+### Added a real Windows scheduler canary
+
+Summary: Added a hosted Windows test that registers, starts, verifies, and removes a disposable scheduled task.
+
+Why: Mocked cmdlet validation cannot prove the operating system scheduler lifecycle works.
+
+### Added SQLite maintenance telemetry
+
+Summary: Reported connection time, lock probe time, busy timeout, journal mode, and WAL checkpoint state.
+
+Why: Lock and checkpoint behavior must be observable before contention becomes an unexplained failure.
+
+### Added a maintenance concurrency lock
+
+Summary: Added an atomic process lock with stale lock recovery around every maintenance run.
+
+Why: Overlapping scheduled runs can race imports, backups, reports, and quote refreshes.
+
+### Enforced dependency license and package policy
+
+Summary: Added explicit allowed licenses and denied package identifiers to dependency review.
+
+Why: Vulnerability severity alone does not enforce legal or prohibited dependency boundaries.
+
+### Expanded strict Mypy coverage
+
+Summary: Added strict Mypy jobs for Python 3.11, 3.12, 3.13, and 3.14.
+
+Why: Interpreter specific dependencies and stubs must remain compatible across every declared runtime.
+
+### Added a lock faithful environment doctor
+
+Summary: Added `tradeforge doctor` to report missing, mismatched, and undeclared packages and validate lock provenance.
+
+Why: Lock drift checks do not detect extra or stale packages in an active developer environment.
+
+### Added a migration performance gate
+
+Summary: Added a 25,000 fill and trade synthetic migration benchmark with a 20 second CI limit.
+
+Why: Schema upgrades must not become operationally unsafe as research histories grow.
+
+### Added correctness mutation gates
+
+Summary: Added controlled mutations for oversized sell protection, return direction, and portfolio cash inclusion.
+
+Why: Passing tests should demonstrate that critical accounting defects are actually detected.
+
+### Added signed lock provenance
+
+Summary: Added verified lock digest, approved source, generation metadata, and GitHub OIDC Sigstore attestation on `main`.
+
+Why: A deterministic lock also needs evidence of where it came from and what build signed it.
+
+### Added one validation bootstrap command
+
+Summary: Added `python scripts/bootstrap.py` for locked Python installation, optional declared Node dependencies, and environment verification.
+
+Why: Contributors and CI should use one cross-platform setup path instead of reconstructing manual steps.
+
+### Added a Python prerelease canary
+
+Summary: Added a scheduled nonblocking Python 3.15 development test and type check.
+
+Why: Upcoming interpreter failures should be visible before the runtime becomes supported without destabilizing current builds.
+
+### Added compatibility canaries
+
+Summary: Added full test and container build canaries for workflow, dependency, and container runtime changes.
+
+Why: Major automation and runtime upgrades need compatibility evidence before merge.
+
+### Automated trusted dependency documentation
+
+Summary: Added a `pull_request_target` workflow that runs base branch automation and commits all four living documents to same repository Dependabot branches.
+
+Why: Trusted dependency updates should satisfy living documentation governance without manual intervention or executing pull request code.
+
+### Added repeated failure issue automation
+
+Summary: Added automatic issue creation or comment updates after two consecutive CI or governance failures using an exact open issue title for deduplication.
+
+Why: Persistent failures need an owned GitHub record without creating duplicate noise.
+
+### Refreshed Tier 1 project records
+
+Summary: Moved all 25 completed Tier 1 upgrades into the completion ledger, replaced them with 25 concrete candidates, and rewrote current state documentation.
+
+Why: The four living files must describe the repository after the release rather than the backlog that preceded it.
+
 ### Initialized SQLite WAL once per engine
 
 Summary: Moved file database WAL activation from the per-connection hook to SQLAlchemy's one-time first connection hook.

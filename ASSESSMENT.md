@@ -2,43 +2,38 @@
 
 ## Purpose
 
-TradeForge is a local paper trading and historical backtesting lab. It imports bars, values positions with live quotes, simulates orders, runs strategies, stores results, and exposes CLI and read only API views. It does not place live trades.
+TradeForge is a local paper trading and historical backtesting lab. It imports and validates bars, values positions with live quotes, simulates orders, runs strategies, stores results, and exposes CLI and read only API views. It does not place live trades.
 
 ## Current State
 
-The simulator supports market, limit, stop, and stop limit orders, partial fills, bar volume limits, configurable commission and slippage, and lifecycle trade records. Quantities default to whole shares.
+The simulator supports market, limit, stop, and stop limit orders, partial fills, bar volume limits, configurable commissions and slippage, and lifecycle trade records. A risk engine enforces cumulative per order fill notional, position quantity, gross exposure, maximum drawdown, and a kill switch. Durable audit events record triggers, cancellations, rejections, remaining quantity changes, and corporate actions.
 
-Strategy context includes positions and pending quantities. Reversals cancel stale opposite orders, and exits cannot exceed inventory. Valuation preserves flat run cash. Moving average crossover is the only built in strategy. Backtests remain single symbol.
+CSV imports normalize UTC timestamps, remove duplicate timestamps, flag gaps, reject price outliers, validate OHLCV, and store repair findings. Splits adjust positions and pending orders. Delistings realize trade profit and loss, cancel orders, and stop later strategy execution. Corporate actions are processed once in timestamp order. Moving average crossover remains the only built in strategy, and backtests remain single symbol.
 
-Alpaca refresh refuses redirects, retries transient failures, requires an exact symbol set, and validates quote values. Existing rows load in one set based query. Staleness uses the provider timestamp.
+Alpaca refresh rejects redirects, validates exact symbol coverage, applies bounded exponential retry with jitter, and opens a persistent circuit breaker during extended outages. Valuation preserves flat run cash.
 
-Backtest reports include returns, CAGR, volatility, risk ratios, drawdown, trade statistics, exposure, and buy and hold comparison. Results use bar close snapshots.
-
-SQLite is versioned through Alembic revision `004_trade_fee_basis`. File database engines initialize persistent WAL once and apply a configurable five second lock wait per connection. The API reuses one engine and session factory until shutdown. Each maintenance run honors its selected lock settings, reuses one engine, then disposes it. `compose.yaml` is the only Compose definition and uses loopback binding plus hardened controls.
+SQLite is versioned through Alembic revision `005_tier_one_controls`. File databases use WAL and bounded lock waits. The API reuses one engine until shutdown, and synthetic validation closes raw connections explicitly. Maintenance uses an atomic concurrency lock, one engine, import archive and quarantine with filename safe retry, SQLite telemetry, verified backup and restore drill, nonfatal reported retention errors, and Teams, email, or minimal webhook escalation.
 
 ## Build And Dependencies
 
-Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Pydantic Settings, and Uvicorn. Development uses HTTPX2, Ruff, strict Mypy, Pytest, and coverage. `requirements.lock` uses a universal Python 3.11 baseline. Warnings fail tests.
+Python 3.11 or newer is required. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX. The universal lock has verified digest and source metadata. Warnings fail tests.
 
 ## Automation
 
-`tradeforge run-maintenance` migrates SQLite, imports queued CSV files, refreshes quotes with bounded retry, verifies a backup, applies retention, and writes JSON reports. Its optional HTTPS webhook sends only failure status and timestamps and refuses redirects. A PowerShell installer registers daily execution with retry and catch up.
+`python scripts/bootstrap.py` installs locked validation dependencies and runs `tradeforge doctor`. `tradeforge health` gives an exit coded local summary. The PowerShell installer registers daily maintenance with retry and catch up.
 
-GitHub Actions runs Ruff, formatting, strict Mypy, lock drift, dependency review, dependency audit, CodeQL, and tests with an 88 percent coverage floor on Python 3.11, 3.13, and 3.14. A Windows job validates the Task Scheduler installer without mutating the runner. CI builds and health checks the Python 3.14 container. Protected `main` requires strict security and quality checks. Repository policy requires full commit SHA action references and permits only GitHub owned plus explicitly allowed Astral and Docker actions.
+GitHub Actions runs tests with an 88 percent coverage floor on Python 3.11, 3.13, and 3.14, strict Mypy on 3.11 through 3.14, mutation and migration performance gates, a real Windows scheduler canary, security review, policy drift detection, compatibility canaries, and a nonblocking Python prerelease canary. GHCR publication depends on every build, container, typing, mutation, and migration gate. Repeated failures open one deduplicated issue. Trusted Dependabot updates synchronize living docs. Releases and GHCR publish SBOM and signed provenance.
 
 ## Known Limitations
 
 * Execution uses bar approximations and does not model intrabar ordering, time in force, shorting, venues, market impact, or settlement.
-* There is no risk engine, provider failover, account aggregation, or multi symbol backtest.
+* There is no provider failover, account aggregation, or multi symbol backtest.
 * Money and quantities remain floating point values despite quantity increment enforcement.
-* Imports reprocess retained files and do not quarantine failures.
-* Failure delivery uses one nonredirecting webhook without deduplication or escalation.
 * The API has no authentication, pagination, or versioning and must remain on loopback or behind an authenticated proxy.
-* Automated backup restore drills and maintenance concurrency locking are not implemented.
-* Windows CI mocks the Scheduler cmdlets and does not register a disposable real task.
-* Developer environments can contain undeclared packages without the current lock drift check reporting them.
+* Data gap checks use elapsed days rather than an exchange calendar.
+* Corporate actions are manually recorded and are not reconciled against an external feed.
 * Local Compose and container validation require Docker, which is unavailable on this workstation.
 
 ## Health
 
-Overall health is good for a local research MVP. The lock faithful suite has 113 tests, warning failures, and 90.31 percent statement coverage against an 88 percent floor. Focused Windows scheduler validation passes locally. Ruff, strict Mypy, lock, build, audit, Markdown, governance, and GitHub container checks pass. Repository security alerts are clear as of 2026-08-16.
+Overall health is good for a local research MVP. The lock faithful suite has 149 tests with warnings treated as errors and 90.08 percent statement coverage against an 88 percent floor. Ruff, strict Mypy, environment and provenance verification, three correctness mutations, and the 25,000 row migration gate pass locally. Windows installer validation passes locally; the real scheduler and container canaries require hosted runners. Repository security alerts were clear on 2026-08-16.

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import isfinite
+from pathlib import Path
+from random import uniform
 from time import sleep
 from typing import Any, NoReturn
 from urllib.error import HTTPError, URLError
@@ -75,6 +78,17 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
         self.retry_attempts = settings.quote_retry_attempts
         self.retry_base_seconds = settings.quote_retry_base_seconds
         self.retry_max_seconds = settings.quote_retry_max_seconds
+        self.retry_jitter_seconds = getattr(settings, "quote_retry_jitter_seconds", 0.0)
+        circuit_path = getattr(settings, "quote_circuit_state_path", None)
+        self.circuit_breaker = (
+            QuoteCircuitBreaker(
+                Path(circuit_path),
+                getattr(settings, "quote_circuit_failure_threshold", 5),
+                getattr(settings, "quote_circuit_reset_seconds", 300),
+            )
+            if circuit_path is not None
+            else None
+        )
 
     def get_latest_quotes(self, symbols: list[str]) -> list[NormalizedQuote]:
         if not self.api_key_id or not self.api_secret_key:
@@ -83,6 +97,8 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
             )
         if not symbols:
             return []
+        if self.circuit_breaker is not None:
+            self.circuit_breaker.ensure_available()
 
         query = urlencode({"symbols": ",".join(symbols), "feed": self.feed, "currency": "USD"})
         request = Request(
@@ -103,44 +119,115 @@ class AlpacaSnapshotQuoteProvider(QuoteProvider):
                 break
             except HTTPError as exc:
                 if exc.code not in {429, 500, 502, 503, 504} or attempt + 1 >= self.retry_attempts:
+                    if self.circuit_breaker is not None:
+                        self.circuit_breaker.record_failure()
                     raise QuoteProviderError(f"Alpaca quote refresh failed with HTTP {exc.code}.") from exc
             except (URLError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError) as exc:
                 if attempt + 1 >= self.retry_attempts:
+                    if self.circuit_breaker is not None:
+                        self.circuit_breaker.record_failure()
                     raise QuoteProviderError(f"Alpaca quote refresh failed: {exc}.") from exc
-            sleep(min(self.retry_base_seconds * (2**attempt), self.retry_max_seconds))
+            delay = self.retry_base_seconds * (2**attempt) + uniform(0, self.retry_jitter_seconds)
+            sleep(min(delay, self.retry_max_seconds))
 
-        if not isinstance(payload, dict):
-            raise QuoteProviderError("Alpaca quote refresh returned an invalid response.")
-        snapshots = payload
-        fetched_at = datetime.now(UTC)
-        normalized: list[NormalizedQuote] = []
-        for symbol in symbols:
-            snapshot = snapshots.get(symbol)
-            if not isinstance(snapshot, dict) or not snapshot:
-                continue
-            latest_trade = _snapshot_section(snapshot, "latestTrade")
-            latest_quote = _snapshot_section(snapshot, "latestQuote")
-            minute_bar = _snapshot_section(snapshot, "minuteBar")
-            previous_bar = _snapshot_section(snapshot, "prevDailyBar")
-            trade_price = _to_float(latest_trade.get("p"), "latest trade price")
-            minute_close = _to_float(minute_bar.get("c"), "minute bar close")
-            quote = NormalizedQuote(
-                symbol=symbol.upper(),
-                provider=self.name,
-                quote_timestamp=_parse_timestamp(latest_quote.get("t") or latest_trade.get("t") or minute_bar.get("t")),
-                fetched_at=fetched_at,
-                last_price=trade_price if trade_price is not None else minute_close,
-                bid_price=_to_float(latest_quote.get("bp"), "bid price"),
-                ask_price=_to_float(latest_quote.get("ap"), "ask price"),
-                bid_size=_to_int(latest_quote.get("bs"), "bid size"),
-                ask_size=_to_int(latest_quote.get("as"), "ask size"),
-                previous_close=_to_float(previous_bar.get("c"), "previous close"),
-                currency="USD",
-                raw_payload_json=json.dumps(snapshot, sort_keys=True, allow_nan=False),
-            )
-            _validate_normalized_quote(quote)
-            normalized.append(quote)
+        try:
+            if not isinstance(payload, dict):
+                raise QuoteProviderError("Alpaca quote refresh returned an invalid response.")
+            snapshots = payload
+            fetched_at = datetime.now(UTC)
+            normalized: list[NormalizedQuote] = []
+            for symbol in symbols:
+                snapshot = snapshots.get(symbol)
+                if not isinstance(snapshot, dict) or not snapshot:
+                    continue
+                latest_trade = _snapshot_section(snapshot, "latestTrade")
+                latest_quote = _snapshot_section(snapshot, "latestQuote")
+                minute_bar = _snapshot_section(snapshot, "minuteBar")
+                previous_bar = _snapshot_section(snapshot, "prevDailyBar")
+                trade_price = _to_float(latest_trade.get("p"), "latest trade price")
+                minute_close = _to_float(minute_bar.get("c"), "minute bar close")
+                quote = NormalizedQuote(
+                    symbol=symbol.upper(),
+                    provider=self.name,
+                    quote_timestamp=_parse_timestamp(
+                        latest_quote.get("t") or latest_trade.get("t") or minute_bar.get("t")
+                    ),
+                    fetched_at=fetched_at,
+                    last_price=trade_price if trade_price is not None else minute_close,
+                    bid_price=_to_float(latest_quote.get("bp"), "bid price"),
+                    ask_price=_to_float(latest_quote.get("ap"), "ask price"),
+                    bid_size=_to_int(latest_quote.get("bs"), "bid size"),
+                    ask_size=_to_int(latest_quote.get("as"), "ask size"),
+                    previous_close=_to_float(previous_bar.get("c"), "previous close"),
+                    currency="USD",
+                    raw_payload_json=json.dumps(snapshot, sort_keys=True, allow_nan=False),
+                )
+                _validate_normalized_quote(quote)
+                normalized.append(quote)
+            requested = {symbol.upper() for symbol in symbols}
+            returned = {quote.symbol for quote in normalized}
+            if requested != returned:
+                missing = ", ".join(sorted(requested - returned)) or "none"
+                extra = ", ".join(sorted(returned - requested)) or "none"
+                raise QuoteProviderError(f"Alpaca response symbol mismatch; missing: {missing}; extra: {extra}.")
+        except QuoteProviderError:
+            if self.circuit_breaker is not None:
+                self.circuit_breaker.record_failure()
+            raise
+        if self.circuit_breaker is not None:
+            self.circuit_breaker.record_success()
         return normalized
+
+
+class QuoteCircuitBreaker:
+    def __init__(self, state_path: Path, failure_threshold: int, reset_seconds: int):
+        self.state_path = state_path.resolve()
+        self.failure_threshold = failure_threshold
+        self.reset_seconds = reset_seconds
+
+    def ensure_available(self) -> None:
+        state = self._load()
+        failures = _state_failure_count(state)
+        opened_at = state.get("opened_at")
+        if failures < self.failure_threshold or not isinstance(opened_at, (int, float)):
+            return
+        elapsed = datetime.now(UTC).timestamp() - float(opened_at)
+        if elapsed < self.reset_seconds:
+            retry_after = max(1, int(self.reset_seconds - elapsed))
+            raise QuoteProviderError(f"Quote provider circuit is open; retry after {retry_after} seconds.")
+        self.record_success()
+
+    def record_failure(self) -> None:
+        state = self._load()
+        failures = _state_failure_count(state) + 1
+        payload: dict[str, object] = {"failures": failures}
+        if failures >= self.failure_threshold:
+            payload["opened_at"] = datetime.now(UTC).timestamp()
+        self._write(payload)
+
+    def record_success(self) -> None:
+        self.state_path.unlink(missing_ok=True)
+
+    def _load(self) -> dict[str, object]:
+        try:
+            payload = json.loads(self.state_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def _write(self, payload: dict[str, object]) -> None:
+        self.state_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = self.state_path.with_suffix(self.state_path.suffix + ".tmp")
+        temporary.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+        os.replace(temporary, self.state_path)
+
+
+def _state_failure_count(state: dict[str, object]) -> int:
+    value = state.get("failures", 0)
+    try:
+        return int(value) if isinstance(value, (int, float, str)) else 0
+    except (OverflowError, ValueError):
+        return 0
 
 
 def get_quote_provider(settings: Settings | None = None) -> QuoteProvider:

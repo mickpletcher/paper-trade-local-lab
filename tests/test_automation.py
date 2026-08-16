@@ -33,7 +33,12 @@ def test_maintenance_imports_backs_up_and_reports(monkeypatch, tmp_path) -> None
     result = run_maintenance(get_settings(), now=datetime(2026, 8, 14, 12, 0, tzinfo=UTC))
 
     assert result["status"] == "success"
-    assert result["imports"] == [{"file": "AAPL.csv", "symbol": "AAPL", "rows_upserted": 1}]
+    assert result["imports"][0]["file"] == "AAPL.csv"
+    assert result["imports"][0]["status"] == "imported"
+    assert result["imports"][0]["rows_upserted"] == 1
+    assert result["restore_drill"]["status"] == "verified"
+    assert result["database"]["journal_mode"] == "wal"
+    assert not (import_dir / "AAPL.csv").exists()
     assert result["quotes"] == {"requested": [], "refreshed_count": 0}
     assert (tmp_path / result["backup_path"]).is_file()
     latest_report = json.loads((tmp_path / "data" / "automation" / "latest.json").read_text(encoding="utf-8"))
@@ -86,7 +91,9 @@ def test_maintenance_reports_failure_and_notifies(monkeypatch, tmp_path) -> None
     assert exc_info.value.report_path is not None
     latest_report = json.loads((tmp_path / "data" / "automation" / "latest.json").read_text(encoding="utf-8"))
     assert latest_report["status"] == "failed"
-    assert "invalid OHLC relationships" in latest_report["error"]
+    assert "were quarantined" in latest_report["error"]
+    assert "invalid OHLC relationships" in latest_report["imports"][0]["error"]
+    assert latest_report["imports"][0]["status"] == "quarantined"
     assert notifications == [{"url": "https://alerts.example.test/tradeforge", "status": "failed"}]
 
 

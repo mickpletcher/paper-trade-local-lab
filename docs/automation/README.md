@@ -8,14 +8,17 @@ TradeForge uses one local maintenance command and GitHub Actions for repeatable 
 
 `tradeforge run-maintenance` performs these steps in order:
 
-1. initialize or migrate the configured database
-2. validate and upsert each `data/imports/<TICKER>.csv`
-3. refresh quotes for every open position with retry and completeness checks
-4. create and integrity check an online SQLite backup
-5. remove backups beyond `TRADEFORGE_BACKUP_RETENTION_COUNT`
-6. write a timestamped report and `data/automation/latest.json`
+1. acquire the atomic maintenance lock
+2. initialize or migrate the configured database
+3. validate, upsert, and archive each `data/imports/<TICKER>.csv`, or quarantine failures with the original retry filename
+4. refresh quotes for every open position with jitter, circuit breaking, and completeness checks
+5. collect SQLite connection, lock, and WAL checkpoint telemetry
+6. create and integrity check an online SQLite backup
+7. restore the backup into memory and report recovery time
+8. apply backup and report retention while recording nonfatal report deletion failures
+9. write a timestamped report and `data/automation/latest.json`
 
-A failed step returns exit code 1, writes the full failure report locally, and posts only event, status, start, and completion timestamps to `TRADEFORGE_FAILURE_WEBHOOK_URL` when configured. The webhook must be HTTPS with a hostname and no embedded credentials. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` so one delay cannot exceed the scheduled execution budget. Databases, backups, reports, imported files, and credentials remain untracked.
+A failed step returns exit code 1, writes the full failure report locally, and can notify a minimal HTTPS webhook, Teams, and SMTP. Teams and email use bounded retry and duplicate suppression. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS`. Databases, backups, reports, imported files, and credentials remain untracked.
 
 One SQLAlchemy engine is reused across every database step in a maintenance run and disposed when the run exits. File backed SQLite databases use WAL and the configured bounded busy timeout.
 
@@ -27,17 +30,22 @@ Install the daily Windows task from an activated environment:
 
 Task Scheduler starts missed runs when the host returns and retries failures three times at five minute intervals.
 
-The Windows CI job runs `scripts/Test-ScheduledTaskInstaller.ps1`. It validates the installer contract with mocked Scheduler cmdlets, including `RunNow` and `WhatIf`, without registering a task on the hosted runner.
+The Windows CI job validates the installer contract with mocked cmdlets, then registers, starts, verifies, and removes a disposable real scheduled task.
 
 ## Workflow Inventory
 
 | Workflow | Triggers | Result |
 | --- | --- | --- |
-| CI | Pull request and push to `main` | Validates the Windows scheduler installer, checks expanded Ruff rules, formatting, strict Mypy, lock drift, warning free tests with an 88 percent coverage floor on runner Python 3.11, 3.13, and 3.14, builds the package and Python 3.14 container, starts and health checks that container, then publishes to GHCR after a successful `main` build. |
+| CI | Pull request and push to `main` | Validates Windows scheduling, Ruff, formatting, strict Mypy on Python 3.11 through 3.14, lock and environment provenance, warning free tests with an 88 percent coverage floor, correctness mutations, a 25,000 row migration gate, package and container builds, then publishes GHCR provenance and SBOMs only after every gate passes. |
 | Docs | Pull request and push to `main` | Installs locked Markdown tooling, runs the path safe PowerShell lint wrapper, and verifies every documentation section entry point. |
 | Governance | Pull request, push to `main`, manual dispatch, and Monday schedule | Validates the four living root files and rejects change sets that omit one. |
-| Security | Pull request, manual dispatch, and Monday schedule | Reviews dependency changes and audits the installed Python dependency set for known vulnerabilities. |
-| Release | Semantic version tag | Validates the tag against package metadata, reruns release checks, builds artifacts, and creates a GitHub release. |
+| Security | Pull request, manual dispatch, and Monday schedule | Reviews dependency severity, licenses, and denied packages and audits installed Python dependencies. |
+| Compatibility Canary | Relevant pull request or manual dispatch | Runs the suite and container build before workflow, dependency, or runtime changes merge. |
+| Python Prerelease Canary | Tuesday schedule or manual dispatch | Runs nonblocking tests and Mypy on the next Python development release. |
+| Repository Policy | Monday schedule or manual dispatch | Detects required check, SHA pin, Actions allowlist, and security feature drift. |
+| Repeated Failure Triage | Completed CI or Governance run | Opens or updates one issue after two consecutive failures. |
+| Dependabot Living Doc Sync | Trusted Dependabot pull request | Runs base branch automation and commits the four living files before governance validation. |
+| Release | Semantic version tag | Validates, tests, builds, generates a CycloneDX SBOM, attests artifacts, and creates a GitHub release. |
 
 ## Governance Contract
 
@@ -60,7 +68,7 @@ Run the same check before handoff:
 
 A failed check stops the workflow and reports the specific error in the job log. Protected `main` requires strict CI, Docs, Governance, dependency review, dependency audit, and CodeQL results, resolved conversations, linear history, and a pull request. Only squash merging is enabled.
 
-Repeated CI issue creation and notification routing remain tracked in `FUTURE-UPGRADES.md`.
+Two consecutive CI or governance failures create or update one exact title GitHub issue.
 
 ## Security Boundary
 
@@ -68,7 +76,7 @@ Workflows use read only repository permissions unless publishing requires GHCR p
 
 ## Release Tags
 
-Push a `vMAJOR.MINOR.PATCH` tag only after the value matches `project.version` in `pyproject.toml`. The release workflow rejects mismatched tags and uploads the built wheel and source distribution to the GitHub release.
+Push a `vMAJOR.MINOR.PATCH` tag only after the value matches `project.version` in `pyproject.toml`. The release workflow rejects mismatched tags and uploads the built wheel, source distribution, CycloneDX SBOM, and GitHub OIDC attestations.
 
 ## Cross Links
 

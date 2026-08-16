@@ -24,6 +24,9 @@ This section documents historical bar backtesting, simulation assumptions, repor
 9. A reversal cancels open opposite side orders even when current inventory does not permit a replacement order.
 10. Quantities use a configurable increment that defaults to one whole share. Cash limited fills round down to that increment.
 11. Trade entry and exit prices are gross weighted execution prices. Entry and exit fees are stored separately, and realized profit and loss subtracts both.
+12. Risk policy rejects orders or cumulative partial fills beyond order notional, position quantity, gross exposure, maximum drawdown, or the global kill switch.
+13. Corporate actions apply once in effective timestamp order. Splits adjust position and pending order quantities and prices. Dividends credit cash. Symbol changes update the ticker. Delistings close the trade, realize profit and loss, cancel orders, deactivate the symbol, and stop later strategy execution.
+14. Audit rows persist triggers, cancellations, rejections, remaining quantities, and applied corporate actions.
 
 `BacktestEngine` queries stored `price_bars` in timestamp order and processes them directly. There is no separate replay module or public replay API. Reports include total return, CAGR, annualized volatility, zero risk free Sharpe and Sortino ratios, drawdown, trade counts, win rate, profit factor, average wins and losses, time exposure, and the same period buy and hold return. Profit factor without a losing trade, risk ratios with a nonzero return and zero denominator, and CAGR that cannot be represented are reported as `None` instead of a misleading zero.
 

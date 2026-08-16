@@ -10,6 +10,7 @@ from sqlalchemy import select
 from tests.conftest import add_bar
 from tradeforge.backtesting.engine import BacktestEngine, _build_commission_model, _parse_symbol_slippage_rules
 from tradeforge.backtesting.metrics import calculate_metrics
+from tradeforge.corporate_actions import record_corporate_action
 from tradeforge.database.models import (
     AccountSnapshot,
     Fill,
@@ -181,6 +182,13 @@ class LastBarSignalStrategy(BaseStrategy):
         return None
 
 
+class AlwaysBuyStrategy(BaseStrategy):
+    name = "always-buy"
+
+    def on_bar(self, bar, context: StrategyContext) -> StrategySignal | None:
+        return StrategySignal(side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=1)
+
+
 def test_last_bar_signal_is_not_filled_on_same_bar(session, symbol, monkeypatch, tmp_path) -> None:
     monkeypatch.chdir(tmp_path)
     add_bar(session, symbol, 1, 10, 11, 9, 10)
@@ -202,6 +210,35 @@ def test_last_bar_signal_is_not_filled_on_same_bar(session, symbol, monkeypatch,
     assert order is not None
     assert order.status == OrderStatus.CANCELLED.value
     assert fills == []
+
+
+def test_backtest_cancels_orders_and_stops_strategy_after_delisting(session, symbol, monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    for day in range(1, 4):
+        add_bar(session, symbol, day, 10, 11, 9, 10)
+    record_corporate_action(
+        session,
+        symbol.ticker,
+        "delisting",
+        datetime(2023, 1, 2, tzinfo=timezone.utc),
+        cash_amount=0,
+    )
+    engine = BacktestEngine(
+        session,
+        AlwaysBuyStrategy(),
+        "AAPL",
+        datetime(2023, 1, 1, tzinfo=timezone.utc),
+        datetime(2023, 1, 3, tzinfo=timezone.utc),
+        starting_cash=10_000,
+    )
+
+    engine.run()
+
+    orders = list(session.scalars(select(Order)))
+    assert len(orders) == 1
+    assert orders[0].status == OrderStatus.CANCELLED.value
+    assert list(session.scalars(select(Fill))) == []
+    assert symbol.is_active is False
 
 
 def test_backtest_cancels_partially_filled_entry_before_exit(session, symbol, monkeypatch, tmp_path) -> None:

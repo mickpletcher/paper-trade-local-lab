@@ -12,9 +12,12 @@ from tradeforge.broker_sim.account import SimAccount
 from tradeforge.broker_sim.execution import FixedCommissionModel, PerShareCommissionModel, SimBroker
 from tradeforge.broker_sim.orders import OrderRequest
 from tradeforge.broker_sim.portfolio import get_or_create_position
+from tradeforge.broker_sim.risk import RiskEngine, RiskLimits
 from tradeforge.config import Settings, get_settings
+from tradeforge.corporate_actions import apply_corporate_action
 from tradeforge.database.models import (
     AccountSnapshot,
+    CorporateAction,
     Fill,
     OrderSide,
     Position,
@@ -50,6 +53,13 @@ class BacktestEngine:
         self.symbol_slippage_rules = _parse_symbol_slippage_rules(settings.symbol_slippage_rules_json)
         self.max_bar_fill_ratio = settings.max_bar_fill_ratio
         self.quantity_increment = settings.quantity_increment
+        self.risk_limits = RiskLimits(
+            max_order_notional=settings.risk_max_order_notional,
+            max_position_quantity=settings.risk_max_position_quantity,
+            max_gross_exposure=settings.risk_max_gross_exposure,
+            max_drawdown_ratio=settings.risk_max_drawdown_ratio,
+            kill_switch=settings.risk_kill_switch,
+        )
 
     def run(self) -> dict[str, object]:
         symbol = self.session.scalar(select(Symbol).where(Symbol.ticker == self.symbol_ticker))
@@ -91,6 +101,12 @@ class BacktestEngine:
         self.session.flush()
 
         account = SimAccount.with_starting_cash(self.starting_cash)
+        risk_engine = RiskEngine(
+            self.session,
+            account,
+            self.risk_limits,
+            run.id,
+        )
         broker = SimBroker(
             self.session,
             account,
@@ -100,13 +116,38 @@ class BacktestEngine:
             max_bar_fill_ratio=self.max_bar_fill_ratio,
             quantity_increment=self.quantity_increment,
             strategy_run_id=run.id,
+            risk_engine=risk_engine,
         )
         history: list[PriceBar] = []
         snapshots: list[AccountSnapshot] = []
+        actions = list(
+            self.session.scalars(
+                select(CorporateAction)
+                .where(
+                    CorporateAction.symbol_id == symbol.id,
+                    CorporateAction.effective_at >= self.start,
+                    CorporateAction.effective_at <= self.end,
+                )
+                .order_by(CorporateAction.effective_at.asc())
+            )
+        )
+        action_cursor = 0
 
         for bar in bars:
-            broker.process_bar(bar)
             position = get_or_create_position(self.session, symbol.id, run.id)
+            while action_cursor < len(actions) and actions[action_cursor].effective_at <= bar.timestamp:
+                apply_corporate_action(
+                    self.session,
+                    account,
+                    position,
+                    actions[action_cursor],
+                    strategy_run_id=run.id,
+                )
+                action_cursor += 1
+            if symbol.is_active:
+                broker.process_bar(bar)
+            else:
+                broker.cancel_open_orders(symbol_id=symbol.id)
             equity = account.cash + position.quantity * bar.close
             unrealized = (bar.close - position.average_cost) * position.quantity if position.quantity else 0.0
             snapshot = AccountSnapshot(
@@ -121,6 +162,8 @@ class BacktestEngine:
             snapshots.append(snapshot)
 
             history.append(bar)
+            if not symbol.is_active:
+                continue
             pending = broker.get_pending_quantities(symbol.id)
             context = StrategyContext(
                 bars=history,

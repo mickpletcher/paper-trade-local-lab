@@ -12,7 +12,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
+      attestations: write
       contents: write
+      id-token: write
 
     steps:
       - name: Checkout
@@ -41,6 +43,20 @@ jobs:
           ruff format --check .
           python -m pytest -q
           python -m build
+
+      - name: Generate CycloneDX SBOM
+        run: cyclonedx-py environment --output-format JSON --output-file dist/tradeforge-sbom.cdx.json
+
+      - name: Attest release packages
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: dist/*
+
+      - name: Attest release SBOM
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34 # v3
+        with:
+          subject-path: dist/*.whl
+          sbom-path: dist/tradeforge-sbom.cdx.json
 
       - name: Create GitHub release
         env:

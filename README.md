@@ -39,11 +39,14 @@ TradeForge is built for teams and solo builders who want:
 * per order commission reconciliation and symbol specific slippage rules
 * gross trade prices with separately recorded entry and exit fees
 * whole share execution by default with a configurable quantity increment
+* order, exposure, drawdown, and kill switch risk enforcement
+* durable execution audit events and corporate action processing
+* historical data repair findings for gaps, duplicates, outliers, and timezone normalization
 * historical backtesting and markdown report output
 * live quote refresh for local valuation
-* unattended CSV import, quote refresh, verified backup, and failure reporting
+* locked unattended CSV import, archive and quarantine, quote circuit breaking, backup restore drills, and escalated failure reporting
 * structured logging and optional metrics output
-* CI for Windows scheduler validation, linting, lock drift, Python 3.11, 3.13, and 3.14 tests, builds, and container health
+* CI for real Windows scheduling, mutation and migration gates, lock provenance, supported Python tests and typing, policy drift, SBOMs, and container health
 
 ## Architecture Summary
 
@@ -96,7 +99,7 @@ Planned visual assets:
 ```powershell
 py -3.13 -m venv .venv
 . .\.venv\Scripts\Activate.ps1
-python -m pip install --constraint requirements.lock -e ".[dev]"
+python scripts/bootstrap.py
 tradeforge init-db
 tradeforge seed-sample-data
 ```
@@ -133,6 +136,7 @@ Run the full maintenance path now or register it daily:
 
 ```powershell
 tradeforge run-maintenance
+tradeforge health
 .\scripts\Install-TradeForgeScheduledTask.ps1 -RunNow
 ```
 

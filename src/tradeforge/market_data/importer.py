@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from math import isfinite
 from pathlib import Path
 from typing import Any, cast
@@ -8,10 +9,12 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tradeforge.database.models import PriceBar
+from tradeforge.config import get_settings
+from tradeforge.database.models import DataQualityEvent, PriceBar
 from tradeforge.market_data.providers import get_or_create_symbol
+from tradeforge.market_data.quality import validate_and_repair_ohlcv
 
-REQUIRED_COLUMNS = {"date", "open", "high", "low", "close", "volume"}
+REQUIRED_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
 
 
 def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> int:
@@ -20,12 +23,17 @@ def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> in
         raise FileNotFoundError(path)
 
     frame = pd.read_csv(path)
-    missing = REQUIRED_COLUMNS.difference(frame.columns)
+    missing = set(REQUIRED_COLUMNS).difference(frame.columns)
     if missing:
         raise ValueError(f"CSV is missing columns: {', '.join(sorted(missing))}")
 
-    frame = frame[list(REQUIRED_COLUMNS)].copy()
-    frame["date"] = pd.to_datetime(frame["date"], utc=True, errors="coerce")
+    frame = frame[REQUIRED_COLUMNS].copy()
+    settings = get_settings()
+    frame, findings = validate_and_repair_ohlcv(
+        frame,
+        max_gap_days=settings.data_quality_max_gap_days,
+        max_return_ratio=settings.data_quality_max_return_ratio,
+    )
     numeric_columns = ["open", "high", "low", "close", "volume"]
     for column in numeric_columns:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
@@ -45,6 +53,18 @@ def import_ohlcv_csv(session: Session, symbol: str, file_path: str | Path) -> in
 
     frame = frame.sort_values("date")
     db_symbol = get_or_create_symbol(session, symbol)
+    for finding in findings:
+        session.add(
+            DataQualityEvent(
+                symbol_id=db_symbol.id,
+                source_file=path.name,
+                severity=finding.severity,
+                issue_type=finding.issue_type,
+                message=finding.message,
+                repair_action=finding.repair_action,
+                payload_json=json.dumps({"source": str(path)}, sort_keys=True),
+            )
+        )
     imported = 0
 
     for raw_row in frame.itertuples(index=False):

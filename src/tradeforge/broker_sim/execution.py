@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import ROUND_FLOOR, Decimal
@@ -10,7 +11,17 @@ from sqlalchemy.orm import Session
 from tradeforge.broker_sim.account import SimAccount
 from tradeforge.broker_sim.orders import OrderRequest
 from tradeforge.broker_sim.portfolio import PositionUpdate, apply_fill_to_position, get_or_create_position
-from tradeforge.database.models import Fill, Order, OrderSide, OrderStatus, OrderType, PriceBar, Trade
+from tradeforge.broker_sim.risk import RiskEngine, RiskLimitError
+from tradeforge.database.models import (
+    ExecutionAuditEvent,
+    Fill,
+    Order,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    PriceBar,
+    Trade,
+)
 
 
 class CommissionModel:
@@ -62,6 +73,7 @@ class SimBroker:
         max_bar_fill_ratio: float = 0.25,
         quantity_increment: float = 1.0,
         strategy_run_id: str | None = None,
+        risk_engine: RiskEngine | None = None,
     ):
         resolved_slippage = slippage_bps if default_slippage_bps is None else default_slippage_bps
         _validate_slippage_bps("default_slippage_bps", resolved_slippage)
@@ -82,6 +94,7 @@ class SimBroker:
         self.max_bar_fill_ratio = max_bar_fill_ratio
         self.quantity_increment = quantity_increment
         self.strategy_run_id = strategy_run_id
+        self.risk_engine = risk_engine
 
     def submit_order(self, request: OrderRequest, submitted_at: datetime | None = None) -> Order:
         request.validate()
@@ -89,6 +102,22 @@ class SimBroker:
             raise ValueError(f"Order quantity must be a multiple of {self.quantity_increment:g}")
         if request.strategy_run_id != self.strategy_run_id:
             raise ValueError("Order strategy run does not match the broker execution scope")
+        reference_price = request.limit_price or request.stop_price
+        if reference_price is None and self.risk_engine is not None:
+            reference_price = self.risk_engine.mark_prices.get(request.symbol_id)
+        if self.risk_engine is not None:
+            try:
+                self.risk_engine.validate_order(request, reference_price)
+            except RiskLimitError as exc:
+                self._audit(
+                    "rejected",
+                    submitted_at,
+                    reason=str(exc),
+                    symbol_id=request.symbol_id,
+                    payload={"side": request.side.value, "quantity": request.quantity},
+                )
+                self.session.flush()
+                raise
         order = Order(
             strategy_run_id=request.strategy_run_id,
             symbol_id=request.symbol_id,
@@ -104,6 +133,8 @@ class SimBroker:
         return order
 
     def process_bar(self, bar: PriceBar) -> list[Fill]:
+        if self.risk_engine is not None:
+            self.risk_engine.update_mark(bar.symbol_id, bar.close)
         fills: list[Fill] = []
         available_volume = float(floor(max(float(bar.volume), 0.0) * self.max_bar_fill_ratio))
         open_orders = (
@@ -137,6 +168,7 @@ class SimBroker:
         ):
             return False
         order.status = OrderStatus.CANCELLED.value
+        self._audit("cancelled", reason="cancel_order", order=order)
         self.session.flush()
         return True
 
@@ -152,6 +184,7 @@ class SimBroker:
         orders = query.all()
         for order in orders:
             order.status = OrderStatus.CANCELLED.value
+            self._audit("cancelled", reason="cancel_open_orders", order=order)
         self.session.flush()
         return len(orders)
 
@@ -186,6 +219,7 @@ class SimBroker:
                 if not self._stop_triggered(side, stop_price, bar):
                     return None
                 order.triggered_at = bar.timestamp
+                self._audit("triggered", bar.timestamp, order=order)
                 reference_price = self._stop_reference_price(side, stop_price, bar)
             else:
                 reference_price = bar.open
@@ -196,6 +230,7 @@ class SimBroker:
                 if not self._stop_triggered(side, stop_price, bar):
                     return None
                 order.triggered_at = bar.timestamp
+                self._audit("triggered", bar.timestamp, order=order)
             reference_price = self._limit_reference_price(side, limit_price, bar)
         elif order_type is OrderType.MARKET:
             reference_price = bar.open
@@ -303,12 +338,21 @@ class SimBroker:
         gross = match.execution_price * quantity
         position = get_or_create_position(self.session, order.symbol_id, order.strategy_run_id)
 
+        if self.risk_engine is not None:
+            try:
+                self.risk_engine.validate_fill(order, quantity, match.execution_price)
+            except RiskLimitError as exc:
+                order.status = OrderStatus.REJECTED.value
+                self._audit("rejected", bar.timestamp, reason=str(exc), order=order)
+                return None
+
         if side is OrderSide.BUY:
             total_cost = gross + fee
             if total_cost > self.account.cash + 1e-9:
                 order.status = (
                     OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
                 )
+                self._audit("rejected", bar.timestamp, reason="insufficient_cash", order=order)
                 return None
             self.account.cash -= total_cost
         else:
@@ -318,10 +362,12 @@ class SimBroker:
                 order.status = (
                     OrderStatus.PARTIALLY_FILLED.value if order.filled_quantity > 0 else OrderStatus.REJECTED.value
                 )
+                self._audit("rejected", bar.timestamp, reason="oversized_sell", order=order)
                 return None
             quantity = min(quantity, remaining_position)
             if quantity <= 0:
                 order.status = OrderStatus.REJECTED.value
+                self._audit("rejected", bar.timestamp, reason="no_position", order=order)
                 return None
             fee = self._commission_for_fill(order, quantity, match.execution_price)
             gross = match.execution_price * quantity
@@ -351,7 +397,32 @@ class SimBroker:
             order.filled_at = bar.timestamp
         else:
             order.status = OrderStatus.PARTIALLY_FILLED.value
+        self._audit("remaining_quantity_changed", bar.timestamp, remaining_quantity=remaining_quantity, order=order)
         return fill
+
+    def _audit(
+        self,
+        event_type: str,
+        timestamp: datetime | None = None,
+        *,
+        reason: str | None = None,
+        remaining_quantity: float | None = None,
+        order: Order | None = None,
+        symbol_id: str | None = None,
+        payload: dict[str, object] | None = None,
+    ) -> None:
+        self.session.add(
+            ExecutionAuditEvent(
+                order_id=None if order is None else order.id,
+                strategy_run_id=self.strategy_run_id if order is None else order.strategy_run_id,
+                symbol_id=symbol_id if order is None else order.symbol_id,
+                timestamp=timestamp or datetime.now(timezone.utc),
+                event_type=event_type,
+                reason=reason,
+                remaining_quantity=remaining_quantity,
+                payload_json=json.dumps(payload or {}, sort_keys=True),
+            )
+        )
 
     def _record_trade_fill(
         self,
