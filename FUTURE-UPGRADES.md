@@ -6,6 +6,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Automation And Reliability
 
+* Add clean clone bootstrap canaries for both LF and CRLF Git checkout policies on Windows and Linux.
+* Add executable documentation tests that run every root README novice workflow against a disposable database and container.
 * Automatically close repeated failure issues after the affected workflow completes successfully twice.
 * Add signed audit comments that identify the exact Dependabot commit synchronized into living documents.
 * Publish compatibility canary results as a machine readable pull request artifact and summary.

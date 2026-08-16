@@ -2,6 +2,18 @@
 
 ## 2026-08-16
 
+### Made lock provenance verification portable
+
+Summary: Canonicalized Windows CRLF line endings before verifying the signed dependency lock digest and added a regression test for a Windows checkout.
+
+Why: Git's standard Windows line ending conversion must not make the documented bootstrap reject an otherwise unchanged and attested lock file.
+
+### Added a novice operator manual
+
+Summary: Replaced the root overview with a Windows first, copy and paste manual covering installation, first run verification, data and configuration, result interpretation, local API use, scheduled maintenance, failure recovery, backup restoration, Docker, upgrades, reset, removal, troubleshooting, and the complete CLI surface.
+
+Why: A first time operator should be able to install, validate, automate, recover, and remove TradeForge without reconstructing procedures from source code or scattered technical documents.
+
 ### Gated image publication on standalone validation
 
 Summary: Made GHCR publication depend on every strict Mypy matrix job and the correctness mutation and migration gates.

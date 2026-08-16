@@ -4,6 +4,8 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
+* Made dependency lock provenance verification stable across LF and CRLF checkouts.
+* Replaced the root project overview with a complete Windows first novice operator manual.
 * Made GHCR publication wait for the strict typing, mutation, and migration gates.
 * Replaced repeated corporate action scans with one ordered action cursor.
 * Made environment inspection tolerate installed distributions without a package name.

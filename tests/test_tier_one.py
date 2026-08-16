@@ -371,6 +371,26 @@ def test_lock_provenance_rejects_tampering(tmp_path) -> None:
         verify_lock_provenance(lock, metadata)
 
 
+def test_lock_provenance_accepts_windows_line_endings(tmp_path) -> None:
+    lock = tmp_path / "requirements.lock"
+    metadata = tmp_path / "provenance.json"
+    lock.write_bytes(b"sample==1.0\r\n")
+    metadata.write_text(
+        json.dumps(
+            {
+                "attestation": "github-oidc-sigstore",
+                "attestation_workflow": ".github/workflows/ci.yml",
+                "generation_command": "uv pip compile --universal --python-version 3.11",
+                "sha256": sha256(b"sample==1.0\n").hexdigest(),
+                "source_index": "https://pypi.org/simple",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert verify_lock_provenance(lock, metadata)["status"] == "verified"
+
+
 def test_environment_doctor_reports_package_drift(monkeypatch, tmp_path) -> None:
     lock = tmp_path / "requirements.lock"
     lock.write_text("alpha==1.0\nbeta==2.0\n", encoding="utf-8")
@@ -426,7 +446,7 @@ def test_lock_provenance_rejects_unapproved_metadata(tmp_path, field, value, mes
         "attestation": "github-oidc-sigstore",
         "attestation_workflow": ".github/workflows/ci.yml",
         "generation_command": "uv pip compile --universal --python-version 3.11",
-        "sha256": sha256(lock.read_bytes()).hexdigest(),
+        "sha256": sha256(lock.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
         "source_index": "https://pypi.org/simple",
     }
     payload[field] = value
