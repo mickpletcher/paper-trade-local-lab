@@ -4,9 +4,9 @@
 
 ### Hardened API key fingerprints
 
-Summary: Replaced service identity SHA-256 fingerprints with fixed length, domain separated BLAKE2b digests and retained exact key lookup behavior.
+Summary: Stored each API secret as a 600,000 iteration, per key salted PBKDF2-HMAC-SHA-256 verifier and selected identities by the public key ID before constant time verification.
 
-Why: API key storage should use a dedicated cryptographic context and pass the repository's high severity CodeQL policy without persisting raw secrets.
+Why: API key storage should resist offline guessing, avoid direct secret fingerprints, and pass the repository's high severity CodeQL policy without persisting raw secrets.
 
 ### Added allocated portfolio backtests
 

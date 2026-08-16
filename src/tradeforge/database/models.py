@@ -59,7 +59,7 @@ class APIKey(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
     name: Mapped[str] = mapped_column(String(120))
-    key_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    key_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     role: Mapped[str] = mapped_column(String(16), index=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

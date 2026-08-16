@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from tradeforge.database.models import APIKey, Tenant
 
 ROLES = {"viewer": 1, "operator": 2, "admin": 3}
+API_KEY_HASH_ITERATIONS = 600_000
 
 
 class AuthenticationError(ValueError):
@@ -60,8 +62,10 @@ def create_api_key(
     normalized_expiration = _utc(expires_at) if expires_at is not None else None
     if normalized_expiration is not None and normalized_expiration <= datetime.now(timezone.utc):
         raise ValueError("API key expiration must be in the future.")
-    raw_key = f"tf_{secrets.token_urlsafe(32)}"
+    api_key_id = str(uuid.uuid4())
+    raw_key = f"tf_{api_key_id}_{secrets.token_urlsafe(32)}"
     api_key = APIKey(
+        id=api_key_id,
         tenant_id=tenant.id,
         name=normalized_name,
         key_hash=_hash_key(raw_key),
@@ -74,11 +78,12 @@ def create_api_key(
 
 
 def authenticate_api_key(session: Session, raw_key: str, now: datetime | None = None) -> AuthContext:
-    if not raw_key.startswith("tf_"):
+    parts = raw_key.split("_", 2)
+    if len(parts) != 3 or parts[0] != "tf" or not parts[1] or not parts[2]:
         raise AuthenticationError("Invalid API key.")
-    api_key = session.scalar(select(APIKey).where(APIKey.key_hash == _hash_key(raw_key)))
+    api_key = session.get(APIKey, parts[1])
     current_time = _utc(now or datetime.now(timezone.utc))
-    if api_key is None or api_key.revoked_at is not None:
+    if api_key is None or not _verify_key(raw_key, api_key.key_hash) or api_key.revoked_at is not None:
         raise AuthenticationError("Invalid API key.")
     if api_key.expires_at is not None and _utc(api_key.expires_at) <= current_time:
         raise AuthenticationError("API key has expired.")
@@ -107,8 +112,21 @@ def revoke_api_key(session: Session, api_key_id: str) -> APIKey:
     return api_key
 
 
-def _hash_key(raw_key: str) -> str:
-    return hashlib.blake2b(raw_key.encode("utf-8"), digest_size=32, person=b"TradeForge-API").hexdigest()
+def _hash_key(raw_key: str, salt: bytes | None = None) -> str:
+    key_salt = salt or secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", raw_key.encode("utf-8"), key_salt, API_KEY_HASH_ITERATIONS)
+    return f"pbkdf2_sha256${key_salt.hex()}${digest.hex()}"
+
+
+def _verify_key(raw_key: str, encoded_hash: str) -> bool:
+    try:
+        algorithm, salt_hex, _ = encoded_hash.split("$", 2)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        candidate = _hash_key(raw_key, bytes.fromhex(salt_hex))
+    except ValueError:
+        return False
+    return secrets.compare_digest(candidate, encoded_hash)
 
 
 def _utc(value: datetime) -> datetime:

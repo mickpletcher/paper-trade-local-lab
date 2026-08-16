@@ -39,7 +39,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.Column("tenant_id", sa.String(length=36), nullable=False),
         sa.Column("name", sa.String(length=120), nullable=False),
-        sa.Column("key_hash", sa.String(length=64), nullable=False),
+        sa.Column("key_hash", sa.String(length=128), nullable=False),
         sa.Column("role", sa.String(length=16), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),

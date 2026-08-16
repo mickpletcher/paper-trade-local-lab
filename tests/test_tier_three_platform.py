@@ -128,7 +128,8 @@ def test_api_key_lifecycle_hashes_rotates_and_revokes_secrets(session) -> None:
     assert context.tenant_id == tenant.id
     assert context.allows("viewer")
     assert not context.allows("operator")
-    assert key.key_hash != secret
+    assert key.key_hash.startswith("pbkdf2_sha256$")
+    assert secret not in key.key_hash
     assert "secret" not in key.__table__.columns
     key.revoked_at = datetime.now(UTC)
     session.flush()

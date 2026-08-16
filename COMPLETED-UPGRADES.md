@@ -4,7 +4,7 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
-* Hardened stored API key fingerprints with a domain separated BLAKE2b digest.
+* Hardened API keys with per key salted PBKDF2 verification and constant time comparison.
 * Added allocated multi symbol portfolio backtesting with equal and fixed capital rules.
 * Added a deterministic event runtime for timezone aware bar, tick, news, and system events.
 * Added allowlisted strategy, broker, indicator, and report entry point plugins.

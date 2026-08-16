@@ -14,7 +14,7 @@ Instrument value objects cover international equities, fixed income, rates, cred
 
 The read only API includes health, metrics, research data, experiments, and an escaped server rendered dashboard. Optional expiring API keys provide viewer, operator, and admin roles plus tenant isolation. Authentication is off by default for loopback use. Symbols and quotes are shared reference data.
 
-SQLite uses Alembic revision `006_tier_three_platform`, WAL, bounded lock waits, cached API engines, tenants, BLAKE2b digested API identities, and experiment records. Maintenance locks runs, archives or quarantines imports, refreshes quotes, records SQLite health, verifies backups, measures local RPO and RTO, applies retention, and sends deduplicated alerts.
+SQLite uses Alembic revision `006_tier_three_platform`, WAL, bounded lock waits, cached API engines, tenants, salted PBKDF2 verified API identities, and experiment records. Maintenance locks runs, archives or quarantines imports, refreshes quotes, records SQLite health, verifies backups, measures local RPO and RTO, applies retention, and sends deduplicated alerts.
 
 The Windows first root manual covers installation, first and portfolio runs, analytics, API identities, dashboard use, automation, recovery, Docker, troubleshooting, and every public CLI command.
 
@@ -38,4 +38,4 @@ CI bootstraps the lock on every supported Python version and enforces warning fr
 
 ## Health
 
-Overall health is good for a local research platform. The lock faithful suite has 172 warning free tests and 89.71 percent coverage. Ruff and strict Mypy pass across 67 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.
+Overall health is good for a local research platform. The lock faithful suite has 172 warning free tests and 89.67 percent coverage. Ruff and strict Mypy pass across 67 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.

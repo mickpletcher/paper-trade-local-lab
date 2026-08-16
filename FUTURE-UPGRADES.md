@@ -39,7 +39,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Reconcile corporate actions against two independent sources before applying them to research data.
 * Add property based corporate action invariants that reconcile cash, positions, trades, and pending orders.
 * Add hash chained execution audit records with verification and tamper detection commands.
-* Add versioned API key digest formats with automatic identity rotation before algorithm retirement.
+* Add versioned API key verifier formats with automatic work factor upgrades and identity rotation.
 
 ## Tier 2 (Medium)
 

@@ -569,7 +569,7 @@ $identity = tradeforge create-api-key --tenant-id $tenant.id --name local-dashbo
 $identity.api_key
 ```
 
-Copy the printed `tf_...` secret into a password manager. TradeForge stores only its domain separated BLAKE2b digest and cannot display the secret again. Do not place the secret in Git, screenshots, shell transcripts, URLs, or issue comments.
+Copy the printed `tf_...` secret into a password manager. TradeForge stores only a per key salted PBKDF2-HMAC-SHA-256 verifier and cannot display the secret again. Do not place the secret in Git, screenshots, shell transcripts, URLs, or issue comments.
 
 Set this value in `.env`, then restart the API:
 

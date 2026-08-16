@@ -16,7 +16,7 @@ Alpaca, failure webhook, and Teams endpoints are constrained to HTTPS with a hos
 
 `.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. The image uses a digest pinned Python base, an unprivileged UID, and a database aware health check. Supported local launch paths must remain behind loopback or another trusted network boundary because authentication is not implemented.
 
-API keys are least privilege service identities with tenant, role, expiration, revocation, and last use metadata. Only domain separated BLAKE2b secret digests are stored. Raw secrets print once on creation or rotation. Rotation revokes the old identity immediately.
+API keys are least privilege service identities with tenant, role, expiration, revocation, and last use metadata. Only per key salted PBKDF2-HMAC-SHA-256 verifiers are stored and checked with constant time comparison. Raw secrets print once on creation or rotation. Rotation revokes the old identity immediately.
 
 Installed entry point plugins load only through an explicit name allowlist. They execute in process without a sandbox and must be treated as trusted code.
 
