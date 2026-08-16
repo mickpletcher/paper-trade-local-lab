@@ -2,6 +2,12 @@
 
 ## 2026-08-16
 
+### Honored explicit maintenance lock settings
+
+Summary: Passed the selected settings object's SQLite busy timeout into the maintenance engine and added regression coverage for nondefault values.
+
+Why: Programmatic maintenance calls must not silently replace their explicit lock wait policy with process-global configuration.
+
 ### Validated Windows scheduling in CI
 
 Summary: Added a Windows runner job and a PowerShell regression harness that parses the Task Scheduler installer, verifies its action, trigger, retry, catch up, immediate run, and `WhatIf` behavior, and blocks merges on failures.

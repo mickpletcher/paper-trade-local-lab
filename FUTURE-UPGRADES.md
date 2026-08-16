@@ -52,7 +52,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add deterministic replay seeds, immutable input snapshots, and artifact checksums.
 * Add idempotency keys for externally submitted order intents and maintenance runs.
 * Add a live quote persistence benchmark that enforces constant query growth across large symbol sets.
-* Add database engine lifecycle telemetry for leaked sessions and slow disposal.
+* Add database engine lifecycle telemetry for configuration provenance, leaked sessions, and slow disposal.
 
 ### Interfaces And Integrations
 

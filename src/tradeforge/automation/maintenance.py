@@ -60,7 +60,7 @@ def run_maintenance(
 
     engine: Engine | None = None
     try:
-        engine = get_engine(current_settings.database_url)
+        engine = get_engine(current_settings.database_url, current_settings.sqlite_busy_timeout_ms)
         if current_settings.database_path is not None:
             current_settings.database_path.parent.mkdir(parents=True, exist_ok=True)
         init_db(engine)

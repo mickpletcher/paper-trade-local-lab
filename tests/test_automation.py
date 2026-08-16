@@ -45,14 +45,14 @@ def test_maintenance_imports_backs_up_and_reports(monkeypatch, tmp_path) -> None
 def test_maintenance_reuses_and_disposes_one_engine(monkeypatch, tmp_path) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
-    settings = get_settings()
-    engine = get_engine(settings.database_url)
+    settings = get_settings().model_copy(update={"sqlite_busy_timeout_ms": 1_250})
+    engine = get_engine(settings.database_url, settings.sqlite_busy_timeout_ms)
     dispose_spy = MagicMock(wraps=engine.dispose)
     monkeypatch.setattr(engine, "dispose", dispose_spy)
-    engine_requests: list[str] = []
+    engine_requests: list[tuple[str, int]] = []
 
-    def tracked_get_engine(database_url: str):
-        engine_requests.append(database_url)
+    def tracked_get_engine(database_url: str, sqlite_busy_timeout_ms: int):
+        engine_requests.append((database_url, sqlite_busy_timeout_ms))
         return engine
 
     monkeypatch.setattr("tradeforge.automation.maintenance.get_engine", tracked_get_engine)
@@ -60,7 +60,7 @@ def test_maintenance_reuses_and_disposes_one_engine(monkeypatch, tmp_path) -> No
     result = run_maintenance(settings, now=datetime(2026, 8, 14, 12, 0, tzinfo=UTC))
 
     assert result["status"] == "success"
-    assert engine_requests == [settings.database_url]
+    assert engine_requests == [(settings.database_url, 1_250)]
     dispose_spy.assert_called_once_with()
 
 

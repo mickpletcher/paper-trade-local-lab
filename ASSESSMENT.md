@@ -14,7 +14,7 @@ Alpaca refresh refuses redirects, retries transient failures, requires an exact 
 
 Backtest reports include returns, CAGR, volatility, risk ratios, drawdown, trade statistics, exposure, and buy and hold comparison. Results use bar close snapshots.
 
-SQLite is versioned through Alembic revision `004_trade_fee_basis`. File databases use WAL and a configurable five second lock wait by default. The API reuses one engine and session factory until shutdown. Each maintenance run reuses one engine across migration, import, and quote work, then disposes it. `compose.yaml` is the only Compose definition and uses loopback binding plus hardened controls.
+SQLite is versioned through Alembic revision `004_trade_fee_basis`. File databases use WAL and a configurable five second lock wait by default. The API reuses one engine and session factory until shutdown. Each maintenance run honors its selected lock settings, reuses one engine, then disposes it. `compose.yaml` is the only Compose definition and uses loopback binding plus hardened controls.
 
 ## Build And Dependencies
 
