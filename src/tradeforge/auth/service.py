@@ -108,7 +108,7 @@ def revoke_api_key(session: Session, api_key_id: str) -> APIKey:
 
 
 def _hash_key(raw_key: str) -> str:
-    return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+    return hashlib.blake2b(raw_key.encode("utf-8"), digest_size=32, person=b"TradeForge-API").hexdigest()
 
 
 def _utc(value: datetime) -> datetime:

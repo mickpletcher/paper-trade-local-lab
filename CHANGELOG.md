@@ -2,6 +2,12 @@
 
 ## 2026-08-16
 
+### Hardened API key fingerprints
+
+Summary: Replaced service identity SHA-256 fingerprints with fixed length, domain separated BLAKE2b digests and retained exact key lookup behavior.
+
+Why: API key storage should use a dedicated cryptographic context and pass the repository's high severity CodeQL policy without persisting raw secrets.
+
 ### Added allocated portfolio backtests
 
 Summary: Added equal and fixed capital allocation across multiple isolated symbol backtests with aggregate equity, return, reports, and lifecycle events.

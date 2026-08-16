@@ -27,7 +27,7 @@ Every completed backtest creates one `Experiment`. It records tenant, strategy r
 
 ## API And Tenants
 
-Authentication remains off by default for loopback use. When enabled, API keys are opaque service identities. The database stores only SHA-256 hashes. Keys have a role, expiration, revocation state, last use time, and tenant. Rotation revokes the old key before returning a one time replacement secret.
+Authentication remains off by default for loopback use. When enabled, API keys are opaque service identities. The database stores only domain separated BLAKE2b digests. Keys have a role, expiration, revocation state, last use time, and tenant. Rotation revokes the old key before returning a one time replacement secret.
 
 Viewer keys access read only tenant data. Operator keys additionally access metrics. Admin is reserved for future administrative routes. Symbols and quotes are shared reference data. Positions, orders, strategy runs, experiments, dashboard rows, and portfolio selection are tenant scoped.
 
