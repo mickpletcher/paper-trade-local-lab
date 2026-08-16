@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock
 from urllib.request import Request
 
 import pytest
@@ -16,7 +17,7 @@ from tradeforge.automation.maintenance import (
 )
 from tradeforge.config import get_settings
 from tradeforge.database.models import PriceBar
-from tradeforge.database.session import session_scope
+from tradeforge.database.session import get_engine, session_scope
 
 
 def test_maintenance_imports_backs_up_and_reports(monkeypatch, tmp_path) -> None:
@@ -39,6 +40,28 @@ def test_maintenance_imports_backs_up_and_reports(monkeypatch, tmp_path) -> None
     assert latest_report["status"] == "success"
     with session_scope() as session:
         assert len(session.scalars(select(PriceBar)).all()) == 1
+
+
+def test_maintenance_reuses_and_disposes_one_engine(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TRADEFORGE_DATABASE_URL", "sqlite:///data/tradeforge.db")
+    settings = get_settings()
+    engine = get_engine(settings.database_url)
+    dispose_spy = MagicMock(wraps=engine.dispose)
+    monkeypatch.setattr(engine, "dispose", dispose_spy)
+    engine_requests: list[str] = []
+
+    def tracked_get_engine(database_url: str):
+        engine_requests.append(database_url)
+        return engine
+
+    monkeypatch.setattr("tradeforge.automation.maintenance.get_engine", tracked_get_engine)
+
+    result = run_maintenance(settings, now=datetime(2026, 8, 14, 12, 0, tzinfo=UTC))
+
+    assert result["status"] == "success"
+    assert engine_requests == [settings.database_url]
+    dispose_spy.assert_called_once_with()
 
 
 def test_maintenance_reports_failure_and_notifies(monkeypatch, tmp_path) -> None:

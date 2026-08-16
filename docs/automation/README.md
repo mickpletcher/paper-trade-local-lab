@@ -17,6 +17,8 @@ TradeForge uses one local maintenance command and GitHub Actions for repeatable 
 
 A failed step returns exit code 1, writes the full failure report locally, and posts only event, status, start, and completion timestamps to `TRADEFORGE_FAILURE_WEBHOOK_URL` when configured. The webhook must be HTTPS with a hostname and no embedded credentials. Quote backoff is capped by `TRADEFORGE_QUOTE_RETRY_MAX_SECONDS` so one delay cannot exceed the scheduled execution budget. Databases, backups, reports, imported files, and credentials remain untracked.
 
+One SQLAlchemy engine is reused across every database step in a maintenance run and disposed when the run exits. File backed SQLite databases use WAL and the configured bounded busy timeout.
+
 Install the daily Windows task from an activated environment:
 
 ```powershell
@@ -25,11 +27,13 @@ Install the daily Windows task from an activated environment:
 
 Task Scheduler starts missed runs when the host returns and retries failures three times at five minute intervals.
 
+The Windows CI job runs `scripts/Test-ScheduledTaskInstaller.ps1`. It validates the installer contract with mocked Scheduler cmdlets, including `RunNow` and `WhatIf`, without registering a task on the hosted runner.
+
 ## Workflow Inventory
 
 | Workflow | Triggers | Result |
 | --- | --- | --- |
-| CI | Pull request and push to `main` | Checks expanded Ruff rules, formatting, strict Mypy, lock drift, warning free tests with an 88 percent coverage floor on runner Python 3.11, 3.13, and 3.14, builds the package and Python 3.14 container, starts and health checks that container, then publishes to GHCR after a successful `main` build. |
+| CI | Pull request and push to `main` | Validates the Windows scheduler installer, checks expanded Ruff rules, formatting, strict Mypy, lock drift, warning free tests with an 88 percent coverage floor on runner Python 3.11, 3.13, and 3.14, builds the package and Python 3.14 container, starts and health checks that container, then publishes to GHCR after a successful `main` build. |
 | Docs | Pull request and push to `main` | Installs locked Markdown tooling, runs the path safe PowerShell lint wrapper, and verifies every documentation section entry point. |
 | Governance | Pull request, push to `main`, manual dispatch, and Monday schedule | Validates the four living root files and rejects change sets that omit one. |
 | Security | Pull request, manual dispatch, and Monday schedule | Reviews dependency changes and audits the installed Python dependency set for known vulnerabilities. |

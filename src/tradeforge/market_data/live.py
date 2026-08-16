@@ -181,17 +181,24 @@ def refresh_live_quotes(session: Session, symbols: list[str], provider: QuotePro
         if duplicate_symbols:
             details.append(f"duplicate: {', '.join(duplicate_symbols)}")
         raise QuoteProviderError(f"Quote provider returned an invalid symbol set ({'; '.join(details)}).")
+
+    symbol_ids = [symbol_model.id for symbol_model in symbol_models]
+    providers = {quote.provider for quote in quotes}
+    existing_quotes = session.scalars(
+        select(LiveQuote).where(LiveQuote.symbol_id.in_(symbol_ids), LiveQuote.provider.in_(providers))
+    ).all()
+    existing_quote_map = {(quote.symbol_id, quote.provider): quote for quote in existing_quotes}
     persisted: list[LiveQuote] = []
     for quote in quotes:
         symbol_model = symbol_map[quote.symbol.strip().upper()]
-        existing = session.scalar(
-            select(LiveQuote).where(LiveQuote.symbol_id == symbol_model.id, LiveQuote.provider == quote.provider)
-        )
+        quote_key = (symbol_model.id, quote.provider)
+        existing = existing_quote_map.get(quote_key)
         if existing is None:
             existing = LiveQuote(
                 symbol_id=symbol_model.id, provider=quote.provider, quote_timestamp=quote.quote_timestamp
             )
             session.add(existing)
+            existing_quote_map[quote_key] = existing
         existing.quote_timestamp = quote.quote_timestamp
         existing.fetched_at = quote.fetched_at
         existing.last_price = quote.last_price

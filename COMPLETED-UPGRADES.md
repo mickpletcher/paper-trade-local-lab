@@ -2,6 +2,14 @@
 
 This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGRADES.md`.
 
+## 2026-08-16
+
+* Added Windows CI coverage for the daily Task Scheduler installer and its nonmutating `WhatIf` path.
+* Enabled SQLite WAL and configurable bounded lock waits with contention regression coverage.
+* Reused and disposed one database engine for each complete maintenance run.
+* Disposed temporary engines owned by transactional session scopes.
+* Batched existing live quote reads into one set based query per refresh.
+
 ## 2026-08-15
 
 * Enforced the selected Actions allowlist and SHA pinning, verified repository security controls, and required dependency review, dependency audit, CodeQL, and Python 3.14 checks before merge.

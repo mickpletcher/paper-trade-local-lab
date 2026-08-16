@@ -7,6 +7,7 @@ Effective settings are cached for the process lifetime. Restart the CLI or API p
 ## Core Settings
 
 * `TRADEFORGE_DATABASE_URL` defaults to `sqlite:///data/tradeforge.db`.
+* `TRADEFORGE_SQLITE_BUSY_TIMEOUT_MS` sets the bounded SQLite lock wait from zero through 60000 milliseconds and defaults to 5000.
 * `TRADEFORGE_STARTING_CASH` sets the simulated opening balance and must be greater than zero.
 * `TRADEFORGE_LOG_LEVEL` controls application log verbosity.
 * `TRADEFORGE_LOG_FORMAT` accepts the supported text or JSON logging mode.
