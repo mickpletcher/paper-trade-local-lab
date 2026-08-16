@@ -88,7 +88,9 @@ def run_maintenance(
                 started_at,
             )
             report["backup_path"] = str(backup_path)
-            report["restore_drill"] = restore_backup_drill(backup_path)
+            from tradeforge.automation.disaster_recovery import measure_recovery_objectives
+
+            report["restore_drill"] = measure_recovery_objectives(backup_path, current_settings, started_at)
             report["status"] = "success"
             report["completed_at"] = _format_timestamp(datetime.now(UTC))
             report_path = _write_report(

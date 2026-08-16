@@ -27,6 +27,7 @@ from tradeforge.database.models import (
     Symbol,
     Trade,
 )
+from tradeforge.experiments.service import track_strategy_run
 from tradeforge.reporting.reports import write_markdown_report
 from tradeforge.strategies.base import BaseStrategy, StrategyContext
 
@@ -47,6 +48,7 @@ class BacktestEngine:
         self.symbol_ticker = symbol.upper()
         self.start = _ensure_utc(start)
         self.end = _ensure_utc(end)
+        self.tenant_id = settings.default_tenant_id
         self.starting_cash = starting_cash if starting_cash is not None else settings.starting_cash
         self.commission_model = _build_commission_model(settings)
         self.default_slippage_bps = settings.slippage_bps
@@ -91,6 +93,7 @@ class BacktestEngine:
             "quantity_increment": self.quantity_increment,
         }
         run = StrategyRun(
+            tenant_id=self.tenant_id,
             strategy_id=strategy_model.id,
             symbol_id=symbol.id,
             start_date=self.start,
@@ -213,8 +216,14 @@ class BacktestEngine:
         self.session.flush()
         positions = list(self.session.scalars(select(Position).where(Position.strategy_run_id == run.id)))
         report_path = write_markdown_report(run, parameters, metrics, trades, positions)
+        experiment = track_strategy_run(self.session, run.id, "builtin-1", {"report": report_path})
         self.session.commit()
-        return {"strategy_run_id": run.id, "metrics": metrics, "report_path": str(report_path)}
+        return {
+            "strategy_run_id": run.id,
+            "experiment_id": experiment.id,
+            "metrics": metrics,
+            "report_path": str(report_path),
+        }
 
     def _get_or_create_strategy(self) -> Strategy:
         strategy = self.session.scalar(select(Strategy).where(Strategy.name == self.strategy.name))

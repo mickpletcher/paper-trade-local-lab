@@ -11,7 +11,13 @@ Effective settings are cached for the process lifetime. Restart the CLI or API p
 * `TRADEFORGE_STARTING_CASH` sets the simulated opening balance and must be greater than zero.
 * `TRADEFORGE_LOG_LEVEL` controls application log verbosity.
 * `TRADEFORGE_LOG_FORMAT` accepts the supported text or JSON logging mode.
-* `TRADEFORGE_ENABLE_METRICS` enables the unauthenticated `/metrics` endpoint and defaults to `false`.
+* `TRADEFORGE_ENABLE_METRICS` enables `/metrics` and defaults to `false`. When API authentication is enabled it requires an operator or admin key.
+* `TRADEFORGE_DEFAULT_TENANT_ID` assigns CLI backtests to an existing tenant and defaults to the seeded local tenant.
+* `TRADEFORGE_API_AUTH_ENABLED` requires API keys outside the public health and documentation routes when set to `true`.
+* `TRADEFORGE_API_KEY_HEADER` defaults to `X-TradeForge-Key`.
+* `TRADEFORGE_API_DASHBOARD_ENABLED` controls the server rendered dashboard.
+* `TRADEFORGE_API_KEY_ROTATION_DAYS` sets the default expiration for newly issued service identities.
+* `TRADEFORGE_PLUGIN_ALLOWLIST_JSON` lists installed entry point names allowed to execute in process.
 
 ## Current Execution Settings
 
@@ -47,6 +53,7 @@ Risk policy uses `TRADEFORGE_RISK_MAX_ORDER_NOTIONAL`, `TRADEFORGE_RISK_MAX_POSI
 * `TRADEFORGE_BACKUP_DIR` holds integrity checked SQLite backups.
 * `TRADEFORGE_AUTOMATION_REPORT_DIR` holds timestamped and latest JSON run reports.
 * `TRADEFORGE_BACKUP_RETENTION_COUNT` keeps the newest 1 through 365 backups.
+* `TRADEFORGE_DR_RPO_TARGET_SECONDS` and `TRADEFORGE_DR_RTO_TARGET_SECONDS` define local recovery drill objectives.
 * `TRADEFORGE_AUTOMATION_REPORT_RETENTION_COUNT` bounds timestamped maintenance reports.
 * `TRADEFORGE_MAINTENANCE_LOCK_PATH` and `TRADEFORGE_MAINTENANCE_LOCK_STALE_SECONDS` control concurrency.
 * `TRADEFORGE_FAILURE_WEBHOOK_URL` optionally receives minimal failure status. It must use HTTPS, include a hostname, and contain no embedded credentials.
@@ -57,7 +64,7 @@ Use `.env.example` as the inventory. Never commit `.env` or generated data.
 
 ## Secret And Network Boundaries
 
-Do not commit `.env`, place credentials in URLs, or paste secrets into logs and issues. The API and optional metrics endpoint have no authentication, so keep them on loopback or behind an authenticated reverse proxy.
+Do not commit `.env`, place credentials in URLs, or paste secrets into logs and issues. API key secrets print only when created or rotated. Keep the API on loopback by default. API keys do not replace HTTPS for approved network exposure.
 
 ## Cross Links
 

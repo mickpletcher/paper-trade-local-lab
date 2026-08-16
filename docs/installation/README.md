@@ -43,7 +43,7 @@ Open `http://localhost:8000/docs`. The compose file mounts `./data` into the con
 
 The image runs as UID 10001 and uses `/health` for container health. Ensure the host `data` directory is writable by that UID before starting Compose.
 
-The API has no authentication. Do not publish port `8000` to an untrusted network without an authenticated reverse proxy and firewall controls.
+API key authentication is available but disabled by default. Do not publish port `8000` to an untrusted network. Enable API keys and use an HTTPS reverse proxy plus firewall controls for any approved network exposure.
 
 ## Upgrade
 

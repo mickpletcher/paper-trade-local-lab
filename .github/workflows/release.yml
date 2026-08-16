@@ -42,6 +42,8 @@ jobs:
           ruff check .
           ruff format --check .
           python -m pytest -q
+          python scripts/Test-MigrationPerformance.py --rows 25000 --max-seconds 20
+          python scripts/Test-BacktestPerformance.py --rows 100000 --max-seconds 5
           python -m build
 
       - name: Generate CycloneDX SBOM

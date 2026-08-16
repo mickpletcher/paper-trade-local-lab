@@ -87,24 +87,24 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Platform Expansion
 
-* Add portfolio level multi symbol backtesting with capital allocation rules.
-* Add an event driven runtime for bars, ticks, and news events.
-* Add a plugin system for strategies, brokers, indicators, and reports.
-* Add a web dashboard for symbols, orders, positions, and runs.
-* Add advanced analytics for rolling risk, factors, beta, and market regimes.
-* Add experiment tracking for strategy versions, parameters, datasets, and artifacts.
-* Add vectorized and multiprocessing execution paths with benchmark gates.
-* Add authentication, API keys, role based access, and tenant isolation.
-* Add semantic release automation with migration and benchmark gates.
-* Add secrets rotation and least privilege service identities.
-* Add disaster recovery drills with measured recovery objectives.
-* Add signed release provenance and software bill of materials publication.
-* Add isolated locked environment full-suite tests for every declared Python version before dependency update merges.
+* Add a shared multi currency portfolio ledger with cross sleeve cash netting and FX attribution.
+* Add a durable event store with deterministic replay and schema evolution for runtime events.
+* Run third party plugins out of process with signed packages, resource limits, and explicit capabilities.
+* Add interactive experiment comparison views with parameter, dataset, and metric diffs.
+* Add signed remote worker jobs for distributed experiment batches.
+* Add GPU accelerated scenario analytics with deterministic CPU parity gates.
+* Add per tenant storage, compute, and request quotas with local audit exports.
+* Add optional OIDC identity federation while retaining local service identities.
+* Add automated release rollback preparation and forward and backward schema compatibility checks.
+* Add Windows Credential Manager, Azure Key Vault, and environment secret provider adapters.
+* Add isolated multi site recovery simulations with dependency and operator handoff timing.
+* Add a local provenance verification dashboard for packages, images, locks, and research artifacts.
+* Add cross architecture artifact reproducibility checks for x64 and ARM64 runners.
 
 ### Extended Markets And Connectors
 
-* Add fixed income, rates, credit, volatility, index derivative, and international equity models.
-* Add CFD, spread, calendar, OTC spot metal, and prediction market simulation.
-* Add auction, halt, price limit, odd lot, latency, queue, and market impact models.
-* Add Tradier, TradeStation, MetaTrader, NinjaTrader, cTrader, and crypto exchange connectors.
-* Evaluate Lean, backtesting.py, Zipline, Freqtrade, Hummingbot, CCXT, TA Lib, and pandas TA patterns before adopting dependencies.
+* Add validated exchange calendars, security masters, currencies, and corporate action reference feeds.
+* Add Level 2 order book ingestion and deterministic depth replay with bounded storage.
+* Add a connector conformance harness with recorded sandboxes, rate limit tests, and capability certification.
+* Add options volatility surface calibration, Greeks, and scenario attribution.
+* Add versioned yield curve, benchmark rate, credit spread, and macro factor surfaces.
