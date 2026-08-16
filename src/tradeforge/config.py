@@ -8,11 +8,13 @@ from urllib.parse import urlsplit
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from tradeforge.constants import DEFAULT_TENANT_ID
+
 
 class Settings(BaseSettings):
     database_url: str = Field(default="sqlite:///data/tradeforge.db", alias="TRADEFORGE_DATABASE_URL")
     default_tenant_id: str = Field(
-        default="00000000-0000-0000-0000-000000000001",
+        default=DEFAULT_TENANT_ID,
         alias="TRADEFORGE_DEFAULT_TENANT_ID",
     )
     api_auth_enabled: bool = Field(default=False, alias="TRADEFORGE_API_AUTH_ENABLED")

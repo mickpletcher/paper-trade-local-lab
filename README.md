@@ -300,7 +300,7 @@ The default `equal` allocation gives each symbol half of the cash. Use fixed wei
 tradeforge run-portfolio-backtest --symbol AAPL --symbol MSFT --start 2023-01-01 --end 2023-01-08 --total-cash 100000 --allocation fixed --weights-json '{"AAPL":0.7,"MSFT":0.3}' --short-window 2 --long-window 3 --order-size 2
 ```
 
-Portfolio output includes total starting cash, ending equity, return, per symbol allocations, one strategy run and report per symbol, and the number of processed lifecycle events. Each sleeve has isolated cash. This is not yet a shared account where one symbol can consume another symbol's unused capital.
+Portfolio output includes total starting cash, ending equity, return, per symbol allocations, one strategy run and report per symbol, and the number of processed lifecycle events. Each sleeve has isolated cash. All sleeves commit together. If one symbol fails, TradeForge rolls back every sleeve and removes reports created by the failed portfolio. This is not yet a shared account where one symbol can consume another symbol's unused capital.
 
 Every completed backtest automatically creates an immutable experiment record. It hashes the exact stored bars used by the run and the generated report. List the records without exposing report contents:
 
@@ -314,7 +314,7 @@ Calculate rolling risk, beta, and market regimes from stored bars:
 tradeforge analyze-symbol --symbol AAPL --benchmark-symbol MSFT --window 2
 ```
 
-Use a larger window, such as `20`, with real daily history. Both symbols must cover the same number of stored returns. The result labels each price as `insufficient`, `bull`, `bear`, `sideways`, or `high_volatility` based on the configured rolling window.
+Use a larger window, such as `20`, with real daily history. TradeForge matches asset and benchmark bars by timestamp and ignores dates that are not present in both series. At least two matching timestamps are required. The result labels each price as `insufficient`, `bull`, `bear`, `sideways`, or `high_volatility` based on the configured rolling window.
 
 Confirm the vectorized moving average path stays inside its runtime budget:
 

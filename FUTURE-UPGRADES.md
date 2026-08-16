@@ -31,6 +31,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add circuit breaker half-open probes and a bounded global quote retry budget.
 * Open a remediation pull request when repository policy drift can be corrected safely.
 * Verify release and GHCR attestations after publication and block promotion on verification failure.
+* Exercise reusable release publication with disposable prerelease tags and reject duplicate tag or release attempts.
+* Add transaction fault injection at portfolio report, artifact, flush, and commit boundaries.
 
 ### Trading Safety And Data Quality
 
@@ -40,6 +42,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add property based corporate action invariants that reconcile cash, positions, trades, and pending orders.
 * Add hash chained execution audit records with verification and tamper detection commands.
 * Add versioned API key verifier formats with automatic work factor upgrades and identity rotation.
+* Add exchange calendar aware benchmark joins that report every dropped or substituted timestamp.
 
 ## Tier 2 (Medium)
 
@@ -59,6 +62,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add idempotency keys for externally submitted order intents and maintenance runs.
 * Add a live quote persistence benchmark that enforces constant query growth across large symbol sets.
 * Add database engine lifecycle telemetry for configuration provenance, leaked sessions, and slow disposal.
+* Add bounded memory and duration budgets for experiment dataset and artifact hashing.
 
 ### Interfaces And Integrations
 
@@ -74,6 +78,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add an explicit webhook hostname allowlist for deployments with fixed notification receivers.
 * Add authentication and transport guidance before supporting API access outside a trusted local network.
 * Add protected deployment environments if the project gains hosted deployment targets or production secrets.
+* Add dashboard query plan checks and configurable limits for shared reference data.
 
 ### Market Coverage
 
@@ -83,6 +88,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add forex pairs, spreads, swaps, sessions, and base currency reporting.
 * Add short selling, borrow fees, locate failures, and forced buy ins.
 * Add settlement calendars and delayed cash availability.
+* Validate tenant identifiers as UUIDs and compare runtime defaults with migration fixtures in CI.
 
 ## Tier 3 (Low)
 

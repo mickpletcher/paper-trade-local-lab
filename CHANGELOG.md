@@ -2,6 +2,48 @@
 
 ## 2026-08-16
 
+### Made portfolio persistence atomic
+
+Summary: Deferred sleeve commits into one nested portfolio transaction and removed generated reports when any sleeve or final commit fails.
+
+Why: A failed multi symbol run must not leave earlier strategy runs, experiments, artifacts, or reports behind as a partial result.
+
+### Aligned benchmark analytics by timestamp
+
+Summary: Loaded timestamped close series and inner joined asset and benchmark bars before calculating returns and beta.
+
+Why: Different calendars or history ranges must not cause length errors or silently pair prices from different dates.
+
+### Invoked validated releases directly
+
+Summary: Converted the release workflow into a reusable workflow and called it after semantic release creates a validated tag while retaining independent tag push support.
+
+Why: Tags pushed with the workflow token do not trigger another push workflow, which could otherwise skip packages, attestations, SBOMs, and the GitHub release.
+
+### Streamed experiment provenance hashing
+
+Summary: Hashed ordered price bar JSON incrementally and hashed report artifacts in bounded chunks without materializing complete datasets or files.
+
+Why: Provenance generation should have bounded memory growth as backtest history and report artifacts increase.
+
+### Counted dashboard symbols in SQL
+
+Summary: Replaced dashboard symbol identifier materialization with a database `COUNT(*)` query.
+
+Why: Rendering one summary card should not allocate memory proportional to the complete symbol catalog.
+
+### Centralized the runtime default tenant identifier
+
+Summary: Moved the default tenant UUID into one dependency neutral runtime constant shared by settings and database models while leaving the historical migration self contained.
+
+Why: Runtime defaults must not drift apart, and applied Alembic revisions must remain immutable snapshots.
+
+### Added review fix regression coverage
+
+Summary: Added tests for atomic portfolio rollback and report cleanup, timestamp aligned beta, streaming digest compatibility, SQL dashboard counts, the shared tenant default, and direct reusable release invocation.
+
+Why: Each resolved review finding needs an executable guard against recurrence.
+
 ### Hardened API key fingerprints
 
 Summary: Stored each API secret as a 600,000 iteration, per key salted PBKDF2-HMAC-SHA-256 verifier and selected identities by the public key ID before constant time verification.

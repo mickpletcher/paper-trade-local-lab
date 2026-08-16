@@ -4,6 +4,13 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-16
 
+* Made portfolio strategy runs, experiments, artifacts, and reports persist atomically across every sleeve.
+* Aligned asset and benchmark close series by timestamp before beta calculation.
+* Made semantic release call the reusable packaging, SBOM, attestation, and GitHub release workflow directly after tagging.
+* Streamed dataset and artifact provenance hashing with bounded memory use.
+* Replaced dashboard symbol identifier materialization with a SQL count.
+* Centralized the runtime default tenant identifier across settings and database models.
+* Added regression coverage for every Tier 3 review fix.
 * Hardened API keys with per key salted PBKDF2 verification and constant time comparison.
 * Added allocated multi symbol portfolio backtesting with equal and fixed capital rules.
 * Added a deterministic event runtime for timezone aware bar, tick, news, and system events.

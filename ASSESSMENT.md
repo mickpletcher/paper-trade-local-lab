@@ -6,9 +6,9 @@ TradeForge is a local paper trading and historical research lab. It imports and 
 
 ## Current State
 
-Historical execution supports market, limit, stop, and stop limit orders, partial fills, volume limits, quantity increments, commissions, slippage, risk limits, corporate actions, and durable decision audits. One built in moving average strategy can run against one symbol or allocated equal and fixed capital portfolio sleeves.
+Historical execution supports market, limit, stop, and stop limit orders, partial fills, volume limits, quantity increments, commissions, slippage, risk limits, corporate actions, and durable decision audits. One built in moving average strategy can run against one symbol or allocated equal and fixed capital portfolio sleeves. Portfolio persistence is all or nothing, including generated report cleanup on failure.
 
-Research services add deterministic bar, tick, news, and system event ordering; vectorized signals; multiprocessing analytics; rolling volatility; benchmark and factor beta; market regimes; and immutable experiments with dataset and report hashes. Allowlisted Python entry points extend strategies, brokers, indicators, and reports.
+Research services add deterministic bar, tick, news, and system event ordering; vectorized signals; multiprocessing analytics; rolling volatility; timestamp aligned benchmark and factor beta; market regimes; and immutable experiments with streaming dataset and report hashes. Allowlisted Python entry points extend strategies, brokers, indicators, and reports.
 
 Instrument value objects cover international equities, fixed income, rates, credit, volatility, index derivatives, CFDs, calendar spreads, OTC metals, and prediction contracts. Microstructure scenarios cover auctions, halts, price limits, odd lots, latency, queues, and market impact. Tradier, TradeStation, MetaTrader, NinjaTrader, cTrader, and crypto adapters construct quote requests, normalize responses, and create nontransmitting paper signals. These models and adapters do not route live orders.
 
@@ -24,7 +24,7 @@ Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQL
 
 ## Automation
 
-CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Conventional commits drive a gated semantic release preparation PR. Tagged releases and GHCR images publish SBOMs and signed provenance.
+CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
 
 ## Known Limitations
 
@@ -38,4 +38,4 @@ CI bootstraps the lock on every supported Python version and enforces warning fr
 
 ## Health
 
-Overall health is good for a local research platform. The lock faithful suite has 172 warning free tests and 89.67 percent coverage. Ruff and strict Mypy pass across 67 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.
+Overall health is good for a local research platform. The lock faithful suite has 176 warning free tests and 89.55 percent coverage. Ruff and strict Mypy cover 68 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.

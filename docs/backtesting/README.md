@@ -32,11 +32,11 @@ This section documents historical bar backtesting, simulation assumptions, repor
 
 ## Portfolio, Analytics, And Experiments
 
-`run-portfolio-backtest` allocates fixed or equal capital to one independent single symbol backtest per sleeve, then aggregates ending equity and return. It is not a shared cash account.
+`run-portfolio-backtest` allocates fixed or equal capital to one independent single symbol backtest per sleeve, then aggregates ending equity and return. Sleeve records commit in one transaction. A failed sleeve rolls back all strategy runs, experiments, artifacts, and generated reports. It is not a shared cash account.
 
-Every completed run records an experiment with strategy version, parameters, ordered dataset SHA-256, and report SHA-256. `show-experiments` exposes provenance metadata without report contents.
+Every completed run records an experiment with strategy version, parameters, ordered dataset SHA-256, and report SHA-256. Dataset JSON and artifact files are hashed incrementally to keep memory bounded. `show-experiments` exposes provenance metadata without report contents.
 
-`analyze-symbol` reports rolling annualized volatility, beta, factor betas, and simple market regimes. The vectorized moving average signal path and multiprocessing analytics are research accelerators only. They do not bypass broker accounting. The performance gate runs 100,000 rows and independent analytics tasks.
+`analyze-symbol` reports rolling annualized volatility, beta, factor betas, and simple market regimes. Asset and benchmark bars are inner joined by timestamp before beta calculation. The vectorized moving average signal path and multiprocessing analytics are research accelerators only. They do not bypass broker accounting. The performance gate runs 100,000 rows and independent analytics tasks.
 
 The event runtime orders timezone aware bar, tick, news, and system events by timestamp and then publication sequence. Portfolio lifecycle messages use it now. It is not yet a live streaming loop.
 

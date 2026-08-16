@@ -26,31 +26,7 @@ def track_strategy_run(
     normalized_version = strategy_version.strip()
     if not normalized_version:
         raise ValueError("strategy_version must not be empty.")
-    bars = list(
-        session.scalars(
-            select(PriceBar)
-            .where(
-                PriceBar.symbol_id == run.symbol_id,
-                PriceBar.timestamp >= run.start_date,
-                PriceBar.timestamp <= run.end_date,
-            )
-            .order_by(PriceBar.timestamp.asc())
-        )
-    )
-    dataset = [
-        {
-            "timestamp": bar.timestamp.isoformat(),
-            "open": bar.open,
-            "high": bar.high,
-            "low": bar.low,
-            "close": bar.close,
-            "volume": bar.volume,
-        }
-        for bar in bars
-    ]
-    dataset_digest = hashlib.sha256(
-        json.dumps(dataset, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    ).hexdigest()
+    dataset_digest = _dataset_sha256(session, run)
     experiment = Experiment(
         tenant_id=run.tenant_id,
         strategy_run_id=run.id,
@@ -70,8 +46,56 @@ def track_strategy_run(
                 experiment_id=experiment.id,
                 artifact_type=normalized_type,
                 path=str(path),
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                sha256=_file_sha256(path),
             )
         )
     session.flush()
     return experiment
+
+
+def _dataset_sha256(session: Session, run: StrategyRun) -> str:
+    statement = (
+        select(
+            PriceBar.timestamp,
+            PriceBar.open,
+            PriceBar.high,
+            PriceBar.low,
+            PriceBar.close,
+            PriceBar.volume,
+        )
+        .where(
+            PriceBar.symbol_id == run.symbol_id,
+            PriceBar.timestamp >= run.start_date,
+            PriceBar.timestamp <= run.end_date,
+        )
+        .order_by(PriceBar.timestamp.asc())
+        .execution_options(yield_per=1_000)
+    )
+    digest = hashlib.sha256()
+    encoder = json.JSONEncoder(sort_keys=True, separators=(",", ":"))
+    digest.update(b"[")
+    first = True
+    for timestamp, open_price, high, low, close, volume in session.execute(statement):
+        if not first:
+            digest.update(b",")
+        first = False
+        payload = {
+            "timestamp": timestamp.isoformat(),
+            "open": open_price,
+            "high": high,
+            "low": low,
+            "close": close,
+            "volume": volume,
+        }
+        for chunk in encoder.iterencode(payload):
+            digest.update(chunk.encode("utf-8"))
+    digest.update(b"]")
+    return digest.hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

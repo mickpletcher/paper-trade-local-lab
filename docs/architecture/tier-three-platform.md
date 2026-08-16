@@ -2,7 +2,7 @@
 
 ## Runtime Shape
 
-The historical `BacktestEngine` remains the authoritative execution path. A portfolio run allocates capital to one engine instance per symbol and aggregates the results. This preserves existing fill, risk, corporate action, audit, report, and experiment behavior while preventing one symbol from consuming another sleeve's cash.
+The historical `BacktestEngine` remains the authoritative execution path. A portfolio run allocates capital to one engine instance per symbol and aggregates the results inside one transaction. Any sleeve failure rolls back all database records and removes generated reports. This preserves existing fill, risk, corporate action, audit, report, and experiment behavior while preventing one symbol from consuming another sleeve's cash.
 
 `EventRuntime` is a deterministic in process priority queue for timezone aware bar, tick, news, and system events. Timestamp orders events first. Publication order breaks timestamp ties. Handlers run synchronously. It is infrastructure for later streaming work, not a second broker loop.
 
@@ -23,7 +23,7 @@ Built ins are always registered. Installed entry points load only when their nor
 
 ## Research Provenance
 
-Every completed backtest creates one `Experiment`. It records tenant, strategy run, built in strategy version, parameters, an SHA-256 hash of the exact ordered price bars, and hashes for generated report artifacts. Repeated tracking of the same strategy run returns the existing record.
+Every completed backtest creates one `Experiment`. It records tenant, strategy run, built in strategy version, parameters, an SHA-256 hash of the exact ordered price bars, and hashes for generated report artifacts. Dataset JSON and artifacts are streamed into their digests with bounded memory. Repeated tracking of the same strategy run returns the existing record.
 
 ## API And Tenants
 
@@ -45,7 +45,7 @@ Tradier, TradeStation, MetaTrader, NinjaTrader, cTrader, and generic crypto desc
 
 Maintenance measures local backup restore time. `run-dr-drill` also compares newest backup age and restore duration with configured RPO and RTO targets and writes an atomic report.
 
-Semantic release automation reads conventional commits, calculates the next semantic version, runs tests plus migration and performance gates, and opens an automatically squash merged release preparation pull request. The existing tag workflow then rebuilds, generates the SBOM, attests artifacts, and publishes the release.
+Semantic release automation reads conventional commits, calculates the next semantic version, runs tests plus migration and performance gates, and opens an automatically squash merged release preparation pull request. When a validated version is ready, it creates the tag and directly calls the reusable release workflow. Manual tag pushes can call the same workflow. The release rebuilds, generates the SBOM, attests artifacts, and publishes the GitHub release.
 
 Supported Python 3.11 through 3.14 environments install from the same lock before the full test suite. Dependency updates cannot substitute the runner's preinstalled package set for the committed lock.
 

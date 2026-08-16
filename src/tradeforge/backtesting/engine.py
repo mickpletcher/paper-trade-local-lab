@@ -63,7 +63,7 @@ class BacktestEngine:
             kill_switch=settings.risk_kill_switch,
         )
 
-    def run(self) -> dict[str, object]:
+    def run(self, *, commit: bool = True) -> dict[str, object]:
         symbol = self.session.scalar(select(Symbol).where(Symbol.ticker == self.symbol_ticker))
         if symbol is None:
             raise ValueError(f"Unknown symbol: {self.symbol_ticker}")
@@ -216,8 +216,13 @@ class BacktestEngine:
         self.session.flush()
         positions = list(self.session.scalars(select(Position).where(Position.strategy_run_id == run.id)))
         report_path = write_markdown_report(run, parameters, metrics, trades, positions)
-        experiment = track_strategy_run(self.session, run.id, "builtin-1", {"report": report_path})
-        self.session.commit()
+        try:
+            experiment = track_strategy_run(self.session, run.id, "builtin-1", {"report": report_path})
+            if commit:
+                self.session.commit()
+        except Exception:
+            report_path.unlink(missing_ok=True)
+            raise
         return {
             "strategy_run_id": run.id,
             "experiment_id": experiment.id,

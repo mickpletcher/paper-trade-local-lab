@@ -5,9 +5,12 @@ from pathlib import Path
 
 import pytest
 import typer
+from sqlalchemy import select
 from typer.testing import CliRunner
 
 from tradeforge.cli import _parse_date_option, app
+from tradeforge.database.models import PriceBar, Symbol
+from tradeforge.database.session import session_scope
 
 
 def test_init_db_command_name_is_preserved(monkeypatch, tmp_path) -> None:
@@ -78,6 +81,16 @@ def test_tier_three_research_cli_flow(monkeypatch, tmp_path) -> None:
     for ticker in ("AAPL", "MSFT"):
         result = runner.invoke(app, ["seed-sample-data", "--symbol", ticker], env=env, catch_exceptions=False)
         assert result.exit_code == 0
+    with session_scope(env["TRADEFORGE_DATABASE_URL"]) as session:
+        first_msft_bar = session.scalar(
+            select(PriceBar)
+            .join(Symbol, PriceBar.symbol_id == Symbol.id)
+            .where(Symbol.ticker == "MSFT")
+            .order_by(PriceBar.timestamp.asc())
+            .limit(1)
+        )
+        assert first_msft_bar is not None
+        session.delete(first_msft_bar)
 
     portfolio_result = runner.invoke(
         app,

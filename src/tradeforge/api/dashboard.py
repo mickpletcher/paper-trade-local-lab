@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from html import escape
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from tradeforge.database.models import Order, Position, StrategyRun, Symbol
 
 
 def render_dashboard(session: Session, tenant_id: str | None) -> str:
-    symbol_count = len(list(session.scalars(select(Symbol.id))))
+    symbol_count = session.scalar(select(func.count()).select_from(Symbol)) or 0
     run_statement: Select[tuple[StrategyRun]] = select(StrategyRun).options(
         joinedload(StrategyRun.strategy), joinedload(StrategyRun.symbol)
     )

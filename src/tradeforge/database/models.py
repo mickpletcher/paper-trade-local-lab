@@ -7,6 +7,8 @@ from enum import Enum
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from tradeforge.constants import DEFAULT_TENANT_ID
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -14,9 +16,6 @@ def utcnow() -> datetime:
 
 def uuid_str() -> str:
     return str(uuid.uuid4())
-
-
-DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001"
 
 
 class Base(DeclarativeBase):

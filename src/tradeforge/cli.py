@@ -245,8 +245,13 @@ def analyze_symbol(
     """Calculate rolling risk, beta, and market regimes for stored bars."""
     init_db()
     with session_scope() as session:
-        prices = _load_closes(session, symbol)
-        benchmark_prices = _load_closes(session, benchmark_symbol) if benchmark_symbol is not None else None
+        asset_series = _load_close_series(session, symbol)
+        if benchmark_symbol is None:
+            prices = [close for _, close in asset_series]
+            benchmark_prices = None
+        else:
+            benchmark_series = _load_close_series(session, benchmark_symbol)
+            prices, benchmark_prices = _align_close_series(asset_series, benchmark_series, symbol, benchmark_symbol)
     try:
         payload = advanced_analytics(prices, benchmark_prices, window=window)
     except ValueError as exc:
@@ -647,20 +652,41 @@ def _configured_plugin_registry() -> PluginRegistry:
     return registry
 
 
-def _load_closes(session: Session, symbol: str) -> list[float]:
+def _load_close_series(session: Session, symbol: str) -> list[tuple[datetime, float]]:
     normalized = symbol.strip().upper()
     _ensure_symbol_exists(session, normalized)
-    values = list(
-        session.scalars(
-            select(PriceBar.close)
+    values = [
+        (timestamp, close)
+        for timestamp, close in session.execute(
+            select(PriceBar.timestamp, PriceBar.close)
             .join(Symbol, PriceBar.symbol_id == Symbol.id)
             .where(Symbol.ticker == normalized)
             .order_by(PriceBar.timestamp.asc())
         )
-    )
+    ]
     if len(values) < 2:
         raise typer.BadParameter(f"Symbol '{normalized}' needs at least two bars for analytics.")
     return values
+
+
+def _align_close_series(
+    asset: list[tuple[datetime, float]],
+    benchmark: list[tuple[datetime, float]],
+    asset_symbol: str,
+    benchmark_symbol: str,
+) -> tuple[list[float], list[float]]:
+    asset_by_timestamp = dict(asset)
+    benchmark_by_timestamp = dict(benchmark)
+    timestamps = sorted(asset_by_timestamp.keys() & benchmark_by_timestamp.keys())
+    if len(timestamps) < 2:
+        raise typer.BadParameter(
+            f"Symbols '{asset_symbol.strip().upper()}' and '{benchmark_symbol.strip().upper()}' "
+            "need at least two matching bar timestamps for beta."
+        )
+    return (
+        [asset_by_timestamp[timestamp] for timestamp in timestamps],
+        [benchmark_by_timestamp[timestamp] for timestamp in timestamps],
+    )
 
 
 if __name__ == "__main__":

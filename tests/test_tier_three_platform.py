@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from sqlalchemy import select
@@ -16,7 +19,7 @@ from tradeforge.backtesting.performance import (
 )
 from tradeforge.backtesting.portfolio import AllocationRule, PortfolioBacktestEngine
 from tradeforge.connectors.catalog import ConnectorAdapter, ConnectorCatalog
-from tradeforge.database.models import APIKey, Experiment, ExperimentArtifact, Symbol
+from tradeforge.database.models import APIKey, Experiment, ExperimentArtifact, PriceBar, StrategyRun, Symbol
 from tradeforge.plugins.registry import PluginKind, create_default_registry
 from tradeforge.runtime.events import Event, EventKind, EventRuntime
 from tradeforge.strategies.moving_average_cross import MovingAverageCrossStrategy
@@ -165,8 +168,56 @@ def test_portfolio_backtest_allocates_capital_tracks_experiments_and_events(
     assert result["allocations"] == {"AAPL": 12_000, "MSFT": 8_000}
     assert result["events_processed"] == 3
     assert len(result["runs"]) == 2
-    assert len(session.scalars(select(Experiment)).all()) == 2
+    experiments = session.scalars(select(Experiment)).all()
+    assert len(experiments) == 2
     assert len(session.scalars(select(ExperimentArtifact)).all()) == 2
+    aapl_experiment = session.scalar(
+        select(Experiment)
+        .join(StrategyRun, Experiment.strategy_run_id == StrategyRun.id)
+        .where(StrategyRun.symbol_id == symbol.id)
+    )
+    assert aapl_experiment is not None
+    bars = session.scalars(select(PriceBar).where(PriceBar.symbol_id == symbol.id).order_by(PriceBar.timestamp)).all()
+    dataset = [
+        {
+            "timestamp": bar.timestamp.isoformat(),
+            "open": bar.open,
+            "high": bar.high,
+            "low": bar.low,
+            "close": bar.close,
+            "volume": bar.volume,
+        }
+        for bar in bars
+    ]
+    expected_digest = hashlib.sha256(
+        json.dumps(dataset, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    assert aapl_experiment.dataset_sha256 == expected_digest
+
+
+def test_portfolio_backtest_rolls_back_every_sleeve_when_one_fails(session, symbol, monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    incomplete_symbol = Symbol(ticker="MSFT")
+    session.add(incomplete_symbol)
+    session.flush()
+    for index, close in enumerate([10, 9, 8, 12, 13, 8, 7, 11], start=1):
+        add_bar(session, symbol, index, close, close + 1, close - 1, close)
+    add_bar(session, incomplete_symbol, 1, 30, 31, 29, 30)
+
+    with pytest.raises(ValueError, match="at least two price bars"):
+        PortfolioBacktestEngine(
+            session,
+            lambda: MovingAverageCrossStrategy(short_window=2, long_window=3, order_size=2),
+            ["AAPL", "MSFT"],
+            datetime(2023, 1, 1, tzinfo=UTC),
+            datetime(2023, 1, 8, tzinfo=UTC),
+            20_000,
+        ).run()
+
+    assert session.scalars(select(StrategyRun)).all() == []
+    assert session.scalars(select(Experiment)).all() == []
+    reports = tmp_path / "data" / "reports"
+    assert not reports.exists() or list(reports.iterdir()) == []
 
 
 @pytest.mark.parametrize(
@@ -189,3 +240,13 @@ def test_portfolio_backtest_rejects_invalid_allocations(session, symbols, cash, 
             allocation_rule=AllocationRule.FIXED if weights is not None else AllocationRule.EQUAL,
             weights=weights,
         )
+
+
+def test_semantic_release_invokes_the_release_workflow_without_a_tag_push_event() -> None:
+    root = Path(__file__).resolve().parents[1]
+    semantic_release = (root / ".github" / "workflows" / "semantic-release.yml").read_text(encoding="utf-8")
+    release = (root / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+
+    assert "uses: ./.github/workflows/release.yml" in semantic_release
+    assert "workflow_call:" in release
+    assert "ref: ${{ inputs.tag || github.ref }}" in release

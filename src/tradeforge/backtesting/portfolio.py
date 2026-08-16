@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from math import isfinite
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -67,34 +68,45 @@ class PortfolioBacktestEngine:
             )
         )
         runs: list[PortfolioRun] = []
-        for symbol in self.symbols:
-            result = BacktestEngine(
-                self.session,
-                self.strategy_factory(),
-                symbol,
-                self.start_at,
-                self.end_at,
-                starting_cash=self.allocations[symbol],
-            ).run()
-            metrics = result["metrics"]
-            if not isinstance(metrics, dict):
-                raise TypeError("Backtest metrics must be a dictionary.")
-            run = PortfolioRun(
-                symbol=symbol,
-                allocation=self.allocations[symbol],
-                strategy_run_id=str(result["strategy_run_id"]),
-                ending_equity=float(metrics["ending_equity"]),
-                total_return=float(metrics["total_return"]),
-                report_path=str(result["report_path"]),
-            )
-            runs.append(run)
-            self.runtime.publish(
-                Event(
-                    self.end_at,
-                    EventKind.SYSTEM,
-                    {"event": "symbol_completed", "symbol": symbol, "strategy_run_id": run.strategy_run_id},
-                )
-            )
+        try:
+            with self.session.begin_nested():
+                for symbol in self.symbols:
+                    result = BacktestEngine(
+                        self.session,
+                        self.strategy_factory(),
+                        symbol,
+                        self.start_at,
+                        self.end_at,
+                        starting_cash=self.allocations[symbol],
+                    ).run(commit=False)
+                    metrics = result["metrics"]
+                    if not isinstance(metrics, dict):
+                        raise TypeError("Backtest metrics must be a dictionary.")
+                    run = PortfolioRun(
+                        symbol=symbol,
+                        allocation=self.allocations[symbol],
+                        strategy_run_id=str(result["strategy_run_id"]),
+                        ending_equity=float(metrics["ending_equity"]),
+                        total_return=float(metrics["total_return"]),
+                        report_path=str(result["report_path"]),
+                    )
+                    runs.append(run)
+                    self.runtime.publish(
+                        Event(
+                            self.end_at,
+                            EventKind.SYSTEM,
+                            {"event": "symbol_completed", "symbol": symbol, "strategy_run_id": run.strategy_run_id},
+                        )
+                    )
+        except Exception:
+            _remove_reports(runs)
+            raise
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            _remove_reports(runs)
+            raise
         processed_events = self.runtime.run()
         ending_equity = sum(run.ending_equity for run in runs)
         return {
@@ -140,3 +152,8 @@ def _build_allocations(
     rounding_delta = total_cash - sum(allocations.values())
     allocations[symbols[-1]] += rounding_delta
     return allocations
+
+
+def _remove_reports(runs: Sequence[PortfolioRun]) -> None:
+    for run in runs:
+        Path(run.report_path).unlink(missing_ok=True)

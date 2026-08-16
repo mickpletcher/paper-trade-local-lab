@@ -6,8 +6,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import event
 
 from tradeforge.api.app import app
+from tradeforge.api.dashboard import render_dashboard
 from tradeforge.auth.service import create_api_key, create_tenant
-from tradeforge.config import get_settings
+from tradeforge.config import Settings, get_settings
+from tradeforge.constants import DEFAULT_TENANT_ID
 from tradeforge.database.migrations import init_db
 from tradeforge.database.models import AccountSnapshot, LiveQuote, Order, Position, Strategy, StrategyRun, Symbol
 from tradeforge.database.session import get_application_engine, session_scope
@@ -137,6 +139,29 @@ def test_settings_are_cached_until_explicitly_cleared(monkeypatch) -> None:
     get_settings.cache_clear()
 
     assert get_settings().starting_cash == 2000
+
+
+def test_default_tenant_constant_is_shared_by_settings_and_models() -> None:
+    assert Settings.model_fields["default_tenant_id"].default == DEFAULT_TENANT_ID
+    assert StrategyRun.__table__.c.tenant_id.default.arg == DEFAULT_TENANT_ID
+
+
+def test_dashboard_counts_symbols_in_the_database(session, symbol) -> None:
+    statements: list[str] = []
+
+    def capture_statement(connection, cursor, statement, parameters, context, executemany) -> None:
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    engine = session.get_bind()
+    event.listen(engine, "before_cursor_execute", capture_statement)
+    try:
+        document = render_dashboard(session, None)
+    finally:
+        event.remove(engine, "before_cursor_execute", capture_statement)
+
+    assert "<strong>Symbols</strong><div>1</div>" in document
+    assert any("count(" in statement.lower() and "symbols" in statement.lower() for statement in statements)
 
 
 def test_api_lifespan_initializes_database_and_health_checks_it(monkeypatch, tmp_path) -> None:
