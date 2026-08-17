@@ -186,3 +186,5 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Replaced the hand rolled schema runner with an Alembic migration workflow plus CLI revision and version commands.
 * Expanded GitHub Actions to run lint, tests, package build validation, container build validation, and GHCR image publishing on `main`.
 * Added structured JSON logging plus an opt in `/metrics` endpoint for long running API deployments.
+
+<!-- dependabot-sync: build(deps): bump the github-actions group with 3 updates -->
