@@ -115,3 +115,5 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add a connector conformance harness with recorded sandboxes, rate limit tests, and capability certification.
 * Add options volatility surface calibration, Greeks, and scenario attribution.
 * Add versioned yield curve, benchmark rate, credit spread, and macro factor surfaces.
+
+<!-- dependabot-sync: build(deps): bump the github-actions group across 1 directory with 4 updates -->
