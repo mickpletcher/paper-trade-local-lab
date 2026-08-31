@@ -4,6 +4,8 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-08-31
 
+* Prepared semantic release v0.1.1.
+
 * Restored scheduled repository policy audits with a repository-scoped read-only token and an explicit missing-secret failure.
 * Refreshed the universal dependency lock and its canonical provenance digest.
 

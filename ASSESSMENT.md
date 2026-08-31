@@ -20,7 +20,9 @@ The Windows first root manual covers installation, first and portfolio runs, ana
 
 ## Build And Dependencies
 
-Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX. LEAN, backtesting.py, Zipline, Freqtrade, Hummingbot, CCXT, TA-Lib, and pandas-ta were evaluated but not added.
+Version: 0.1.1.
+
+Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX.
 
 ## Automation
 
