@@ -8,6 +8,14 @@ Summary: Authenticated scheduled policy audits with a repository-scoped read-onl
 
 Why: The built-in workflow token cannot read branch protection and administration settings, and stale dependency pins blocked unrelated pull requests.
 
+## 2026-08-24
+
+### Automated dependency synchronization: build(deps): bump the github-actions group across 1 directory with 4 updates
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump the github-actions group across 1 directory with 4 updates`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-16
 
 ### Made portfolio persistence atomic
