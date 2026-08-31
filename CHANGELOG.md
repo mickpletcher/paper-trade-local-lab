@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-31
+
+### Restored repository policy automation
+
+Summary: Authenticated scheduled policy audits with a repository-scoped read-only administration token, added a missing-secret preflight, and refreshed the universal dependency lock and provenance digest.
+
+Why: The built-in workflow token cannot read branch protection and administration settings, and stale dependency pins blocked unrelated pull requests.
+
 ## 2026-08-16
 
 ### Made portfolio persistence atomic
