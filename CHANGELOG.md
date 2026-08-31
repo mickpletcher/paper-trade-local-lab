@@ -2,6 +2,13 @@
 
 ## 2026-08-31
 
+### Prepared semantic release v0.1.1
+
+Summary: Updated package and project records for v0.1.1.
+
+Why: Conventional changes require one validated, reviewable release version before tag publication.
+
+
 ### Refreshed the Python container base image
 
 Summary: Updated the pinned Python 3.14 slim image digest from `ce40764` to `cae66f2` and refreshed the living project records.
