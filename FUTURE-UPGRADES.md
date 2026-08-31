@@ -30,6 +30,7 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add configurable staleness thresholds and reason codes to the local health command.
 * Add circuit breaker half-open probes and a bounded global quote retry budget.
 * Open a remediation pull request when repository policy drift can be corrected safely.
+* Replace the expiring repository policy token with a read-only GitHub App installation token.
 * Verify release and GHCR attestations after publication and block promotion on verification failure.
 * Exercise reusable release publication with disposable prerelease tags and reject duplicate tag or release attempts.
 * Add transaction fault injection at portfolio report, artifact, flush, and commit boundaries.

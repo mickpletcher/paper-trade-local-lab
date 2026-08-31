@@ -24,7 +24,7 @@ Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQL
 
 ## Automation
 
-CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
+CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Scheduled policy audits use a repository-scoped read-only administration token. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
 
 ## Known Limitations
 

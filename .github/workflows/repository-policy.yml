@@ -22,4 +22,8 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_POLICY_TOKEN }}
-        run: ./scripts/Test-RepositoryPolicy.ps1
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
+            throw "REPOSITORY_POLICY_TOKEN repository secret is required."
+          }
+          ./scripts/Test-RepositoryPolicy.ps1
