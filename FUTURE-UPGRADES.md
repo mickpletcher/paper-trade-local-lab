@@ -117,4 +117,6 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add options volatility surface calibration, Greeks, and scenario attribution.
 * Add versioned yield curve, benchmark rate, credit spread, and macro factor surfaces.
 
+<!-- dependabot-sync: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group -->
+
 <!-- dependabot-sync: build(deps): bump the github-actions group across 1 directory with 4 updates -->

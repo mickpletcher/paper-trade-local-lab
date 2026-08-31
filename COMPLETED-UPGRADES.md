@@ -192,4 +192,6 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Expanded GitHub Actions to run lint, tests, package build validation, container build validation, and GHCR image publishing on `main`.
 * Added structured JSON logging plus an opt in `/metrics` endpoint for long running API deployments.
 
+<!-- dependabot-sync: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group -->
+
 <!-- dependabot-sync: build(deps): bump the github-actions group across 1 directory with 4 updates -->

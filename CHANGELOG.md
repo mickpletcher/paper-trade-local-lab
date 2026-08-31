@@ -2,6 +2,12 @@
 
 ## 2026-08-31
 
+### Refreshed the Python container base image
+
+Summary: Updated the pinned Python 3.14 slim image digest from `ce40764` to `cae66f2` and refreshed the living project records.
+
+Why: The container must use the current immutable digest selected by the trusted dependency update.
+
 ### Restored repository policy automation
 
 Summary: Authenticated scheduled policy audits with a repository-scoped read-only administration token, added a missing-secret preflight, and refreshed the universal dependency lock and provenance digest.
