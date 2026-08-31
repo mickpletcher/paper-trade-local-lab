@@ -131,16 +131,18 @@ def _prepare_release_files(root: Path, version: Version) -> None:
         _insert_dated_entry(
             changelog.read_text(encoding="utf-8"),
             today,
-            f"### Prepared semantic release v{version_text}\n\nSummary: Updated package and project records for v{version_text}.\n\nWhy: Conventional changes require one validated, reviewable release version before tag publication.\n\n",
+            f"### Prepared semantic release v{version_text}\n\nSummary: Updated package and project records for v{version_text}.\n\nWhy: Conventional changes require one validated, reviewable release version before tag publication.\n",
         ),
         encoding="utf-8",
         newline="\n",
     )
     assessment = root / "ASSESSMENT.md"
-    assessment_text = re.sub(r"(?m)^Current package version: .*\n", "", assessment.read_text(encoding="utf-8"))
+    assessment_text = re.sub(
+        r"(?m)^(?:Current package version|Version): .*\n", "", assessment.read_text(encoding="utf-8")
+    )
     assessment.write_text(
         assessment_text.replace(
-            "## Build And Dependencies\n", f"## Build And Dependencies\n\nCurrent package version: {version_text}.\n", 1
+            "## Build And Dependencies\n", f"## Build And Dependencies\n\nVersion: {version_text}.\n", 1
         ),
         encoding="utf-8",
         newline="\n",

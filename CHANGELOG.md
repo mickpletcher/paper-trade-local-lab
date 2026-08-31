@@ -4,10 +4,9 @@
 
 ### Prepared semantic release v0.1.1
 
-Summary: Updated package and project records for v0.1.1.
+Summary: Updated package and project records for v0.1.1 and corrected generated Markdown and assessment formatting.
 
 Why: Conventional changes require one validated, reviewable release version before tag publication.
-
 
 ### Refreshed the Python container base image
 
