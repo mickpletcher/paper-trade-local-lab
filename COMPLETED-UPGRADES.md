@@ -2,6 +2,11 @@
 
 This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGRADES.md`.
 
+## 2026-08-31
+
+* Restored scheduled repository policy audits with a repository-scoped read-only token and an explicit missing-secret failure.
+* Refreshed the universal dependency lock and its canonical provenance digest.
+
 ## 2026-08-16
 
 * Made portfolio strategy runs, experiments, artifacts, and reports persist atomically across every sleeve.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-31
+
+### Restored repository policy automation
+
+Summary: Authenticated scheduled policy audits with a repository-scoped read-only administration token, added a missing-secret preflight, and refreshed the universal dependency lock and provenance digest.
+
+Why: The built-in workflow token cannot read branch protection and administration settings, and stale dependency pins blocked unrelated pull requests.
+
 ## 2026-08-24
 
 ### Automated dependency synchronization: build(deps): bump the github-actions group across 1 directory with 4 updates
