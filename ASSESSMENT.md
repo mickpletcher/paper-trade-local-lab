@@ -39,3 +39,5 @@ CI bootstraps the lock on every supported Python version and enforces warning fr
 ## Health
 
 Overall health is good for a local research platform. The lock faithful suite has 176 warning free tests and 89.55 percent coverage. Ruff and strict Mypy cover 68 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.
+
+<!-- dependabot-sync: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group -->

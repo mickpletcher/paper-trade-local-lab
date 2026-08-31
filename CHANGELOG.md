@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-31
+
+### Automated dependency synchronization: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-16
 
 ### Made portfolio persistence atomic
