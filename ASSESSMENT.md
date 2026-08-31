@@ -24,7 +24,7 @@ Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQL
 
 ## Automation
 
-CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
+CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Scheduled policy audits use a repository-scoped read-only administration token. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
 
 ## Known Limitations
 
@@ -41,3 +41,5 @@ CI bootstraps the lock on every supported Python version and enforces warning fr
 Overall health is good for a local research platform. The lock faithful suite has 176 warning free tests and 89.55 percent coverage. Ruff and strict Mypy cover 68 source files. The 25,000 row migration gate and 100,000 row vectorized benchmark are enforced in CI.
 
 <!-- dependabot-sync: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group -->
+
+<!-- dependabot-sync: build(deps): bump the github-actions group across 1 directory with 4 updates -->

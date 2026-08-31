@@ -2,9 +2,23 @@
 
 ## 2026-08-31
 
-### Automated dependency synchronization: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group
+### Refreshed the Python container base image
 
-Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group`.
+Summary: Updated the pinned Python 3.14 slim image digest from `ce40764` to `cae66f2` and refreshed the living project records.
+
+Why: The container must use the current immutable digest selected by the trusted dependency update.
+
+### Restored repository policy automation
+
+Summary: Authenticated scheduled policy audits with a repository-scoped read-only administration token, added a missing-secret preflight, and refreshed the universal dependency lock and provenance digest.
+
+Why: The built-in workflow token cannot read branch protection and administration settings, and stale dependency pins blocked unrelated pull requests.
+
+## 2026-08-24
+
+### Automated dependency synchronization: build(deps): bump the github-actions group across 1 directory with 4 updates
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump the github-actions group across 1 directory with 4 updates`.
 
 Why: Dependency changes must update current state before governance validation.
 

@@ -21,5 +21,9 @@ jobs:
       - name: Verify repository policy
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: ./scripts/Test-RepositoryPolicy.ps1
+          GH_TOKEN: ${{ secrets.REPOSITORY_POLICY_TOKEN }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
+            throw "REPOSITORY_POLICY_TOKEN repository secret is required."
+          }
+          ./scripts/Test-RepositoryPolicy.ps1

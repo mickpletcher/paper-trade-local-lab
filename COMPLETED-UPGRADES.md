@@ -2,6 +2,11 @@
 
 This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGRADES.md`.
 
+## 2026-08-31
+
+* Restored scheduled repository policy audits with a repository-scoped read-only token and an explicit missing-secret failure.
+* Refreshed the universal dependency lock and its canonical provenance digest.
+
 ## 2026-08-16
 
 * Made portfolio strategy runs, experiments, artifacts, and reports persist atomically across every sleeve.
@@ -188,3 +193,5 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 * Added structured JSON logging plus an opt in `/metrics` endpoint for long running API deployments.
 
 <!-- dependabot-sync: build(deps): bump python from `ce40764` to `cae66f2` in the container-base-images group -->
+
+<!-- dependabot-sync: build(deps): bump the github-actions group across 1 directory with 4 updates -->
