@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-07
+
+### Automated dependency synchronization: build(deps): bump python from `cae66f2` to `cad9a2c` in the container-base-images group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump python from `cae66f2` to `cad9a2c` in the container-base-images group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1
