@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-14
+
+### Automated dependency synchronization: build(deps): bump astral-sh/setup-uv from 10.0.1 to 10.1.0 in the github-actions group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump astral-sh/setup-uv from 10.0.1 to 10.1.0 in the github-actions group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1
