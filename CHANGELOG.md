@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-21
+
+### Automated dependency synchronization: build(deps): bump the github-actions group across 1 directory with 3 updates
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump the github-actions group across 1 directory with 3 updates`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1
