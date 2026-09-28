@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-28
+
+### Automated dependency synchronization: build(deps-dev): bump markdownlint-cli2 from 0.23.2 to 0.23.3 in the documentation-tooling group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps-dev): bump markdownlint-cli2 from 0.23.2 to 0.23.3 in the documentation-tooling group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1
