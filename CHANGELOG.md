@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-26
+
+### Automated dependency synchronization: build(deps-dev): bump setuptools from 84.0.0 to 84.2.1 in the python-development group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps-dev): bump setuptools from 84.0.0 to 84.2.1 in the python-development group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1
