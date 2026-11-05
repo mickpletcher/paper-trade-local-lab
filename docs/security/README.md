@@ -14,7 +14,9 @@ Alpaca, failure webhook, and Teams endpoints are constrained to HTTPS with a hos
 
 ## Current Controls
 
-`.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. The image uses a digest pinned Python base, an unprivileged UID, and a database aware health check. Supported local launch paths must remain behind loopback or another trusted network boundary because authentication is not implemented.
+`.env`, SQLite databases, import files, reports, and backups are excluded from Git and the container build context. The image uses a digest pinned Python base, an unprivileged UID, and a database aware health check. Supported local launch paths must remain behind loopback or another trusted network boundary. Optional API key authentication does not provide TLS; approved network use also requires encrypted transport.
+
+When authentication is enabled, `/health`, `/docs`, `/openapi.json`, and `/redoc` remain public. Research endpoints enforce API key authentication; `/metrics` requires an operator or admin role. Restrict public diagnostic and documentation routes at the network boundary when appropriate.
 
 API keys are least privilege service identities with tenant, role, expiration, revocation, and last use metadata. Only per key salted PBKDF2-HMAC-SHA-256 verifiers are stored and checked with constant time comparison. Raw secrets print once on creation or rotation. Rotation revokes the old identity immediately.
 

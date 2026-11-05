@@ -57,6 +57,10 @@ The documentation model is described in:
 * [docs/contributing/documentation-governance.md](./docs/contributing/documentation-governance.md)
 * [docs/contributing/wiki-strategy.md](./docs/contributing/wiki-strategy.md)
 
+## Accessibility
+
+Follow [ACCESSIBILITY.md](./ACCESSIBILITY.md) when changing documentation, CLI output, or the dashboard. Include relevant keyboard, zoom, screen-reader, and readability checks in the pull request, and state what was not tested. Do not claim accessibility conformance without supporting evidence.
+
 ## Pull Requests
 
 Use an imperative title and explain the reason, operator impact, validation, and remaining risk. The repository is optimized for squash merges so each pull request should represent one coherent change.

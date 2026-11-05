@@ -4,6 +4,9 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-11-05
 
+* Added project-specific accessibility reporting and contribution guidance for documentation, CLI output, and the research dashboard.
+* Aligned community security guidance with optional API authentication and its public endpoint exceptions.
+
 * Updated the four dependency-audit packages and refreshed the canonical lock digest.
 * Made lock verification reuse reviewed pins while still resolving current project requirements.
 

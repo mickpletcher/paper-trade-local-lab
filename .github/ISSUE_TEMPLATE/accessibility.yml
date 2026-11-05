@@ -1,0 +1,35 @@
+name: Accessibility barrier
+description: Report a barrier in TradeForge documentation, CLI output, or dashboard.
+title: "accessibility: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the barrier without sharing disability or medical information.
+        Remove credentials, account identifiers, private data, and local paths.
+        Report security vulnerabilities privately using SECURITY.md.
+  - type: input
+    id: surface
+    attributes:
+      label: Affected page or command
+      description: Include the TradeForge version or commit if known.
+    validations:
+      required: true
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What prevented access?
+      description: Describe what you tried and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior or suggested improvement
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (optional)
+      description: Relevant browser, terminal, operating system, or assistive technology versions.
