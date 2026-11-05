@@ -36,6 +36,12 @@ pip-audit --local --skip-editable
 
 Run `docker build -t tradeforge-ci .` when Docker or runtime dependencies change.
 
+## Dependency Lock Updates
+
+Use the CI-pinned uv version to resolve the universal Python 3.11 lock. CI seeds its temporary output from `requirements.lock`, resolves the current `pyproject.toml`, and compares the result. This checks graph consistency without silently upgrading unrelated packages whenever upstream releases change.
+
+For an intentional dependency update, use `uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --upgrade-package PACKAGE --custom-compile-command "uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --output-file requirements.lock" --output-file requirements.lock`, replacing `PACKAGE` with the approved package name. Review the entire diff and refresh the SHA-256 in `requirements.lock.provenance.json` over UTF-8 lock bytes with CRLF normalized to LF. Run the installed dependency audit, environment doctor, and applicable tests. Do not suppress advisories or remove lock verification to make CI pass.
+
 ## Change Rules
 
 1. Add or update tests for behavior changes.

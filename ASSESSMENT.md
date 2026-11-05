@@ -16,19 +16,17 @@ The read only API includes health, metrics, research data, experiments, and an e
 
 SQLite uses Alembic revision `006_tier_three_platform`, WAL, bounded lock waits, cached API engines, tenants, salted PBKDF2 verified API identities, and experiment records. Maintenance locks runs, archives or quarantines imports, refreshes quotes, records SQLite health, verifies backups, measures local RPO and RTO, applies retention, and sends deduplicated alerts.
 
-The Windows first root manual covers installation, first and portfolio runs, analytics, API identities, dashboard use, automation, recovery, Docker, troubleshooting, and every public CLI command.
+The Windows first manual covers installation, research, API identities, dashboard, automation, recovery, Docker, troubleshooting, and CLI commands.
 
 ## Build And Dependencies
 
-Version: 0.1.1.
+Version: 0.1.1. Audited pins and accessibility guidance are updated; a full accessibility audit remains outstanding.
 
 Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX.
 
 ## Automation
 
 CI bootstraps the lock on every supported Python version and enforces warning free tests, 88 percent coverage, strict typing, correctness mutations, migration and backtest benchmarks, package and container builds, security, governance, and repository policy. Scheduled policy audits use a repository-scoped read-only administration token. Conventional commits drive a gated semantic release preparation PR, then invoke the reusable package release workflow directly after tagging. Tagged releases and GHCR images publish SBOMs and signed provenance.
-
-Accessibility reporting and contributor guidance are documented; a full audit remains outstanding.
 
 ## Known Limitations
 
