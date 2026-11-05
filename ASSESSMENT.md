@@ -20,7 +20,7 @@ The Windows first root manual covers installation, first and portfolio runs, ana
 
 ## Build And Dependencies
 
-Version: 0.1.1.
+Version: 0.1.1. Dependency audit pins refreshed; CI validates the graph using reviewed lock versions.
 
 Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX.
 

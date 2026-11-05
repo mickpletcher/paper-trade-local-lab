@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05
+
+### Updated audited dependencies and stabilized lock validation
+
+Summary: Updated certifi, filelock, msgpack, and urllib3 pins, refreshed lock provenance, and made CI resolve against existing reviewed pins before comparing the generated dependency graph.
+
+Why: The installed dependency audit flagged these packages, and fresh-output lock generation unintentionally upgraded unrelated dependencies on every upstream release.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1

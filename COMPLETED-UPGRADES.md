@@ -2,6 +2,11 @@
 
 This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGRADES.md`.
 
+## 2026-11-05
+
+* Updated the four dependency-audit packages and refreshed the canonical lock digest.
+* Made lock verification reuse reviewed pins while still resolving current project requirements.
+
 ## 2026-08-31
 
 * Prepared semantic release v0.1.1.
