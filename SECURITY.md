@@ -20,8 +20,9 @@ The maintainer aims to acknowledge reports within three business days and provid
 ## Security Boundaries
 
 * TradeForge simulates orders and does not route live trades.
-* The API has no authentication. Keep it bound to loopback or place it behind an authenticated reverse proxy on a trusted network.
-* Docker publishes port `8000`; review host firewall and network exposure before using the container outside a development machine.
+* API key authentication is available but disabled by default. Keep the API bound to loopback. For approved network access, enable authentication and use an HTTPS reverse proxy; API keys do not encrypt traffic.
+* With authentication enabled, `/health`, `/docs`, `/openapi.json`, and `/redoc` remain public. Restrict their network exposure as needed. See [the security guide](./docs/security/README.md) for the current trust model.
+* The supplied Docker Compose configuration publishes port `8000` on host loopback. Review any bind or port changes before allowing network access.
 * Alpaca credentials belong only in an ignored local `.env` file or an external secret store. Never commit them.
 * `TRADEFORGE_ALPACA_DATA_URL` must use HTTPS and cannot contain embedded credentials.
 * Local databases, imported market data, reports, and logs may contain sensitive research information. Protect and back them up accordingly.

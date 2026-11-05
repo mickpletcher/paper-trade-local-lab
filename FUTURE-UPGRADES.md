@@ -2,7 +2,6 @@
 
 Current release baseline: v0.1.2.
 
-
 Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with their completion date.
 
 ## Tier 1 (High)
@@ -71,6 +70,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 * Add bounded memory and duration budgets for experiment dataset and artifact hashing.
 
 ### Interfaces And Integrations
+
+* Audit dashboard, CLI output, and documentation with keyboard, screen-reader, zoom, and contrast checks; add regression coverage for confirmed barriers.
 
 * Add a configuration diagnostic command that reports non-sensitive effective settings and their sources.
 * Add pagination query budgets and maximum page sizes to every list endpoint.

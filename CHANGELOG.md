@@ -8,6 +8,12 @@ Summary: Updated package and project records for v0.1.2.
 
 Why: Conventional changes require one validated, reviewable release version before tag publication.
 
+### Clarified community accessibility and security guidance
+
+Summary: Added accessibility guidance and an issue form, linked contributor and support workflows, and corrected outdated API authentication statements.
+
+Why: Contributors need actionable access-barrier reporting and review guidance, and operators need security documentation that matches the implemented optional API keys.
+
 ### Updated audited dependencies and stabilized lock validation
 
 Summary: Updated certifi, filelock, msgpack, and urllib3 pins, refreshed lock provenance, and made CI resolve against existing reviewed pins before comparing the generated dependency graph.
