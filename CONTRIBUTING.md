@@ -9,6 +9,8 @@ py -3.13 -m venv .venv
 . .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 npm ci --ignore-scripts
+npm run test:docs
+npm audit
 ```
 
 Create `.env` from `.env.example`; never commit the populated file.
@@ -41,6 +43,10 @@ Run `docker build -t tradeforge-ci .` when Docker or runtime dependencies change
 Use the CI-pinned uv version to resolve the universal Python 3.11 lock. CI seeds its temporary output from `requirements.lock`, resolves the current `pyproject.toml`, and compares the result. This checks graph consistency without silently upgrading unrelated packages whenever upstream releases change.
 
 For an intentional dependency update, use `uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --upgrade-package PACKAGE --custom-compile-command "uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --output-file requirements.lock" --output-file requirements.lock`, replacing `PACKAGE` with the approved package name. Review the entire diff and refresh the SHA-256 in `requirements.lock.provenance.json` over UTF-8 lock bytes with CRLF normalized to LF. Run the installed dependency audit, environment doctor, and applicable tests. Do not suppress advisories or remove lock verification to make CI pass.
+
+## Documentation Dependencies
+
+The lock includes development dependencies in audits. `micromark-extension-math` still requests KaTeX 0.16, so its scoped override selects 0.18.2 to reject inherited trust options. `markdownlint` pins RE2JS 2.8.6, so its override selects the 2.8.7 lookbehind complexity fix. Keep `npm run test:docs`, Markdown lint, and `npm audit` passing when updating or removing either override. Python security CI installs the declared build requirements before auditing so isolated setuptools dependencies are covered too.
 
 ## Change Rules
 

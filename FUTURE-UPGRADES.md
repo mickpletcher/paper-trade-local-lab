@@ -8,6 +8,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Automation And Reliability
 
+* Remove the scoped KaTeX and RE2JS overrides once their parent packages require patched compatible versions.
+
 * Add a scheduled targeted transitive-dependency refresh that opens a tested lock and provenance update for newly reported advisories.
 
 * Add clean clone bootstrap canaries for both LF and CRLF Git checkout policies on Windows and Linux.

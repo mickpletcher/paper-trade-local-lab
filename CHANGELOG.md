@@ -2,6 +2,12 @@
 
 ## 2026-11-05
 
+### Consolidated security and tooling updates
+
+Summary: Updated the Python build backend, documentation dependency graph, and six pinned Actions; added parser, math, and regex regressions plus npm and build-backend auditing.
+
+Why: Nine dependency alerts affected development tools, and the existing update branches did not fully resolve the vulnerable transitive packages.
+
 ### Prepared semantic release v0.1.2
 
 Summary: Updated package and project records for v0.1.2.
