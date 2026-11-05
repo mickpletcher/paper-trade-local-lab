@@ -58,6 +58,8 @@ jobs:
 
       - name: Verify dependency lock
         run: |
+          # Seed the resolver with reviewed pins instead of implicitly upgrading everything.
+          cp requirements.lock requirements.generated.lock
           uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 \
             --custom-compile-command "uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --output-file requirements.lock" \
             --output-file requirements.generated.lock

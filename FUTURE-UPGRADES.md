@@ -8,6 +8,8 @@ Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with
 
 ### Automation And Reliability
 
+* Add a scheduled targeted transitive-dependency refresh that opens a tested lock and provenance update for newly reported advisories.
+
 * Add clean clone bootstrap canaries for both LF and CRLF Git checkout policies on Windows and Linux.
 * Add executable documentation tests that run every root README novice workflow against a disposable database and container.
 * Automatically close repeated failure issues after the affected workflow completes successfully twice.
