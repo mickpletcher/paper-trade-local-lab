@@ -20,7 +20,7 @@ The Windows first manual covers installation, research, API identities, dashboar
 
 ## Build And Dependencies
 
-Version: 0.1.2. Dependency audit pins refreshed; CI validates the graph using reviewed lock versions. Accessibility guidance is updated; a full accessibility audit remains outstanding.
+Version: 0.1.2. Patched development dependencies have npm and Python build audits. CI validates reviewed lock versions. Accessibility guidance is updated; an audit remains outstanding.
 
 Python 3.11 through 3.14 is supported. Core dependencies are Typer, FastAPI, SQLAlchemy, Alembic, Pandas, Packaging, Pydantic Settings, and Uvicorn. Development adds HTTPX2, Ruff, strict Mypy, Pytest, coverage, Pip Audit, and CycloneDX.
 

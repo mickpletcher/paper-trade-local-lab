@@ -3,12 +3,21 @@
   "private": true,
   "description": "Pinned documentation tooling for the TradeForge repository.",
   "scripts": {
-    "lint:markdown": "markdownlint-cli2 \"*.md\" \"docs/**/*.md\" \"specs/**/*.md\" \"prompts/**/*.md\" \".github/**/*.md\""
+    "lint:markdown": "markdownlint-cli2 \"*.md\" \"docs/**/*.md\" \"specs/**/*.md\" \"prompts/**/*.md\" \".github/**/*.md\"",
+    "test:docs": "node --test scripts/Test-DocumentationDependencies.mjs"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.23.2"
+    "markdownlint-cli2": "0.24.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "micromark-extension-math": {
+      "katex": "0.18.2"
+    },
+    "markdownlint": {
+      "re2js": "2.8.7"
+    }
   }
 }

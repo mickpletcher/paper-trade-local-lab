@@ -36,12 +36,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
 
       - name: Install dependencies
         run: python -m pip install --constraint requirements.lock -e ".[dev]"
+
+      - name: Install declared build dependencies for auditing
+        run: |
+          python - <<'PYTHON'
+          import subprocess
+          import sys
+          import tomllib
+          from pathlib import Path
+          requirements = tomllib.loads(Path("pyproject.toml").read_text())["build-system"]["requires"]
+          subprocess.run([sys.executable, "-m", "pip", "install", *requirements], check=True)
+          PYTHON
 
       - name: Audit installed Python dependencies
         run: pip-audit --local --skip-editable

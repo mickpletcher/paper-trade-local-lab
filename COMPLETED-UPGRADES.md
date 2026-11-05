@@ -4,6 +4,9 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-11-05
 
+* Consolidated the outstanding build, documentation, and Actions dependency updates on the current release baseline.
+* Added documentation parser and trust-boundary regressions and audits covering npm and isolated Python build dependencies.
+
 * Prepared semantic release v0.1.2.
 
 * Added project-specific accessibility reporting and contribution guidance for documentation, CLI output, and the research dashboard.
