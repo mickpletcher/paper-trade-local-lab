@@ -2,6 +2,12 @@
 
 ## 2026-11-05
 
+### Prepared semantic release v0.1.2
+
+Summary: Updated package and project records for v0.1.2.
+
+Why: Conventional changes require one validated, reviewable release version before tag publication.
+
 ### Clarified community accessibility and security guidance
 
 Summary: Added accessibility guidance and an issue form, linked contributor and support workflows, and corrected outdated API authentication statements.

@@ -1,6 +1,6 @@
 # Future Upgrades
 
-Current release baseline: v0.1.1.
+Current release baseline: v0.1.2.
 
 Keep each item concrete and move completed items to `COMPLETED-UPGRADES.md` with their completion date.
 
