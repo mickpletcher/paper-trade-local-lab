@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05
+
+### Clarified community accessibility and security guidance
+
+Summary: Added accessibility guidance and an issue form, linked contributor and support workflows, and corrected outdated API authentication statements.
+
+Why: Contributors need actionable access-barrier reporting and review guidance, and operators need security documentation that matches the implemented optional API keys.
+
 ## 2026-08-31
 
 ### Prepared semantic release v0.1.1

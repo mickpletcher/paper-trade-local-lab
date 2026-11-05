@@ -14,6 +14,10 @@ Search the [documentation](./docs/README.md), [FAQ](./docs/faq/README.md), and e
 
 Use the feature-request issue form. Describe the research problem and expected behavior, and keep proposals within the local paper-trading boundary.
 
+## Accessibility Help
+
+Use the [accessibility issue form](https://github.com/mickpletcher/paper-trade-local-lab/issues/new?template=accessibility.yml) for barriers in documentation, CLI output, or the dashboard. See [ACCESSIBILITY.md](./ACCESSIBILITY.md) for guidance. You do not need to disclose disability or medical information.
+
 ## Security Reports
 
 Follow [SECURITY.md](./SECURITY.md). Never place a vulnerability, credential, or private data in a public issue.
