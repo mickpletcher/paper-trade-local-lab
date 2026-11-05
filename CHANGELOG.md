@@ -2,6 +2,12 @@
 
 ## 2026-11-05
 
+### Prepared semantic release v0.1.2
+
+Summary: Updated package and project records for v0.1.2.
+
+Why: Conventional changes require one validated, reviewable release version before tag publication.
+
 ### Updated audited dependencies and stabilized lock validation
 
 Summary: Updated certifi, filelock, msgpack, and urllib3 pins, refreshed lock provenance, and made CI resolve against existing reviewed pins before comparing the generated dependency graph.

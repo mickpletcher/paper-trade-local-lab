@@ -4,6 +4,8 @@ This file tracks shipped roadmap work that was previously listed in `FUTURE-UPGR
 
 ## 2026-11-05
 
+* Prepared semantic release v0.1.2.
+
 * Updated the four dependency-audit packages and refreshed the canonical lock digest.
 * Made lock verification reuse reviewed pins while still resolving current project requirements.
 
