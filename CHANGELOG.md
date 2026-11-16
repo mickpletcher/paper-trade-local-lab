@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-16
+
+### Automated dependency synchronization: build(deps): bump python from 3.14-slim to 3.15-slim in the container-base-images group
+
+Summary: Refreshed the living project records for the trusted Dependabot update `build(deps): bump python from 3.14-slim to 3.15-slim in the container-base-images group`.
+
+Why: Dependency changes must update current state before governance validation.
+
 ## 2026-11-05
 
 ### Consolidated security and tooling updates
